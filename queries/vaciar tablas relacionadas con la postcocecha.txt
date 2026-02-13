@@ -1,0 +1,22 @@
+TRUNCATE `bitacora`;
+TRUNCATE `cliente_pedido_especificacion`;
+TRUNCATE `detalle_especificacionempaque`;
+TRUNCATE `detalle_pedido`;
+TRUNCATE `especificacion`;
+TRUNCATE `especificacion_empaque`;
+TRUNCATE `pedido`;
+
+TRUNCATE `cosecha`;
+TRUNCATE `desglose_recepcion`;
+TRUNCATE `recepcion`;
+TRUNCATE `bitacora`;
+TRUNCATE `clasificacion_verde`;
+TRUNCATE `consumo`;
+TRUNCATE `detalle_clasificacion_verde`;
+TRUNCATE `inventario_frio`;
+TRUNCATE `lote_re`;
+TRUNCATE `recepcion`;
+TRUNCATE `recepcion_clasificacion_verde`;
+TRUNCATE `stock_apertura`;
+TRUNCATE `stock_empaquetado`;
+TRUNCATE `stock_frio`;
