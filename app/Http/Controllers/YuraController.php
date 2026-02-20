@@ -37,9 +37,9 @@ class YuraController extends Controller
 {
     public function inicio(Request $request)
     {
-        $empresas = SuperFinca::All()->sortBy('nombre');
+        $empresas = SuperFinca::orderBy('nombre')->get();
         $semana_pasada = getSemanaByDate(opDiasFecha('-', 7, hoy()));
-        $semana_1mes = $semana_pasada->last_4_semana;
+        //$semana_1mes = $semana_pasada->last_4_semana;
 
         $data = [];
         /*foreach ($empresas as $sf) {
