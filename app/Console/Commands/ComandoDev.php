@@ -134,6 +134,9 @@ class ComandoDev extends Command
         if ($comando == 'resumen_fechas') {
             $this->resumen_fechas();
         }
+        if ($comando == 'importar_plantas') {
+            $this->importar_plantas();
+        }
         if ($comando == 'caca') {
             $this->caca();
         }
@@ -1015,40 +1018,38 @@ class ComandoDev extends Command
         dump('<<<<< ! >>>>> Ejecutando comando:dev "importar_recetas" <<<<< ! >>>>>');
         DB::beginTransaction();
         try {
-            $url = public_path('storage/pdf_loads/recetas.xlsx');
+            $url = public_path('storage/file_loads/upload_recetas.xlsx');
             $document = IOFactory::load($url);
             $activeSheetData = $document->getActiveSheet()->toArray(null, true, true, true);
 
-            $planta = Planta::where('nombre', 'BOUQUETS')
+            $planta = Planta::where('nombre', 'BOUQUET')
                 ->first();
             $errores = [];
             foreach ($activeSheetData as $pos_row => $row) {
-                if ($pos_row > 2 && $row['E'] != '') {
+                if ($pos_row > 1 && $row['F'] != '') {
                     dump($pos_row . '/' . count($activeSheetData));
-                    if ($row['B'] != '') {    // nueva receta
+                    if ($row['A'] != '') {    // nueva receta
                         $receta = new Variedad();
                         $receta->id_planta = $planta->id_planta;
-                        $receta->nombre = espacios(mb_strtoupper($row['B']));
-                        $receta->siglas = espacios(mb_strtoupper($row['A']));
+                        $receta->nombre = espacios(mb_strtoupper($row['A']));
                         $receta->color = 'RECETA';
                         $receta->receta = 1;
                         $receta->tallos_x_malla = 30;
                         $receta->tipo = 'L';
+                        $receta->codigo_latin = $row['B'];
                         $receta->save();
-                        $receta = Variedad::All()->last();
+                        $receta->id_variedad = DB::table('variedad')->max('id_variedad');
                     }
-                    $item = Variedad::where('nombre', espacios(mb_strtoupper($row['C'])))
+                    $item = Variedad::where('nombre', espacios(mb_strtoupper($row['F'])))
                         ->first();
                     if ($item != '') {
                         $detalle = new DetalleReceta();
                         $detalle->id_variedad = $receta->id_variedad;
                         $detalle->id_item = $item->id_variedad;
-                        $detalle->unidades = $row['D'];
-                        $detalle->longitud = 60;
-                        $detalle->precio = $row['E'];
+                        $detalle->unidades = $row['G'];
                         $detalle->save();
                     } else {
-                        $errores[] = 'No se encontro la variedad: ' . espacios(mb_strtoupper($row['E']));
+                        $errores[] = 'No se encontro la variedad: ' . espacios(mb_strtoupper($row['F']));
                     }
                 }
             }
@@ -1152,39 +1153,34 @@ class ComandoDev extends Command
     {
         dump('<<<<< ! >>>>> Ejecutando comando:dev "importar_variedades" <<<<< ! >>>>>');
         try {
-            $url = public_path('storage/pdf_loads/variedades.xls');
+            $url = public_path('storage/file_loads/upload_variedades.xlsx');
             $document = IOFactory::load($url);
             $activeSheetData = $document->getActiveSheet()->toArray(null, true, true, true);
 
             foreach ($activeSheetData as $pos_row => $row) {
-                $planta = Planta::All()
-                    ->where('nombre', espacios(mb_strtoupper($row['C'])))
-                    ->first();
-                if ($planta == '') {
-                    $planta = new Planta();
-                    $planta->nombre = espacios(mb_strtoupper($row['C']));
-                    $planta->siglas = substr(espacios(mb_strtoupper($row['C'])), 0, 3);
-                    $planta->save();
-                    $planta = Planta::All()->last();
-                }
-                if ($planta != '') {
-                    $variedad = Variedad::All()
-                        ->where('nombre', espacios(mb_strtoupper($row['B'])))
+                if ($pos_row > 1 && $row['A']) {
+                    dump($pos_row . '/' . (count($activeSheetData) - 1));
+                    $planta = Planta::where('nombre', espacios(mb_strtoupper($row['C'])))
+                        ->first();
+                    if ($planta == '') {
+                        $planta = new Planta();
+                        $planta->nombre = espacios(mb_strtoupper($row['C']));
+                        $planta->save();
+                        $planta->id_planta = DB::table('planta')->max('id_planta');
+                    }
+                    $variedad = Variedad::where('nombre', espacios(mb_strtoupper($row['A'])))
                         ->where('id_planta', $planta->id_planta)
                         ->first();
                     if ($variedad == '') {
-                        dump($pos_row . '/' . (count($activeSheetData) - 1));
                         $variedad = new Variedad();
                         $variedad->id_planta = $planta->id_planta;
-                        $variedad->nombre = espacios(mb_strtoupper($row['B']));
-                        $variedad->siglas = espacios(mb_strtoupper($row['A']));
-                        $variedad->color = espacios(mb_strtoupper($row['D']));
+                        $variedad->nombre = espacios(mb_strtoupper($row['A']));
+                        $variedad->color = espacios(mb_strtoupper($row['B']));
                         $variedad->tallos_x_malla = 30;
+                        $variedad->codigo_latin = $row['E'];
 
                         $variedad->save();
                     }
-                } else {
-                    dd('Falló en la fila: ' . $pos_row . '; Planta errónea', $row, espacios(mb_strtoupper($row['B'])));
                 }
             }
             //unlink($url);
@@ -1198,29 +1194,32 @@ class ComandoDev extends Command
     {
         dump('<<<<< ! >>>>> Ejecutando comando:dev "importar_clientes" <<<<< ! >>>>>');
         try {
-            $url = public_path('storage/pdf_loads/clientes.xls');
+            $url = public_path('storage/file_loads/upload_clientes.xlsx');
             $document = IOFactory::load($url);
             $activeSheetData = $document->getActiveSheet()->toArray(null, true, true, true);
-            $pos_row = 0;
             foreach ($activeSheetData as $pos_row => $row) {
                 if ($pos_row > 1) {
                     dump($pos_row . '/' . count($activeSheetData));
-                    $cliente = Cliente::All()
-                        ->where('codigo', $row['A'])
+                    $cliente = Cliente::where('codigo', espacios(mb_strtoupper($row['G'])))
                         ->first();
                     if ($cliente == '') {
                         $cliente = new Cliente();
-                        $cliente->codigo = $row['A'];
+                        $cliente->codigo = espacios(mb_strtoupper($row['G']));
                         $cliente->save();
-                        $cliente = Cliente::All()->last();
+                        $cliente->id_cliente = DB::table('cliente')->max('id_cliente');
 
                         $objDetalleCliente = new DetalleCliente();
                         $objDetalleCliente->id_cliente = $cliente->id_cliente;
-                        $objDetalleCliente->nombre = espacios(mb_strtoupper($row['E']));
-                        $objDetalleCliente->ruc = espacios(mb_strtoupper($row['C']));
+                        $objDetalleCliente->nombre = espacios(mb_strtoupper($row['A']));
+                        $objDetalleCliente->ruc = espacios(mb_strtoupper($row['G']));
                         $objDetalleCliente->codigo_porcentaje_impuesto = 0;
                         $objDetalleCliente->codigo_identificacion = 0;
                         $objDetalleCliente->codigo_impuesto = 2;
+                        $objDetalleCliente->codigo_latin = espacios(mb_strtoupper($row['B']));
+                        $objDetalleCliente->direccion = $row['D'];
+                        $objDetalleCliente->telefono = $row['F'];
+                        $objDetalleCliente->correo = $row['H'];
+                        $objDetalleCliente->segmento = $row['I'];
                         $objDetalleCliente->save();
                     } else {
                         $detalle = $cliente->detalle();
@@ -1231,11 +1230,16 @@ class ComandoDev extends Command
 
                         $objDetalleCliente = new DetalleCliente();
                         $objDetalleCliente->id_cliente = $cliente->id_cliente;
-                        $objDetalleCliente->nombre = espacios(mb_strtoupper($row['E']));
-                        $objDetalleCliente->ruc = espacios(mb_strtoupper($row['C']));
+                        $objDetalleCliente->nombre = espacios(mb_strtoupper($row['A']));
+                        $objDetalleCliente->ruc = espacios(mb_strtoupper($row['G']));
                         $objDetalleCliente->codigo_porcentaje_impuesto = 0;
                         $objDetalleCliente->codigo_identificacion = 0;
                         $objDetalleCliente->codigo_impuesto = 2;
+                        $objDetalleCliente->codigo_latin = espacios(mb_strtoupper($row['B']));
+                        $objDetalleCliente->direccion = $row['D'];
+                        $objDetalleCliente->telefono = $row['F'];
+                        $objDetalleCliente->correo = $row['H'];
+                        $objDetalleCliente->segmento = $row['I'];
                         $objDetalleCliente->save();
                     }
                 }
@@ -1388,36 +1392,31 @@ class ComandoDev extends Command
         }
     }
 
-    function caca()
+    function importar_plantas()
     {
-        $postcos = Postco::where('armados', '>', 0)
-            ->orderBy('fecha')->get();
-        foreach($postcos as $postco){
-            $ramos_armados = $postco->armados;
-            $ramos_ot = DB::table('ot_postco')
-                ->select(DB::raw('sum(ramos) as cantidad'))
-                ->where('id_postco', $postco->id_postco)
-                ->get()[0]->cantidad;
-            if($ramos_armados > $ramos_ot){
-                $diferencia = $ramos_armados - $ramos_ot;
-                $model_armado = new ArmadoPostco();
-                $model_armado->id_postco = $postco->id_postco;
-                $model_armado->ramos = $diferencia;
-                $model_armado->id_cliente = $postco->clientes[0]->id_cliente;
-                $model_armado->save();
-                $model_armado->id_armado_postco = DB::table('armado_postco')
-                    ->select(DB::raw('max(id_armado_postco) as id'))
-                    ->get()[0]->id;
-                dump('POSTCO: '.$postco->variedad->nombre.' '.$postco->fecha.' = '.$diferencia);
+        dump('<<<<< ! >>>>> Ejecutando comando:dev "importar_plantas" <<<<< ! >>>>>');
+        try {
+            $url = public_path('storage/file_loads/upload_plantas.xlsx');
+            $document = IOFactory::load($url);
+            $activeSheetData = $document->getActiveSheet()->toArray(null, true, true, true);
 
-                foreach ($postco->distribuciones as $key => $dist) {
-                    $det_armado = new DetalleArmadoPostco();
-                    $det_armado->id_armado_postco = $model_armado->id_armado_postco;
-                    $det_armado->id_item = $dist->id_item;
-                    $det_armado->unidades = $dist->unidades;
-                    $det_armado->save();
+            foreach ($activeSheetData as $pos_row => $row) {
+                if ($pos_row > 1) {
+                    dump($pos_row . '/' . (count($activeSheetData) - 1));
+                    $planta = new Planta();
+                    $planta->nombre = espacios(mb_strtoupper($row['A']));
+                    $planta->save();
                 }
             }
+            //unlink($url);
+        } catch (\Exception $e) {
+            dump('************************* ERROR ****************************');
+            dump($e->getMessage());
         }
+    }
+
+    function caca()
+    {
+        //$this->importar_plantas();
     }
 }
