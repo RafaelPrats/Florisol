@@ -1417,6 +1417,10 @@ class ComandoDev extends Command
 
     function caca()
     {
-        //$this->importar_plantas();
+        $variedades = Variedad::where('nombre', 'like', '% X %')->get();
+        foreach ($variedades as $var) {
+            $var->nombre = explode(' X ', $var->nombre)[0];
+            $var->save();
+        }
     }
 }
