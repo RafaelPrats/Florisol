@@ -93,7 +93,6 @@ class IngresoCajasController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Documento guardado correctamente',
-                'id' => 0
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
