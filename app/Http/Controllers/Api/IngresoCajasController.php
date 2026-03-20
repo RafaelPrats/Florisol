@@ -14,7 +14,6 @@ class IngresoCajasController extends Controller
 {
     public function store_cajas(Request $request)
     {
-        return env('API_KEY');
         if ($request->header('X-API-KEY') !== env('API_KEY')) {
             return response()->json([
                 'success' => false,
