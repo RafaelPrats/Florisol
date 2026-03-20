@@ -34,8 +34,10 @@ class ProyectoController extends Controller
 
     public function listar_reporte(Request $request)
     {
+        $finca = getFincaActiva();
         $listado = Proyecto::where('estado', 1)
-            ->where('fecha', $request->fecha);
+            ->where('fecha', $request->fecha)
+            ->where('id_empresa', $finca);
         if ($request->segmento != 'T')
             $listado = $listado->where('segmento', $request->segmento);
         if ($request->cliente != 'T')
@@ -169,10 +171,12 @@ class ProyectoController extends Controller
 
     public function store_proyecto(Request $request)
     {
+        $finca = getFincaActiva();
         jobStoreProyecto::dispatch(
             $request->all(),
             session('id_usuario'),
-            \Request::ip()
+            \Request::ip(),
+            $finca
         )->onQueue('store_proyecto')->onConnection('database');
 
         $msg = 'Se esta <b>CREANDO</b> el pedido en un segundo plano';
@@ -298,6 +302,7 @@ class ProyectoController extends Controller
                 DB::beginTransaction();
                 // NUEVO PROYECTO
                 $proyecto = new Proyecto();
+                $proyecto->id_empresa = $pedOriginal->id_empresa;
                 $proyecto->id_cliente = $pedOriginal->id_cliente;
                 $proyecto->segmento = $pedOriginal->segmento;
                 $proyecto->fecha = $d;

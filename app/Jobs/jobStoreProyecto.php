@@ -26,12 +26,14 @@ class jobStoreProyecto implements ShouldQueue
     protected $request;
     protected $usuario;
     protected $ip;
+    protected $finca;
 
-    public function __construct($par_request, $par_usuario, $par_ip)
+    public function __construct($par_request, $par_usuario, $par_ip, $par_finca)
     {
         $this->request = $par_request;
         $this->usuario = $par_usuario;
         $this->ip = $par_ip;
+        $this->finca = $par_finca;
     }
 
     /**
@@ -86,6 +88,7 @@ class jobStoreProyecto implements ShouldQueue
                 $numeroOrdenFija = $numeroOrdenFija != '' ? ($numeroOrdenFija + 1) : 1;
                 $proyecto->orden_fija = $numeroOrdenFija;
             }
+            $proyecto->id_empresa = $this->finca;
             $proyecto->fecha = $fecha;
             $proyecto->tipo = $request['tipo'];
             $proyecto->segmento = $request['segmento'];

@@ -49,6 +49,7 @@ class jobGrabarOrdenFija implements ShouldQueue
             $proyecto->fecha = $fecha;
             $proyecto->tipo = $proy_original->tipo;
             $proyecto->segmento = $proy_original->segmento;
+            $proyecto->id_empresa = $proy_original->id_empresa;
             $proyecto->id_consignatario = $proy_original->id_consignatario;
             $proyecto->id_agencia_carga = $proy_original->id_agencia_carga;
             $proyecto->save();

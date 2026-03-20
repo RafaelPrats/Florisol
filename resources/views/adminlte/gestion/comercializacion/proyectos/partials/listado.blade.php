@@ -67,14 +67,18 @@
                                     class="check_proyecto">
                             </th>
                             <th class="text-center" style="border-color: #9d9d9d" rowspan="{{ $cant_rows }}">
-                                {{ $proyecto->packing }}
+                                <small>{{ $proyecto->segmento }}</small>
+                                @if ($proyecto->packing != '')
+                                    <br>
+                                    {{ $proyecto->packing }}
+                                @endif
                             </th>
                             <th class="text-center" style="border-color: #9d9d9d" rowspan="{{ $cant_rows }}">
                                 {{ $proyecto->cliente->detalle()->nombre }}
                                 <br>
                                 <small>Ventas: ${{ $monto_proy }}</small>
                                 <br>
-                                <small>Cajas: ${{ $cajas_proy }}</small>
+                                <small>Cajas: {{ $cajas_proy }}</small>
                             </th>
                             <th class="text-center" style="border-color: #9d9d9d" rowspan="{{ $cant_rows }}">
                                 {{ $proyecto->tipo }}
