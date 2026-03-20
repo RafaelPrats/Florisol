@@ -42,7 +42,7 @@ class IngresoCajasController extends Controller
             $model_api->save();
 
             foreach ($request->cajas as $caja) {
-                $empresa = $caja['destino'] == 1 ? 2 : 1;
+                $empresa = $caja['destino'] == 1 ? 1 : 2;
                 if (count($caja['variedades']) > 0) {
                     foreach ($caja['variedades'] as $var) {
                         $variedad = Variedad::where('codigo_latin', $var['codigo_variedad'])
