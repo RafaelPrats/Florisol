@@ -1023,30 +1023,44 @@ class ComandoDev extends Command
             $activeSheetData = $document->getActiveSheet()->toArray(null, true, true, true);
 
             $planta = Planta::where('nombre', 'BOUQUET')
+                ->where('id_empresa', 2)
                 ->first();
+            if ($planta == '') {
+                $planta = new Planta();
+                $planta->nombre = 'BOUQUET';
+                $planta->id_empresa = 2;
+                $planta->save();
+                $planta->id_planta = DB::table('planta')->max('id_planta');
+            }
             $errores = [];
             foreach ($activeSheetData as $pos_row => $row) {
-                if ($pos_row > 1 && $row['F'] != '') {
+                if ($pos_row > 1 && $row['F'] != '' && $row['A'] != '') {
                     dump($pos_row . '/' . count($activeSheetData));
-                    if ($row['A'] != '') {    // nueva receta
+                    $receta = Variedad::where('nombre', espacios(mb_strtoupper($row['A'])))
+                        ->where('id_empresa', 2)
+                        ->first();
+                    if ($receta == '') {
                         $receta = new Variedad();
                         $receta->id_planta = $planta->id_planta;
                         $receta->nombre = espacios(mb_strtoupper($row['A']));
                         $receta->color = 'RECETA';
                         $receta->receta = 1;
-                        $receta->tallos_x_malla = 30;
+                        $receta->tallos_x_malla = 0;
                         $receta->tipo = 'L';
-                        $receta->codigo_latin = $row['B'];
+                        $receta->codigo_exportacion = $row['B'];
+                        $receta->id_empresa = 2;
                         $receta->save();
                         $receta->id_variedad = DB::table('variedad')->max('id_variedad');
                     }
-                    $item = Variedad::where('nombre', espacios(mb_strtoupper($row['F'])))
+
+                    $item = Variedad::where('codigo_exportacion', espacios(mb_strtoupper($row['E'])))
+                        ->where('id_empresa', 2)
                         ->first();
                     if ($item != '') {
                         $detalle = new DetalleReceta();
                         $detalle->id_variedad = $receta->id_variedad;
                         $detalle->id_item = $item->id_variedad;
-                        $detalle->unidades = $row['G'];
+                        $detalle->unidades = $row['F'];
                         $detalle->save();
                     } else {
                         $errores[] = 'No se encontro la variedad: ' . espacios(mb_strtoupper($row['F']));
@@ -1158,13 +1172,14 @@ class ComandoDev extends Command
             $activeSheetData = $document->getActiveSheet()->toArray(null, true, true, true);
 
             foreach ($activeSheetData as $pos_row => $row) {
-                if ($pos_row > 1 && $row['A']) {
+                if ($pos_row > 1 && $row['A'] != '') {
                     dump($pos_row . '/' . (count($activeSheetData) - 1));
                     $planta = Planta::where('nombre', espacios(mb_strtoupper($row['C'])))
                         ->first();
                     if ($planta == '') {
                         $planta = new Planta();
                         $planta->nombre = espacios(mb_strtoupper($row['C']));
+                        $planta->id_empresa = 2;
                         $planta->save();
                         $planta->id_planta = DB::table('planta')->max('id_planta');
                     }
@@ -1177,8 +1192,8 @@ class ComandoDev extends Command
                         $variedad->nombre = espacios(mb_strtoupper($row['A']));
                         $variedad->color = espacios(mb_strtoupper($row['B']));
                         $variedad->tallos_x_malla = 30;
-                        $variedad->codigo_latin = $row['E'];
-
+                        $variedad->codigo_exportacion = $row['D'];
+                        $variedad->id_empresa = 2;
                         $variedad->save();
                     }
                 }
