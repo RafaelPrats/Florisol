@@ -1016,7 +1016,7 @@ class ComandoDev extends Command
     function importar_recetas()
     {
         dump('<<<<< ! >>>>> Ejecutando comando:dev "importar_recetas" <<<<< ! >>>>>');
-        DB::beginTransaction();
+        //DB::beginTransaction();
         try {
             $url = public_path('storage/file_loads/upload_recetas.xlsx');
             $document = IOFactory::load($url);
@@ -1033,6 +1033,7 @@ class ComandoDev extends Command
                 $planta->id_planta = DB::table('planta')->max('id_planta');
             }
             $errores = [];
+            $pos_row = 0;
             foreach ($activeSheetData as $pos_row => $row) {
                 if ($pos_row > 1 && $row['F'] != '' && $row['A'] != '') {
                     dump($pos_row . '/' . count($activeSheetData));
@@ -1069,10 +1070,10 @@ class ComandoDev extends Command
             }
             if (count($errores) > 0)
                 dump($errores);
-            DB::commit();
+            //DB::commit();
             //unlink($url);
         } catch (\Exception $e) {
-            DB::rollBack();
+            //DB::rollBack();
             dump('pos: ' . $pos_row . '************************* ERROR ****************************');
             dump($e->getMessage());
         }
