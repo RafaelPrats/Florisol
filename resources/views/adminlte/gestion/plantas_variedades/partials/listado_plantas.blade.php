@@ -15,15 +15,13 @@
                                 <i class="fa fa-fw fa-plus"></i> Agregar Planta
                             </a>
                         </li>
-                        <li>
-                            <a href="javascript:void(0)"
-                                onclick="importar_variedades()">
+                        <li class="hidden">
+                            <a href="javascript:void(0)" onclick="importar_variedades()">
                                 <i class="fa fa-fw fa-upload"></i> Importar Variedades
                             </a>
                         </li>
                         <li>
-                            <a href="javascript:void(0)"
-                                onclick="form_compelto()">
+                            <a href="javascript:void(0)" onclick="form_compelto()">
                                 <i class="fa fa-fw fa-leaf"></i> Formulario completo
                             </a>
                         </li>

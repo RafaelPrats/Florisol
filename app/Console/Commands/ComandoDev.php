@@ -1064,7 +1064,8 @@ class ComandoDev extends Command
                         $detalle->unidades = $row['F'];
                         $detalle->save();
                     } else {
-                        $errores[] = 'No se encontro la variedad: ' . espacios(mb_strtoupper($row['F']));
+                        //$errores[] = 'No se encontro la variedad: ' . espacios(mb_strtoupper($row['E']));
+                        $errores[] = espacios(mb_strtoupper($row['E']));
                     }
                 }
             }

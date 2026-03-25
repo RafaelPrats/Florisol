@@ -23,9 +23,9 @@
                         onclick="add_variedad()">
                         <i class="fa fa-fw fa-plus"></i>
                     </button>
-                    <button class="btn btn-xs btn-yura_dark" onclick="importar_recetas()">
+                    {{-- <button class="btn btn-xs btn-yura_dark" onclick="importar_recetas()">
                         <i class="fa fa-fw fa-upload"></i>
-                    </button>
+                    </button> --}}
                 </div>
             </th>
         </tr>
@@ -56,10 +56,10 @@
                 </td>
                 <td style="border-color: #9d9d9d" class="text-center hidden">
                     @if ($v->receta == 1)
-                        {{--@php
+                        {{-- @php
                             $bloqueos = $v->getCantidadRecetasBloqueadas();
                         @endphp
-                        {{ $bloqueos > 0 ? $bloqueos : '' }}--}}
+                        {{ $bloqueos > 0 ? $bloqueos : '' }} --}}
                     @endif
                 </td>
                 @if ($proveedor != '')

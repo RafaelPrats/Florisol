@@ -1,4 +1,5 @@
 <script>
+    $('#vista_actual').val('plantas_variedades');
     estructura_tabla('table_content_proveedores');
     $('#table_content_proveedores_filter label').addClass('hidden');
     estructura_tabla('table_content_plantas');

@@ -27,10 +27,11 @@ class PlantaController extends Controller
 {
     public function inicio(Request $request)
     {
+        $finca = getFincaActiva();
         return view('adminlte.gestion.plantas_variedades.inicio', [
             'url' => $request->getRequestUri(),
             'submenu' => Submenu::Where('url', '=', substr($request->getRequestUri(), 1))->get()[0],
-            'plantas' => Planta::orderBy('nombre')->get(),
+            'plantas' => Planta::where('id_empresa', $finca)->orderBy('nombre')->get(),
             'proveedores' => ConfiguracionEmpresa::where('proveedor', 1)
                 ->orderBy('nombre')->get()
         ]);
@@ -58,8 +59,7 @@ class PlantaController extends Controller
 
     public function asignar_proveedor(Request $request)
     {
-        $model = VariedadProveedor::All()
-            ->where('id_variedad', $request->variedad)
+        $model = VariedadProveedor::where('id_variedad', $request->variedad)
             ->where('id_proveedor', $request->id_proveedor)
             ->first();
         if ($model == '') {
@@ -87,8 +87,7 @@ class PlantaController extends Controller
             ->where('id_planta', $request->planta)
             ->get();
         foreach ($variedades as $var) {
-            $model = VariedadProveedor::All()
-                ->where('id_variedad', $var->id_variedad)
+            $model = VariedadProveedor::where('id_variedad', $var->id_variedad)
                 ->where('id_proveedor', $request->proveedor)
                 ->first();
             if ($model == '') {
@@ -108,11 +107,13 @@ class PlantaController extends Controller
 
     public function form_compelto(Request $request)
     {
+        $finca = getFincaActiva();
         $plantas = Planta::join('variedad as v', 'v.id_planta', '=', 'planta.id_planta')
             ->select('planta.*')->distinct()
             ->where('planta.estado', 1)
             ->where('v.estado', 1)
             ->where('v.receta', 0)
+            ->where('planta.id_empresa', $finca)
             ->orderBy('planta.nombre')
             ->get();
         return view('adminlte.gestion.plantas_variedades.forms.form_completo', [
@@ -144,6 +145,7 @@ class PlantaController extends Controller
             $model->tarifa = $request->tarifa;
             $model->nandina = $request->nandina;
             $model->siglas = $request->siglas;
+            $model->id_empresa = getFincaActiva();
             $model->fecha_registro = date('Y-m-d H:i:s');
 
             if ($model->save()) {
@@ -184,8 +186,9 @@ class PlantaController extends Controller
 
     public function add_variedad(Request $request)
     {
+        $finca = getFincaActiva();
         return view('adminlte.gestion.plantas_variedades.forms.add_variedad', [
-            'plantas' => Planta::where('estado', '=', 1)->orderBy('nombre')->get(),
+            'plantas' => Planta::where('id_empresa', $finca)->where('estado', '=', 1)->orderBy('nombre')->get(),
         ]);
     }
 
@@ -226,6 +229,7 @@ class PlantaController extends Controller
                 $model->nombre = str_limit(mb_strtoupper(espacios($request->nombre)), 250);
                 $model->siglas = str_limit(mb_strtoupper(espacios($request->siglas)), 25);
                 $model->id_planta = $request->id_planta;
+                $model->id_empresa = getFincaActiva();
                 $model->color = $request->color;
                 $model->tipo = $request->tipo;
                 $model->tallos_x_ramo_estandar = $request->tallos_x_ramo_estandar;
@@ -438,8 +442,12 @@ class PlantaController extends Controller
             'nombre.max' => 'El nombre es muy grande',
         ]);
         if (!$valida->fails()) {
-            if (count(Planta::All()->where('nombre', '=', $request->nombre)
-                ->where('id_planta', '!=', $request->id_planta)) == 0) {
+            $finca = getFincaActiva();
+            $existe = Planta::where('nombre', '=', $request->nombre)
+                ->where('id_empresa', $finca)
+                ->where('id_planta', '!=', $request->id_planta)
+                ->first();
+            if ($existe == '') {
                 $model = Planta::find($request->id_planta);
                 $model->nombre = str_limit(mb_strtoupper(espacios($request->nombre)), 250);
                 $model->tarifa = $request->tarifa;
@@ -527,7 +535,7 @@ class PlantaController extends Controller
             if ($v != '') {
                 return view('adminlte.gestion.plantas_variedades.forms.edit_variedad', [
                     'variedad' => $v,
-                    'plantas' => Planta::where('estado', '=', 1)->orderBy('nombre')->get(),
+                    'plantas' => Planta::where('estado', '=', 1)->where('id_empresa', getFincaActiva())->orderBy('nombre')->get(),
                 ]);
             } else {
                 return '<div class="alert alert-warning text-center">No se ha encontrado la variedad en el sistema</div>';
@@ -559,9 +567,11 @@ class PlantaController extends Controller
             'siglas.max' => 'Las siglas son muy grande',
         ]);
         if (!$valida->fails()) {
-            if (count(Variedad::All()->where('nombre', '=', str_limit(mb_strtoupper(espacios($request->nombre)), 250))
+            $existe = Variedad::where('nombre', '=', str_limit(mb_strtoupper(espacios($request->nombre)), 250))
                 ->where('id_planta', '=', $request->id_planta)
-                ->where('id_variedad', '!=', $request->id_variedad)) == 0) {
+                ->where('id_variedad', '!=', $request->id_variedad)
+                ->first();
+            if ($existe == '') {
                 $model = Variedad::find($request->id_variedad);
                 $model->nombre = str_limit(mb_strtoupper(espacios($request->nombre)), 250);
                 $model->siglas = str_limit(mb_strtoupper(espacios($request->siglas)), 25);

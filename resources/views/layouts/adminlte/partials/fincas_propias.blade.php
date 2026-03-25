@@ -185,6 +185,7 @@
                 'reporte_postcosecha',
                 'pedidos',
                 'importar_pedidos',
+                'plantas_variedades',
                 '/control_diario',
                 '/dashboard_personal'
             ];

@@ -45,7 +45,7 @@ class IngresoCajasController extends Controller
                 $empresa = $caja['destino'] == 1 ? 1 : 2;
                 if (count($caja['variedades']) > 0) {
                     foreach ($caja['variedades'] as $var) {
-                        $variedad = Variedad::where('codigo_latin', $var['codigo_variedad'])
+                        $variedad = Variedad::where('codigo_exportacion', $var['codigo_variedad'])
                             ->first();
                         if ($variedad != '') {
                             $model_inventario = InventarioRecepcion::where('id_variedad', $variedad->id_variedad)

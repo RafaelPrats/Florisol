@@ -56,9 +56,9 @@
                                                     title="Añadir Planta" onclick="add_variedad()">
                                                     <i class="fa fa-fw fa-plus"></i>
                                                 </button>
-                                                <button class="btn btn-xs btn-yura_dark" onclick="importar_recetas()">
+                                                {{--<button class="btn btn-xs btn-yura_dark" onclick="importar_recetas()">
                                                     <i class="fa fa-fw fa-upload"></i>
-                                                </button>
+                                                </button>--}}
                                             </div>
                                         @endif
                                     </th>
