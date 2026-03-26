@@ -186,6 +186,7 @@
                 'pedidos',
                 'importar_pedidos',
                 'plantas_variedades',
+                'ingreso_inventario',
                 '/control_diario',
                 '/dashboard_personal'
             ];

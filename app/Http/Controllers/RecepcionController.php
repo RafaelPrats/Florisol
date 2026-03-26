@@ -50,11 +50,14 @@ class RecepcionController extends Controller
 {
     public function inicio(Request $request)
     {
+        $finca = getFincaActiva();
         $plantas = Planta::where('estado', 1)
+            ->where('id_empresa', $finca)
             ->orderBy('nombre')
             ->get();
         $variedades = Variedad::where('estado', 1)
             ->where('receta', 0)
+            ->where('id_empresa', $finca)
             ->orderBy('nombre')
             ->get();
         return view('adminlte.gestion.postcocecha.recepciones.inicio', [
