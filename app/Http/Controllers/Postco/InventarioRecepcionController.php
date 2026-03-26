@@ -5,6 +5,7 @@ namespace yura\Http\Controllers\Postco;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use yura\Http\Controllers\Controller;
+use yura\Modelos\InventarioRecepcion;
 use yura\Modelos\Planta;
 use yura\Modelos\Submenu;
 
@@ -71,5 +72,53 @@ class InventarioRecepcionController extends Controller
         return view('adminlte.gestion.postco.ingreso_inventario.forms.modal_add', [
             'plantas' => $plantas
         ]);
+    }
+
+    public function store_inventario(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $finca = getFincaActiva();
+            foreach (json_decode($request->data) as $data) {
+                $model_inventario = InventarioRecepcion::where('id_variedad', $data->variedad)
+                    ->where('fecha', $data->fecha)
+                    ->where('tallos_x_ramo', $data->tallos_x_ramo)
+                    ->where('longitud', $data->longitud)
+                    ->where('id_empresa', $finca)
+                    ->first();
+                if ($model_inventario == '') {
+                    $model_inventario = new InventarioRecepcion();
+                    $model_inventario->id_variedad = $data->variedad;
+                    $model_inventario->fecha = $data->fecha;
+                    $model_inventario->tallos_x_ramo = $data->tallos_x_ramo;
+                    $model_inventario->ramos = $data->ramos;
+                    $model_inventario->longitud = $data->longitud;
+                    $model_inventario->disponibles = $data->ramos * $data->tallos_x_ramo;
+                    $model_inventario->id_empresa = $finca;
+                    $model_inventario->save();
+                } else {
+                    $model_inventario->ramos += $data->ramos;
+                    $model_inventario->disponibles += $data->ramos * $data->tallos_x_ramo;
+                    $model_inventario->save();
+                }
+            }
+
+            $success = true;
+            $msg = 'Se ha <strong>GRABADO</strong> la informacion correctamente';
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $success = false;
+            $msg = '<div class="alert alert-danger text-center">' .
+                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
+                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
+                . '</div>';
+        }
+
+        return [
+            'success' => $success,
+            'mensaje' => $msg,
+        ];
     }
 }

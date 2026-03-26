@@ -1177,6 +1177,7 @@ class ComandoDev extends Command
                 if ($pos_row > 1 && $row['A'] != '') {
                     dump($pos_row . '/' . (count($activeSheetData) - 1));
                     $planta = Planta::where('nombre', espacios(mb_strtoupper($row['C'])))
+                        ->where('id_empresa', 2)
                         ->first();
                     if ($planta == '') {
                         $planta = new Planta();
@@ -1187,6 +1188,7 @@ class ComandoDev extends Command
                     }
                     $variedad = Variedad::where('nombre', espacios(mb_strtoupper($row['A'])))
                         ->where('id_planta', $planta->id_planta)
+                        ->where('id_empresa', 2)
                         ->first();
                     if ($variedad == '') {
                         $variedad = new Variedad();

@@ -65,7 +65,7 @@
                             {{ $var->tallos_x_ramo }}
                         </th>
                         <th class="padding_lateral_5" style="border-color: #9d9d9d">
-                            {{ $var->longitud }}cm
+                            {{ $var->longitud }}
                         </th>
                         <th class="" style="border-color: #9d9d9d">
                             <input type="number" style="width: 100%" class="text-center" value="{{ $var->ramos }}">
