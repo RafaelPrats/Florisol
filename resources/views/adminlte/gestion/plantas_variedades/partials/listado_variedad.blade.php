@@ -3,7 +3,8 @@
     <thead>
         <tr class="tr_fija_top_0">
             <th class="text-center th_yura_green">Variedad</th>
-            <th class="text-center th_yura_green">Codigo</th>
+            <th class="text-center th_yura_green">Cod. Latin</th>
+            <th class="text-center th_yura_green">Cod. Exp.</th>
             <th class="text-center th_yura_green">Color</th>
             <th class="text-center th_yura_green hidden">Recetas</th>
             <th class="text-center th_yura_green hidden">Bloqueos</th>
@@ -39,7 +40,10 @@
                     {{ $v->nombre }}
                 </td>
                 <td style="border-color: #9d9d9d" class="text-center">
-                    {{ $v->siglas }}
+                    {{ $v->codigo_latin }}
+                </td>
+                <td style="border-color: #9d9d9d" class="text-center">
+                    {{ $v->codigo_exportacion }}
                 </td>
                 <td style="border-color: #9d9d9d" class="text-center">
                     @if ($v->receta == 1)

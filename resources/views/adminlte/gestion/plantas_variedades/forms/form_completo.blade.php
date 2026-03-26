@@ -6,18 +6,18 @@
                     <input type="text" value="{{ $p->nombre }}" id="nombre_planta_{{ $p->id_planta }}" title="Nombre"
                         style="width: 100%" class="bg-yura_dark" placeholder="Nombre">
                 </th>
-                <th class="text-center">
+                <th class="text-center" style="width: 60px">
                     <input type="text" value="{{ $p->siglas }}" id="siglas_planta_{{ $p->id_planta }}"
                         title="Siglas" style="width: 100%" class="bg-yura_dark" placeholder="Siglas">
                 </th>
-                <th class="text-center">
+                <th class="text-center" style="width: 150px">
                     <select id="tipo_planta_{{ $p->id_planta }}" style="width: 100%; height: 26px;"
                         class="bg-yura_dark">
                         <option value="N" {{ $p->tipo == 'N' ? 'selected' : '' }}>Normal</option>
                         <option value="P" {{ $p->tipo == 'P' ? 'selected' : '' }}>Perenne</option>
                     </select>
                 </th>
-                <th class="text-center bg-yura_dark">
+                <th class="text-center bg-yura_dark" style="width: 60px">
                     <div class="btn-group">
                         <button type="button" class="btn btn-xs btn-yura_warning"
                             onclick="actualizar_planta('{{ $p->id_planta }}')" title="Grabar">
@@ -38,11 +38,15 @@
                             style="width: 100%; height: 26px" placeholder="Nombre" title="Nombre">
                         <input type="hidden" class="ids_variedad_{{ $p->id_planta }}" value="{{ $v->id_variedad }}">
                     </td>
-                    <td class="text-center" style="border-color: #9d9d9d">
-                        <input type="text" value="{{ $v->siglas }}" id="siglas_var_{{ $v->id_variedad }}"
-                            style="width: 100%; height: 26px" placeholder="Siglas" title="Siglas">
+                    <td class="text-center" style="border-color: #9d9d9d; width: 70px">
+                        <input type="text" value="{{ $v->codigo_latin }}" id="codigo_latin_var_{{ $v->id_variedad }}"
+                            style="width: 100%; height: 26px" placeholder="codigo_latin" title="Codigo Latin">
                     </td>
-                    <td class="text-center" style="border-color: #9d9d9d" colspan="2">
+                    <td class="text-center" style="border-color: #9d9d9d; width: 70px">
+                        <input type="text" value="{{ $v->codigo_exportacion }}" id="codigo_exportacion_var_{{ $v->id_variedad }}"
+                            style="width: 100%; height: 26px" placeholder="codigo_exportacion" title="codigo Exportacion">
+                    </td>
+                    <td class="text-center" style="border-color: #9d9d9d">
                         <div class="input-group" style="width: 100%">
                             <div class="input-group-btn">
                                 <button type="button" class="btn btn-xs btn-yura_dark dropdown-toggle"
@@ -99,7 +103,8 @@
             _token: '{{ csrf_token() }}',
             nombre: $('#nombre_var_' + id_var).val(),
             id_variedad: id_var,
-            siglas: $('#siglas_var_' + id_var).val(),
+            codigo_latin: $('#codigo_latin_var_' + id_var).val(),
+            codigo_exportacion: $('#codigo_exportacion_var_' + id_var).val(),
             rotacion: $('#dias_rotacion_recepcion_var_' + id_var).val(),
         };
         post_jquery_m('{{ url('plantas_variedades/actualizar_variedad') }}', datos, function() {

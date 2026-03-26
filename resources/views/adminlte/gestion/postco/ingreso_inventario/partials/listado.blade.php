@@ -14,13 +14,16 @@
                 <th class="padding_lateral_5 bg-yura_dark" style="width: 90px">
                     Longitud
                 </th>
+                <th class="padding_lateral_5" style="width: 90px; background-color: cyan">
+                    Pendiente
+                </th>
                 <th class="padding_lateral_5 bg-yura_dark" style="width: 90px">
                     Ramos
                 </th>
                 <th class="padding_lateral_5 bg-yura_dark" style="width: 90px">
                     Tallos
                 </th>
-                <th class="text-center bg-yura_dark" style="width: 70px">
+                <th class="text-center bg-yura_dark" style="width: 110px">
                     <button type="button" class="btn btn-xs btn-yura_default" onclick="modal_add()">
                         <i class="fa fa-fw fa-plus"></i> Agregar
                     </button>
@@ -32,15 +35,23 @@
                 @php
                     $ramos_pta = 0;
                     $tallos_pta = 0;
+                    $pendiente_pta = 0;
                     foreach ($item['variedades'] as $var) {
                         $ramos_pta += $var->ramos;
                         $tallos_pta += $var->disponibles;
+                        $pendiente_pta += $var->ramos_pendiente;
                     }
                 @endphp
                 <tr style="background-color: #dddddd" class="mouse-hand"
                     onclick="$('.tr_planta_{{ $item['planta']->id_planta }}').toggleClass('hidden')">
                     <th class="padding_lateral_5" style="border-color: #9d9d9d" colspan="4">
                         {{ $item['planta']->nombre }} <i class="fa fa-fw fa-caret-down"></i>
+                    </th>
+                    <th class="text-center"
+                        style="border-color: #9d9d9d; background-color: {{ $pendiente_pta > 0 ? '#b0ffff' : '' }}">
+                        @if ($pendiente_pta > 0)
+                            {{ number_format($pendiente_pta) }}
+                        @endif
                     </th>
                     <th class="text-center" style="border-color: #9d9d9d">
                         {{ number_format($ramos_pta) }}
@@ -56,7 +67,14 @@
                         onmouseleave="$(this).css('background-color', '')"
                         class="tr_planta_{{ $item['planta']->id_planta }} hidden">
                         <th class="padding_lateral_5" style="border-color: #9d9d9d">
-                            {{ $var->fecha }}
+                            @if ($var->ramos_pendiente > 0)
+                                <input type="checkbox" id="check_inventario_{{ $var->id_inventario_recepcion }}"
+                                    class="ramos_pendiente"
+                                    data-id_inventario_recepcion="{{ $var->id_inventario_recepcion }}">
+                            @endif
+                            <label for="check_inventario_{{ $var->id_inventario_recepcion }}">
+                                {{ $var->fecha }}
+                            </label>
                         </th>
                         <th class="padding_lateral_5" style="border-color: #9d9d9d">
                             {{ $var->nombre }}
@@ -67,17 +85,28 @@
                         <th class="padding_lateral_5" style="border-color: #9d9d9d">
                             {{ $var->longitud }}
                         </th>
-                        <th class="" style="border-color: #9d9d9d">
+                        <th style="border-color: #9d9d9d">
+                            @if ($var->ramos_pendiente > 0)
+                                <input type="number" style="width: 100%; background-color: #b0ffff" class="text-center"
+                                    id="ramos_pendiente_{{ $var->id_inventario_recepcion }}"
+                                    value="{{ $var->ramos_pendiente }}">
+                            @endif
+                        </th>
+                        <th style="border-color: #9d9d9d">
                             <input type="number" style="width: 100%" class="text-center" value="{{ $var->ramos }}">
                         </th>
-                        <th class="" style="border-color: #9d9d9d">
+                        <th style="border-color: #9d9d9d">
                             <input type="number" style="width: 100%" class="text-center"
                                 value="{{ $var->disponibles }}">
                         </th>
-                        <th class="padding_lateral_5" style="border-color: #9d9d9d">
+                        <th class="text-center" style="border-color: #9d9d9d">
                             <div class="btn-group">
                                 <button type="button" class="btn btn-xs btn-yura_warning">
                                     <i class="fa fa-fw fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-xs btn-yura_dark" title="Recibir pendientes"
+                                    onclick="recibir_pendientes('{{ $var->id_inventario_recepcion }}')">
+                                    <i class="fa fa-fw fa-check"></i>
                                 </button>
                                 <button type="button" class="btn btn-xs btn-yura_danger">
                                     <i class="fa fa-fw fa-trash"></i>
@@ -88,6 +117,14 @@
                 @endforeach
             @endforeach
         </tbody>
+        <tr>
+            <th style="border-color: #9d9d9d" colspan="4"></th>
+            <th style="border-color: #9d9d9d">
+                <button type="button" class="btn btn-xs btn-yura_dark" onclick="recibir_all_pendientes()">
+                    <i class="fa fa-fw fa-check"></i> Recibir todo
+                </button>
+            </th>
+        </tr>
     </table>
 </div>
 
@@ -132,6 +169,54 @@
                 cerrar_modals();
                 listar_reporte();
             });
+        })
+    }
+
+    function recibir_pendientes(id) {
+        texto =
+            "<div class='alert alert-warning text-center'><h3><i class='fa fa-fw fa-exclamation-triangle error'></i>¿Esta seguro de <b>RECIBIR los RAMOS PENDIENTES</b>?</h3></div>";
+
+        modal_quest('modal_recibir_pendientes', texto, 'Grabar recetas', true, false, '40%', function() {
+            datos = {
+                _token: '{{ csrf_token() }}',
+                id: id,
+                ramos: $('#ramos_pendiente_' + id).val()
+            }
+            post_jquery_m('{{ url('ingreso_inventario/recibir_pendientes') }}', datos, function() {
+                cerrar_modals();
+                listar_reporte();
+            });
+        })
+    }
+
+    function recibir_all_pendientes() {
+        texto =
+            "<div class='alert alert-warning text-center'><h3><i class='fa fa-fw fa-exclamation-triangle error'></i>¿Esta seguro de <b>RECIBIR los RAMOS PENDIENTES</b>?</h3></div>";
+
+        modal_quest('modal_recibir_pendientes', texto, 'Grabar recetas', true, false, '40%', function() {
+            data = [];
+            ramos_pendiente = $('.ramos_pendiente');
+            for (i = 0; i < ramos_pendiente.length; i++) {
+                id = ramos_pendiente[i].id;
+                id_inv = $('#' + id).data('id_inventario_recepcion');
+                if ($('#check_inventario_' + id_inv).prop('checked') == true) {
+                    data.push({
+                        id_inv: id_inv,
+                        ramos: $('#ramos_pendiente_' + id_inv).val()
+                    });
+                }
+            }
+            if (data.length > 0) {
+                datos = {
+                    _token: '{{ csrf_token() }}',
+                    id: id,
+                    data: JSON.stringify(data)
+                }
+                post_jquery_m('{{ url('ingreso_inventario/recibir_all_pendientes') }}', datos, function() {
+                    cerrar_modals();
+                    listar_reporte();
+                });
+            }
         })
     }
 </script>

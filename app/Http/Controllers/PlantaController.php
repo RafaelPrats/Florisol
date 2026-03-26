@@ -549,7 +549,7 @@ class PlantaController extends Controller
     {
         $valida = Validator::make($request->all(), [
             'nombre' => 'required|max:250',
-            'siglas' => 'required|max:25',
+            'siglas' => 'max:25',
             'color' => 'required|max:50',
             'id_planta' => 'required|',
             //'tallos_por_ramo' => 'required|',
@@ -583,6 +583,8 @@ class PlantaController extends Controller
                 $model->tallos_x_malla = $request->tallos_x_malla;
                 $model->compra_flor = $request->compra_flor;
                 $model->receta = $request->receta;
+                $model->codigo_latin = $request->codigo_latin;
+                $model->codigo_exportacion = $request->codigo_exportacion;
 
                 if ($model->save()) {
                     $success = true;
@@ -942,7 +944,8 @@ class PlantaController extends Controller
     {
         $model = Variedad::find($request->id_variedad);
         $model->nombre = str_limit(mb_strtoupper(espacios($request->nombre)), 250);
-        $model->siglas = $request->siglas;
+        $model->codigo_latin = $request->codigo_latin;
+        $model->codigo_exportacion = $request->codigo_exportacion;
         $model->dias_rotacion_recepcion = $request->rotacion;
         $model->save();
         return [

@@ -31,12 +31,14 @@ class InventarioRecepcionController extends Controller
         $plantas = DB::table('inventario_recepcion as i')
             ->join('variedad as v', 'v.id_variedad', '=', 'i.id_variedad')
             ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
-            ->select('v.id_planta', 'p.nombre')->distinct()
-            ->where('i.disponibles', '>', 0)
-            ->where('i.id_empresa', $finca);
-        if ($request->planta != '')
-            $plantas = $plantas->where('v.id_planta', $request->planta);
-        $plantas = $plantas->orderBy('p.nombre')
+            ->select('v.id_planta', 'p.nombre')
+            ->distinct()
+            ->where('i.id_empresa', $finca)
+            ->whereRaw('(i.disponibles > 0 OR i.ramos_pendiente > 0)')
+            ->when($request->planta != '', function ($query) use ($request) {
+                return $query->where('v.id_planta', $request->planta);
+            })
+            ->orderBy('p.nombre')
             ->get();
         $listado = [];
         foreach ($plantas as $pta) {
@@ -48,7 +50,7 @@ class InventarioRecepcionController extends Controller
                 )->distinct()
                 ->where('i.id_empresa', $finca)
                 ->where('v.id_planta', $pta->id_planta)
-                ->where('i.disponibles', '>', 0)
+                ->whereRaw('(i.disponibles > 0 OR i.ramos_pendiente > 0)')
                 ->orderBy('i.fecha')
                 ->get();
             $listado[] = [
@@ -101,6 +103,69 @@ class InventarioRecepcionController extends Controller
                     $model_inventario->disponibles += $data->ramos * $data->tallos_x_ramo;
                     $model_inventario->save();
                 }
+            }
+
+            $success = true;
+            $msg = 'Se ha <strong>GRABADO</strong> la informacion correctamente';
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $success = false;
+            $msg = '<div class="alert alert-danger text-center">' .
+                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
+                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
+                . '</div>';
+        }
+
+        return [
+            'success' => $success,
+            'mensaje' => $msg,
+        ];
+    }
+
+    public function recibir_pendientes(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $model = InventarioRecepcion::find($request->id);
+            $model->ramos += $request->ramos;
+            $model->disponibles += $request->ramos * $model->tallos_x_ramo;
+            $model->ingreso = 'I';
+            $model->ramos_pendiente = 0;
+            $model->save();
+
+            $success = true;
+            $msg = 'Se ha <strong>GRABADO</strong> la informacion correctamente';
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $success = false;
+            $msg = '<div class="alert alert-danger text-center">' .
+                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
+                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
+                . '</div>';
+        }
+
+        return [
+            'success' => $success,
+            'mensaje' => $msg,
+        ];
+    }
+
+    public function recibir_all_pendientes(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            foreach (json_decode($request->data) as $data) {
+                $model = InventarioRecepcion::find($data->id_inv);
+                $model->ramos += $data->ramos;
+                $model->disponibles += $data->ramos * $model->tallos_x_ramo;
+                $model->ingreso = 'I';
+                $model->ramos_pendiente = 0;
+                $model->save();
             }
 
             $success = true;

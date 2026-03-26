@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use yura\Http\Controllers\Controller;
 use yura\Modelos\ApiStoreCajas;
+use yura\Modelos\ConfiguracionEmpresa;
 use yura\Modelos\InventarioRecepcion;
 use yura\Modelos\Variedad;
 
@@ -42,17 +43,19 @@ class IngresoCajasController extends Controller
             $model_api->save();
 
             foreach ($request->cajas as $caja) {
-                $empresa = $caja['destino'] == 1 ? 1 : 2;
+                $id_empresa = $caja['destino'] == 1 ? 1 : 2;
+                $empresa = ConfiguracionEmpresa::find($id_empresa);
                 if (count($caja['variedades']) > 0) {
                     foreach ($caja['variedades'] as $var) {
                         $variedad = Variedad::where('codigo_exportacion', $var['codigo_variedad'])
+                            ->where('id_empresa', $id_empresa)
                             ->first();
                         if ($variedad != '') {
                             $model_inventario = InventarioRecepcion::where('id_variedad', $variedad->id_variedad)
                                 ->where('fecha', $request->fecha)
                                 ->where('tallos_x_ramo', $var['tallos_x_ramo'])
                                 ->where('longitud', $var['longitud'])
-                                ->where('id_empresa', $empresa)
+                                ->where('id_empresa', $id_empresa)
                                 ->first();
                             if ($model_inventario == '') {
                                 $model_inventario = new InventarioRecepcion();
@@ -62,7 +65,7 @@ class IngresoCajasController extends Controller
                                 $model_inventario->ramos = 0;
                                 $model_inventario->longitud = $var['longitud'];
                                 $model_inventario->disponibles = 0;
-                                $model_inventario->id_empresa = $empresa;
+                                $model_inventario->id_empresa = $id_empresa;
                                 $model_inventario->ingreso = 'P';
                                 $model_inventario->ramos_pendiente = $caja['cantidad_cajas'] * $var['ramos_x_caja'];
                                 $model_inventario->save();
@@ -76,7 +79,7 @@ class IngresoCajasController extends Controller
 
                             return response()->json([
                                 'success' => false,
-                                'message' => 'No se ha encontrado la variedad con codigo: ' . $var['codigo_variedad'],
+                                'message' => 'No se ha encontrado la variedad con codigo: ' . $var['codigo_variedad'] . ' en ' . $empresa->nombre,
                             ], 422);
                         }
                     }

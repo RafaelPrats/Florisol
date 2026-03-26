@@ -49,7 +49,7 @@
         </div>
     </div>
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-3">
             <div class="form-group">
                 <label for="tipo">Compra de Flor</label>
                 <select name="compra_flor" id="compra_flor" class="form-control">
@@ -58,13 +58,25 @@
                 </select>
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-3">
             <div class="form-group">
                 <label for="tipo">Receta</label>
                 <select name="receta" id="receta" class="form-control">
                     <option value="0">No</option>
                     <option value="1">Sí</option>
                 </select>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label for="codigo_latin">Codigo Latin</label>
+                <input type="text" id="codigo_latin" name="codigo_latin" class="form-control">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label for="codigo_exportacion">Codigo exportacion</label>
+                <input type="text" id="codigo_exportacion" name="codigo_exportacion" class="form-control">
             </div>
         </div>
     </div>
