@@ -59,14 +59,16 @@ class IngresoCajasController extends Controller
                                 $model_inventario->id_variedad = $variedad->id_variedad;
                                 $model_inventario->fecha = $request->fecha;
                                 $model_inventario->tallos_x_ramo = $var['tallos_x_ramo'];
-                                $model_inventario->ramos = $caja['cantidad_cajas'] * $var['ramos_x_caja'];
+                                $model_inventario->ramos = 0;
                                 $model_inventario->longitud = $var['longitud'];
-                                $model_inventario->disponibles = $caja['cantidad_cajas'] * $var['ramos_x_caja'] * $var['tallos_x_ramo'];
+                                $model_inventario->disponibles = 0;
                                 $model_inventario->id_empresa = $empresa;
+                                $model_inventario->ingreso = 'P';
+                                $model_inventario->ramos_pendiente = $caja['cantidad_cajas'] * $var['ramos_x_caja'];
                                 $model_inventario->save();
                             } else {
-                                $model_inventario->ramos += $caja['cantidad_cajas'] * $var['ramos_x_caja'];
-                                $model_inventario->disponibles += $caja['cantidad_cajas'] * $var['ramos_x_caja'] * $var['tallos_x_ramo'];
+                                $model_inventario->ramos_pendiente += $caja['cantidad_cajas'] * $var['ramos_x_caja'];
+                                $model_inventario->ingreso = 'P';
                                 $model_inventario->save();
                             }
                         } else {
