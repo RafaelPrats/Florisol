@@ -159,6 +159,9 @@
             if (vista_actual == 'ingreso_clasificacion') {
                 listar_blanco();   // adminlte/gestion/postcocecha/ingreso_clasificacion/script
             }
+            if (vista_actual == 'ingreso_inventario') {
+                listar_reporte();   // adminlte/gestion/postco/ingreso_inventario/script
+            }
             if (vista_actual == 'dashboard') {
                 $.LoadingOverlay('show');
                 location.href = '{{url('dashboard')}}' + '?f=' + id;
@@ -186,7 +189,6 @@
                 'pedidos',
                 'importar_pedidos',
                 'plantas_variedades',
-                'ingreso_inventario',
                 '/control_diario',
                 '/dashboard_personal'
             ];
