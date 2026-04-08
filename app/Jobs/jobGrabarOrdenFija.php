@@ -11,7 +11,9 @@ use Illuminate\Support\Facades\DB;
 use yura\Modelos\CajaProyecto;
 use yura\Modelos\CajaProyectoMarcacion;
 use yura\Modelos\DetalleCajaProyecto;
+use yura\Modelos\DistribucionReceta;
 use yura\Modelos\Proyecto;
+use yura\Modelos\Variedad;
 
 class jobGrabarOrdenFija implements ShouldQueue
 {
@@ -77,6 +79,19 @@ class jobGrabarOrdenFija implements ShouldQueue
                     $detalle->precio = $det_original->precio;
                     $detalle->longitud_ramo = $det_original->longitud_ramo;
                     $detalle->save();
+                    $detalle->id_detalle_caja_proyecto = DB::table('detalle_caja_proyecto')
+                        ->select(DB::raw('max(id_detalle_caja_proyecto) as id'))
+                        ->get()[0]->id;
+
+                    $getDetallesReceta = Variedad::find($det_original->id_variedad)->getDetallesReceta();
+                    foreach ($getDetallesReceta as $det_receta) {
+                        $dist_receta = new DistribucionReceta();
+                        $dist_receta->id_detalle_caja_proyecto = $detalle->id_detalle_caja_proyecto;
+                        $dist_receta->id_variedad = $det_receta->id_item;
+                        $dist_receta->unidades = $det_receta->unidades;
+                        $dist_receta->longitud = $detalle->longitud_ramo;
+                        $dist_receta->save();
+                    }
                 }
                 foreach ($caja_original->marcaciones as $marcacion) {
                     // NUEVA CAJA PROYECTO MARCACION

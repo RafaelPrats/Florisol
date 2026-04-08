@@ -1321,10 +1321,9 @@ function getEspecificacion($idEspecificacion)
 function getTotalInventarioByVariedad($variedad)
 {
     $finca = getFincaActiva();
-    $disponibles = DB::table('desglose_recepcion as i')
+    $disponibles = DB::table('inventario_recepcion as i')
         ->select(DB::raw('sum(i.disponibles) as cantidad'))
         ->where('i.disponibles', '>', 0)
-        ->where('i.estado', 1)
         ->where('i.id_variedad', $variedad)
         ->where('i.id_empresa', $finca)
         ->get()[0]->cantidad;
@@ -1335,10 +1334,9 @@ function getInventarioDisponibleByVariedadFecha($variedad, $fecha)
 {
     $finca = getFincaActiva();
     $disponibles = 0;
-    $query = DB::table('desglose_recepcion as i')
+    $query = DB::table('inventario_recepcion as i')
         ->select('i.*')->distinct()
         ->where('i.disponibles', '>', 0)
-        ->where('i.estado', 1)
         ->where('i.id_variedad', $variedad->id_variedad)
         ->where('i.id_empresa', $finca)
         ->get();

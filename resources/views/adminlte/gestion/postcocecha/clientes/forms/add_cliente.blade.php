@@ -147,6 +147,13 @@
                 </select>
             </div>
         </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label for="marca">Segmento</label>
+                <input type="text" id="segmento" name="segmento" class="form-control"
+                    value="{!! !empty($dataCliente) ? $dataCliente->segmento : '' !!}">
+            </div>
+        </div>
     </div>
     {{-- <div class='row'>
         <div class='col-md-12'>
@@ -186,8 +193,7 @@
         <div class="col-md-12">
             <div class="form-group">
                 <label for="direccion">Dirección</label>
-                <textarea rows="5" id="direccion" name="direccion" class="form-control" maxlength="500"
-                    autocomplete="off">{!! !empty($dataCliente) ? $dataCliente->direccion : '' !!}</textarea>
+                <textarea rows="5" id="direccion" name="direccion" class="form-control" maxlength="500" autocomplete="off">{!! !empty($dataCliente) ? $dataCliente->direccion : '' !!}</textarea>
             </div>
         </div>
     </div>

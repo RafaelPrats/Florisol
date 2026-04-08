@@ -38,9 +38,17 @@
                 <td style="width: 120px">
                     <div class="input-group div_group_filtro" style="margin-top: 5px;">
                         <div class="input-group-addon span-input-group-yura-fixed bg-yura_dark">
-                            Fecha
+                            Desde
                         </div>
-                        <input type="date" id="fecha_filtro" class="form-control" value="{{ hoy() }}">
+                        <input type="date" id="desde_filtro" class="form-control" value="{{ hoy() }}">
+                    </div>
+                </td>
+                <td style="width: 120px">
+                    <div class="input-group div_group_filtro" style="margin-top: 5px;">
+                        <div class="input-group-addon bg-yura_dark">
+                            Hasta
+                        </div>
+                        <input type="date" id="hasta_filtro" class="form-control" value="{{ hoy() }}">
                     </div>
                 </td>
                 <td>

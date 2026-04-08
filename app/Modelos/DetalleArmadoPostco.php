@@ -12,14 +12,14 @@ class DetalleArmadoPostco extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'id_armado_postco   ',
+        'id_armado_postco',
         'unidades',
         'id_item',
     ];
 
-    public function armado_postco ()
+    public function armado_postco()
     {
-        return $this->belongsTo('\yura\Modelos\ArmadoPostco', 'id_armado_postco   ');
+        return $this->belongsTo('\yura\Modelos\ArmadoPostco', 'id_armado_postco');
     }
 
     public function item()

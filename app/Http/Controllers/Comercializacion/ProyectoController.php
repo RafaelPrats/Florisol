@@ -11,6 +11,7 @@ use yura\Modelos\CajaProyectoMarcacion;
 use yura\Modelos\Cliente;
 use yura\Modelos\DatosExportacion;
 use yura\Modelos\DetalleCajaProyecto;
+use yura\Modelos\DistribucionReceta;
 use yura\Modelos\Proyecto;
 use yura\Modelos\Submenu;
 use yura\Modelos\Variedad;
@@ -19,10 +20,15 @@ class ProyectoController extends Controller
 {
     public function inicio(Request $request)
     {
-        $clientes = Cliente::where('estado', '=', '1')->get();
-        $segmentos = DB::table('detalle_cliente')
-            ->select('segmento')->distinct()
-            ->where('estado', '1')
+        $finca = getFincaActiva();
+        $clientes = Cliente::where('estado', '=', '1')
+            ->where('id_empresa', $finca)
+            ->get();
+        $segmentos = DB::table('detalle_cliente as dc')
+            ->join('cliente as c', 'c.id_cliente', '=', 'dc.id_cliente')
+            ->select('dc.segmento')->distinct()
+            ->where('dc.estado', '1')
+            ->where('c.id_empresa', $finca)
             ->get()->pluck('segmento')->toArray();
         return view('adminlte.gestion.comercializacion.proyectos.inicio', [
             'url' => $request->getRequestUri(),
@@ -36,7 +42,8 @@ class ProyectoController extends Controller
     {
         $finca = getFincaActiva();
         $listado = Proyecto::where('estado', 1)
-            ->where('fecha', $request->fecha)
+            ->where('fecha', '>=', $request->desde)
+            ->where('fecha', '<=', $request->hasta)
             ->where('id_empresa', $finca);
         if ($request->segmento != 'T')
             $listado = $listado->where('segmento', $request->segmento);
@@ -53,13 +60,17 @@ class ProyectoController extends Controller
 
     public function add_proyecto(Request $request)
     {
-        $segmentos = DB::table('detalle_cliente')
-            ->select('segmento')->distinct()
-            ->where('estado', '1')
+        $finca = getFincaActiva();
+        $segmentos = DB::table('detalle_cliente as dc')
+            ->join('cliente as c', 'c.id_cliente', '=', 'dc.id_cliente')
+            ->select('dc.segmento')->distinct()
+            ->where('dc.estado', '1')
+            ->where('c.id_empresa', $finca)
             ->get()->pluck('segmento')->toArray();
         $datos_exportacion = DatosExportacion::where('estado', 1)->get();
         $recetas = Variedad::where('estado', 1)
             ->where('receta', 1)
+            ->where('id_empresa', $finca)
             ->orderBy('nombre')
             ->get();
         return view('adminlte.gestion.comercializacion.proyectos.forms.add_proyecto', [
@@ -81,11 +92,14 @@ class ProyectoController extends Controller
 
     public function seleccionar_segmento(Request $request)
     {
-        $clientes = DB::table('detalle_cliente')
-            ->select('*')->distinct()
-            ->where('estado', 1)
-            ->where('segmento', $request->segmento)
-            ->orderBy('nombre')
+        $finca = getFincaActiva();
+        $clientes = DB::table('detalle_cliente as dc')
+            ->join('cliente as c', 'c.id_cliente', '=', 'dc.id_cliente')
+            ->select('dc.*')->distinct()
+            ->where('c.id_empresa', $finca)
+            ->where('dc.estado', 1)
+            ->where('dc.segmento', $request->segmento)
+            ->orderBy('dc.nombre')
             ->get();
         $options_cliente = '<option value="">Seleccione</option>';
         foreach ($clientes as $con) {
@@ -234,13 +248,18 @@ class ProyectoController extends Controller
                         ->get()[0]->id;
                 }
                 foreach ($det_ped->detalles_combo as $det_caj) {
+                    $isCambioReceta = false;
                     if ($det_caj->id_detalle_caja_proyecto != '') {
                         // DETALLE CAJA PROYECTO EXISTENTE
                         $detalle = DetalleCajaProyecto::find($det_caj->id_detalle_caja_proyecto);
+                        $isNuevo = false;
+                        if ($det_caj->receta != $detalle->id_variedad)
+                            $isCambioReceta = true;
                     } else {
                         // NUEVO DETALLE CAJA PROYECTO
                         $detalle = new DetalleCajaProyecto();
                         $detalle->id_caja_proyecto = $caja->id_caja_proyecto;
+                        $isNuevo = true;
                     }
                     $detalle->id_variedad = $det_caj->receta;
                     $detalle->ramos_x_caja = $det_caj->ramos_x_caja;
@@ -248,6 +267,34 @@ class ProyectoController extends Controller
                     $detalle->precio = $det_caj->precio_ped;
                     $detalle->longitud_ramo = $det_caj->longitud;
                     $detalle->save();
+
+                    if ($isNuevo) {
+                        $detalle->id_detalle_caja_proyecto = DB::table('detalle_caja_proyecto')
+                            ->select(DB::raw('max(id_detalle_caja_proyecto) as id'))
+                            ->get()[0]->id;
+
+                        $getDetallesReceta = Variedad::find($det_caj->receta)->getDetallesReceta();
+                        foreach ($getDetallesReceta as $det_receta) {
+                            $dist_receta = new DistribucionReceta();
+                            $dist_receta->id_detalle_caja_proyecto = $detalle->id_detalle_caja_proyecto;
+                            $dist_receta->id_variedad = $det_receta->id_item;
+                            $dist_receta->unidades = $det_receta->unidades;
+                            $dist_receta->longitud = $detalle->longitud_ramo;
+                            $dist_receta->save();
+                        }
+                    } elseif ($isCambioReceta) {
+                        DB::select('delete from distribucion_receta where id_detalle_caja_proyecto = ' . $detalle->id_detalle_caja_proyecto);
+                        
+                        $getDetallesReceta = Variedad::find($detalle->id_variedad)->getDetallesReceta();
+                        foreach ($getDetallesReceta as $det_receta) {
+                            $dist_receta = new DistribucionReceta();
+                            $dist_receta->id_detalle_caja_proyecto = $detalle->id_detalle_caja_proyecto;
+                            $dist_receta->id_variedad = $det_receta->id_item;
+                            $dist_receta->unidades = $det_receta->unidades;
+                            $dist_receta->longitud = $detalle->longitud_ramo;
+                            $dist_receta->save();
+                        }
+                    }
                 }
                 DB::select('delete from caja_proyecto_marcacion where id_caja_proyecto = ' . $caja->id_caja_proyecto);
                 foreach ($det_ped->valores_marcaciones as $marcacion) {

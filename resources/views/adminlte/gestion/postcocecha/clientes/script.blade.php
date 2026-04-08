@@ -1,4 +1,5 @@
 <script>
+    $('#vista_actual').val('clientes');
     buscar_listado();
 
     function buscar_listado() {
@@ -125,6 +126,7 @@
                 pais: $("#pais").val(),
                 provincia: $("#provincia").val(),
                 correo: $("#correo").val(),
+                segmento: $("#segmento").val(),
                 telefono: $("#telefono").val(),
                 direccion: $("#direccion").val(),
                 codigo_impuesto: $("#codigo_impuesto").val(),
@@ -148,7 +150,7 @@
             $.LoadingOverlay('hide');
         }
     }
-    
+
     function importar_clientes() {
         if ($('#form-importar_clientes').valid()) {
             $.LoadingOverlay('show');

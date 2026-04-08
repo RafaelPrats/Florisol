@@ -5,7 +5,8 @@
 
     function listar_reporte() {
         datos = {
-            fecha: $('#fecha_filtro').val(),
+            desde: $('#desde_filtro').val(),
+            hasta: $('#hasta_filtro').val(),
             segmento: $('#segmento_filtro').val(),
             tipo: $('#tipo_filtro').val(),
             cliente: $('#cliente_filtro').val(),

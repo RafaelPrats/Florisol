@@ -1,10 +1,10 @@
 <legend class="text-center" style="font-size: 1em; margin-bottom: 5px">
     <div class="input-group">
         <span class="input-group-addon bg-yura_dark span-input-group-yura-fixed">
-            Distribucion de "<b>{{ $postco->ramos }}</b>" ramos de "<b>{{ $postco->longitud }}cm</b>" en
+            Distribucion de "<b>{{ $det_caja->ramos }}</b>" ramos de "<b>{{ $det_caja->longitud_ramo }}cm</b>" en
             la receta
-            "<b>{{ $postco->variedad->nombre }}</b>"
-            para "<b>{{ convertDateToText($postco->fecha) }}</b>"
+            "<b>{{ $det_caja->variedad->nombre }}</b>"
+            para "<b>{{ convertDateToText($proyecto->fecha) }}</b>"
         </span>
         <select id="select_numero_receta" class="form-control">
             @foreach ($numeros_receta as $n)
@@ -18,10 +18,10 @@
         </span>
     </div>
 </legend>
-<input type="hidden" id="id_postco_seleccionado" value="{{ $postco->id_postco }}">
-<input type="hidden" id="ramos_pedido" value="{{ $postco->ramos }}">
-<input type="hidden" id="longitud_pedido" value="{{ $postco->longitud }}">
-<input type="hidden" id="postco_fecha" value="{{ $postco->fecha }}">
+<input type="hidden" id="id_detalle_seleccionado" value="{{ $det_caja->id_detalle_caja_proyecto }}">
+<input type="hidden" id="ramos_pedido" value="{{ $caja->ramos * $det_caja->ramos_x_caja }}">
+<input type="hidden" id="longitud_pedido" value="{{ $det_caja->longitud_ramo }}">
+<input type="hidden" id="postco_fecha" value="{{ $proyecto->fecha }}">
 <table style="width: 100%;">
     <tr>
         <td id="listado_productos" style="vertical-align: top; width: 45%">
@@ -87,17 +87,17 @@
                         $pos = 0;
                     @endphp
                     <tbody id="tbody_variedades_seleccionados">
-                        @foreach ($postco->distribuciones as $pos => $item)
+                        @foreach ($det_caja->distribuciones as $pos => $item)
                             <tr id="tr_variedad_seleccionado_{{ $pos + 1 }}">
                                 <td class="text-center" style="border-color: #9d9d9d">
-                                    {{ $item->item->planta->nombre }}
+                                    {{ $item->variedad->planta->nombre }}
                                 </td>
                                 <td class="text-center" style="border-color: #9d9d9d">
-                                    {{ $item->item->nombre }}
+                                    {{ $item->variedad->nombre }}
                                     <input type="hidden" class="cant_variedad_seleccionado"
                                         value="{{ $pos + 1 }}">
                                     <input type="hidden" id="id_variedad_seleccionado_{{ $pos + 1 }}"
-                                        value="{{ $item->id_item }}">
+                                        value="{{ $item->id_variedad }}">
                                 </td>
                                 <td class="text-center" style="border-color: #9d9d9d">
                                     <input type="number" class="text-center" style="width: 100%"
@@ -187,15 +187,15 @@
     function store_distribucion_receta() {
         cant_variedad_seleccionado = $('.cant_variedad_seleccionado');
         data = [];
-        id_postco = $('#id_postco_seleccionado').val();
+        id_detalle = $('#id_detalle_seleccionado').val();
         for (i = 0; i < cant_variedad_seleccionado.length; i++) {
             pos = cant_variedad_seleccionado[i].value;
             unidades = $('#cantidad_variedad_seleccionado_' + pos).val();
             longitud = $('#longitud_variedad_seleccionado_' + pos).val();
-            id_item = $('#id_variedad_seleccionado_' + pos).val();
+            id_variedad = $('#id_variedad_seleccionado_' + pos).val();
             if (unidades > 0 && longitud != '')
                 data.push({
-                    id_item: id_item,
+                    id_variedad: id_variedad,
                     longitud: longitud,
                     unidades: unidades,
                 })
@@ -203,20 +203,20 @@
         if (data.length > 0) {
             datos = {
                 _token: '{{ csrf_token() }}',
-                id_postco: id_postco,
+                id_detalle: id_detalle,
                 data: JSON.stringify(data)
             };
             post_jquery_m('{{ url('preproduccion/store_distribucion_receta') }}', datos, function(retorno) {
                 cerrar_modals();
-                modal_receta('{{ $postco->id_variedad }}', '{{ $postco->longitud }}');
+                modal_receta('{{ $det_caja->id_variedad }}', '{{ $det_caja->longitud_ramo }}');
             });
         }
     }
 
     function cargar_receta() {
-        id_postco = $('#id_postco_seleccionado').val();
+        id_detalle = $('#id_detalle_seleccionado').val();
         datos = {
-            id_postco: id_postco,
+            id_detalle: id_detalle,
             numero_receta: $('#select_numero_receta').val(),
         };
         get_jquery('{{ url('preproduccion/cargar_receta') }}', datos, function(retorno) {

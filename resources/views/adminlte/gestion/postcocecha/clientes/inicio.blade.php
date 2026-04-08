@@ -33,12 +33,12 @@
                                     <button class="btn btn-yura_primary" onclick="add_cliente()">
                                         <i class="fa fa-fw fa-plus"></i>
                                     </button>
-                                    <button class="btn btn-primary btn-yura_dark" onclick="add_importar_clientes()">
+                                    {{-- <button class="btn btn-primary btn-yura_dark" onclick="add_importar_clientes()">
                                         <i class="fa fa-fw fa-upload"></i>
                                     </button>
                                     <button class="btn btn-yura_default" onclick="exportar_clientes()">
                                         <i class="fa fa-fw fa-file-excel-o"></i>
-                                    </button>
+                                    </button> --}}
                                 </div>
                             </div>
                         </td>

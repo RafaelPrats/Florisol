@@ -24,6 +24,9 @@
                     Tallos
                 </th>
                 <th class="text-center th_yura_green padding_lateral_5">
+                    TxR
+                </th>
+                <th class="text-center th_yura_green padding_lateral_5">
                     Linea Produccion
                 </th>
                 <th class="text-center th_yura_green padding_lateral_5">
@@ -35,72 +38,81 @@
             </tr>
         </thead>
         <tbody>
-            @foreach ($listado as $pos_o => $item)
+            @foreach ($listado as $pos_o => $ot)
                 @php
-                    $estado = $item->getEstado();
+                    $estado = $ot->getEstado();
+                    $tallos_x_ramo = 0;
+                    $detalles_ot = $ot->detalles;
+                    foreach ($ot->detalles as $det) {
+                        $tallos_x_ramo += $det->unidades;
+                    }
                 @endphp
-                @foreach ($item->detalles as $pos_d => $det)
+                @foreach ($detalles_ot as $pos_d => $det_ot)
                     <tr onmouseover="$(this).addClass('bg-aqua')" onmouseleave="$(this).removeClass('bg-aqua')"
-                        class="tr_ot_{{ $item->id_ot_postco }}">
+                        class="tr_ot_{{ $ot->id_orden_trabajo }}">
                         @if ($pos_d == 0)
                             <th class="text-center padding_lateral_5" style="border-color: #9d9d9d"
-                                rowspan="{{ count($item->detalles) }}">
-                                #{{ $item->id_ot_postco }}
+                                rowspan="{{ count($detalles_ot) }}">
+                                #{{ $ot->id_orden_trabajo }}
                             </th>
                             <th class="text-center padding_lateral_5" style="border-color: #9d9d9d"
-                                rowspan="{{ count($item->detalles) }}">
-                                {{ $postco->variedad->nombre }}
+                                rowspan="{{ count($detalles_ot) }}">
+                                {{ $detalle->variedad->nombre }}
                                 <br>
-                                <small><em>{{$item->cliente->detalle()->nombre}}</em></small>
+                                <small><em>{{ $ot->cliente->detalle()->nombre }}</em></small>
                             </th>
                             <th class="text-center padding_lateral_5" style="border-color: #9d9d9d"
-                                rowspan="{{ count($item->detalles) }}">
-                                {{ $item->longitud }} <sup>cm</sup>
+                                rowspan="{{ count($detalles_ot) }}">
+                                {{ $ot->longitud }} <sup>cm</sup>
                             </th>
                             <th class="text-center padding_lateral_5" style="border-color: #9d9d9d"
-                                rowspan="{{ count($item->detalles) }}">
-                                {{ $item->ramos }}
+                                rowspan="{{ count($detalles_ot) }}">
+                                {{ $ot->ramos }}
                             </th>
                         @endif
                         <th class="text-center padding_lateral_5" style="border-color: #9d9d9d">
-                            {{ $det->item->nombre }}
+                            {{ $det_ot->variedad->nombre }}
                         </th>
                         <th class="text-center padding_lateral_5" style="border-color: #9d9d9d">
-                            {{ $det->unidades }}
+                            {{ $det_ot->unidades }}
                         </th>
                         <th class="text-center padding_lateral_5" style="border-color: #9d9d9d">
-                            {{ $det->unidades * $item->ramos }}
+                            {{ $det_ot->unidades * $ot->ramos }}
                         </th>
                         @if ($pos_d == 0)
+                            <th class="text-center padding_lateral_5" style="border-color: #9d9d9d"
+                                rowspan="{{ count($detalles_ot) }}">
+                                {{ $tallos_x_ramo }}
+                            </th>
                             <th class="text-center" style="border-color: #9d9d9d; color: black"
-                                rowspan="{{ count($item->detalles) }}">
-                                <select id="id_despachador_{{ $item->id_ot_postco }}" style="width: 100%"
-                                    onchange="update_despachador('{{ $item->id_ot_postco }}')">
+                                rowspan="{{ count($detalles_ot) }}">
+                                <select id="id_despachador_{{ $ot->id_orden_trabajo }}" style="width: 100%"
+                                    onchange="update_despachador('{{ $ot->id_orden_trabajo }}')">
                                     <option value="">Seleccione</option>
                                     @foreach ($despachadores as $desp)
                                         <option value="{{ $desp->id_despachador }}"
-                                            {{ $desp->id_despachador == $item->id_despachador ? 'selected' : '' }}>
+                                            {{ $desp->id_despachador == $ot->id_despachador ? 'selected' : '' }}>
                                             {{ $desp->nombre }}
                                         </option>
                                     @endforeach
                                 </select>
                             </th>
                             <th class="text-center padding_lateral_5" style="border-color: #9d9d9d"
-                                rowspan="{{ count($item->detalles) }}">
+                                rowspan="{{ count($detalles_ot) }}">
                                 {!! $estado['html'] !!}
                             </th>
                             <th class="text-center padding_lateral_5" style="border-color: #9d9d9d"
-                                rowspan="{{ count($item->detalles) }}">
+                                rowspan="{{ count($detalles_ot) }}">
                                 <div class="btn-group">
                                     @if ($estado['estado'] == 'Pendiente')
                                         <button type="button" class="btn btn-xs btn-yura_danger"
                                             style="margin-top: 5px"
-                                            onclick="eliminar_orden_trabajo('{{ $item->id_ot_postco }}')">
+                                            onclick="eliminar_orden_trabajo('{{ $ot->id_orden_trabajo }}')">
                                             <i class="fa fa-fw fa-trash"></i> Eliminar
                                         </button>
                                     @endif
                                     <button type="button" class="btn btn-xs btn-yura_default" style="margin-top: 5px"
-                                        onclick="exportar_orden_trabajo('{{ $item->id_ot_postco }}')">
+                                        onclick="exportar_orden_trabajo('{{ $ot->id_orden_trabajo }}')">
                                         <i class="fa fa-fw fa-file-excel-o"></i> Exportar
                                     </button>
                                 </div>
@@ -126,7 +138,7 @@
                 }
                 post_jquery_m('{{ url('preproduccion/eliminar_orden_trabajo') }}', datos, function() {
                     cerrar_modals();
-                    modal_receta('{{$postco->id_variedad}}', '{{$postco->longitud}}');
+                    modal_receta('{{ $detalle->id_variedad }}', '{{ $detalle->longitud_ramo }}');
                     listar_reporte();
                 });
             })
@@ -149,8 +161,7 @@
                     id_ot: id_ot,
                     despachador: $('#id_despachador_' + id_ot).val(),
                 }
-                post_jquery_m('{{ url('preproduccion/update_despachador') }}', datos, function() {
-                });
+                post_jquery_m('{{ url('preproduccion/update_despachador') }}', datos, function() {});
             })
     }
 </script>

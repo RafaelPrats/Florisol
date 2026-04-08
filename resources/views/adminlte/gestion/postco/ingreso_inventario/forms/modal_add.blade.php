@@ -26,7 +26,7 @@
     </tr>
     <tr id="new_tr_1">
         <th class="text-center" style="border-color: #9d9d9d">
-            <input type="date" style="width: 100%;" class="padding_lateral_5" id="new_fecha_1"
+            <input type="date" style="width: 100%; height: 34px;" class="padding_lateral_5" id="new_fecha_1"
                 value="{{ hoy() }}" max="{{ hoy() }}">
         </th>
         <th class="text-center" style="border-color: #9d9d9d">
@@ -44,13 +44,13 @@
             </select>
         </th>
         <th class="text-center" style="border-color: #9d9d9d">
-            <input type="text" style="width: 100%;" class="padding_lateral_5" id="new_longitud_1">
+            <input type="text" style="width: 100%; height: 34px;" class="padding_lateral_5" id="new_longitud_1">
         </th>
         <th class="text-center" style="border-color: #9d9d9d">
-            <input type="number" style="width: 100%;" class="padding_lateral_5" id="new_tallos_x_ramo_1">
+            <input type="number" style="width: 100%; height: 34px;" class="padding_lateral_5" id="new_tallos_x_ramo_1">
         </th>
         <th class="text-center" style="border-color: #9d9d9d">
-            <input type="number" style="width: 100%;" class="padding_lateral_5" id="new_ramos_1">
+            <input type="number" style="width: 100%; height: 34px;" class="padding_lateral_5" id="new_ramos_1">
         </th>
         <th class="text-center" style="border-color: #9d9d9d">
         </th>
@@ -64,6 +64,14 @@
 </div>
 
 <script>
+    setTimeout(() => {
+        $("#new_planta_1, #new_variedad_1").select2({
+            dropdownParent: $('#div_modal-modal_modal_add')
+        });
+        $('.select2-container').css('width', '100%');
+        $('.select2-selection').css('height', '34px');
+    }, 500);
+
     num_row = 1;
 
     function add_inventario() {
@@ -77,7 +85,7 @@
         max_fecha = $('#new_fecha_1').prop('max');
         $('#table_add_inventario').append('<tr id="new_tr_' + num_row + '">' +
             '<th class="text-center" style="border-color: #9d9d9d">' +
-            '<input type="date" style="width: 100%;" class="padding_lateral_5" id="new_fecha_' + num_row + '" ' +
+            '<input type="date" style="width: 100%; height: 34px;" class="padding_lateral_5" id="new_fecha_' + num_row + '" ' +
             'value="' + fecha + '" max="' + max_fecha + '">' +
             '</th>' +
             '<th class="text-center" style="border-color: #9d9d9d">' +
@@ -93,15 +101,15 @@
             '</select>' +
             '</th>' +
             '<th class="text-center" style="border-color: #9d9d9d">' +
-            '<input type="text" style="width: 100%;" class="padding_lateral_5" id="new_longitud_' + num_row +
+            '<input type="text" style="width: 100%; height: 34px;" class="padding_lateral_5" id="new_longitud_' + num_row +
             '">' +
             '</th>' +
             '<th class="text-center" style="border-color: #9d9d9d">' +
-            '<input type="number" style="width: 100%;" class="padding_lateral_5" id="new_tallos_x_ramo_' + num_row +
+            '<input type="number" style="width: 100%; height: 34px;" class="padding_lateral_5" id="new_tallos_x_ramo_' + num_row +
             '">' +
             '</th>' +
             '<th class="text-center" style="border-color: #9d9d9d">' +
-            '<input type="number" style="width: 100%;" class="padding_lateral_5" ' +
+            '<input type="number" style="width: 100%; height: 34px;" class="padding_lateral_5" ' +
             'id="new_ramos_' + num_row + '">' +
             '</th>' +
             '<th class="text-center" style="border-color: #9d9d9d">' +
@@ -110,6 +118,12 @@
             '</button>' +
             '</th>' +
             '</tr>');
+
+        $('#new_planta_' + num_row + ', #new_variedad_' + num_row).select2({
+            dropdownParent: $('#div_modal-modal_modal_add')
+        });
+        $('.select2-container').css('width', '100%');
+        $('.select2-selection').css('height', '34px');
     }
 
     function quitar_row(row) {

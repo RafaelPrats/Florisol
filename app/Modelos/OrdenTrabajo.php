@@ -12,13 +12,15 @@ class OrdenTrabajo extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'id_detalle_import_pedido',
+        'id_detalle_caja_proyecto',
         'fecha',
         'longitud',
         'ramos',
-        'entregado',
-        'armado',
-        'id_empresa',
+        'estado',
+        'armados',
+        'id_despachador',
+        'id_cliente',
+        'observacion',
     ];
 
     public function detalles()
@@ -26,9 +28,9 @@ class OrdenTrabajo extends Model
         return $this->hasMany('\yura\Modelos\DetalleOrdenTrabajo', 'id_orden_trabajo');
     }
 
-    public function detalle_import_pedido()
+    public function detalle_caja_proyecto()
     {
-        return $this->belongsTo('\yura\Modelos\DetalleImportPedido', 'id_detalle_import_pedido');
+        return $this->belongsTo('\yura\Modelos\DetalleCajaProyecto', 'id_detalle_caja_proyecto');
     }
 
     public function despachador()
@@ -36,19 +38,24 @@ class OrdenTrabajo extends Model
         return $this->belongsTo('\yura\Modelos\Despachador', 'id_despachador');
     }
 
+    public function cliente()
+    {
+        return $this->belongsTo('\yura\Modelos\Cliente', 'id_cliente');
+    }
+
     public function getEstado()
     {
-        if ($this->entregado == 0 && $this->armado == 0) {
+        if ($this->estado == 'P') {
             return [
                 'estado' => 'Pendiente',
                 'html' => '<span class="badge" style="background-color: #ef6e11">Pendiente</span>',
             ];
-        } else if ($this->entregado == 1 && $this->armado == 0) {
+        } else if ($this->estado == 'D') {
             return [
                 'estado' => 'Despachado',
                 'html' => '<span class="badge bg-yura_dark"><i class="fa fa-fw fa-check"></i> Despachado</span>',
             ];
-        } else if (($this->entregado == 1 && $this->armado == 1) || ($this->entregado == 0 && $this->armado == 1)) {
+        } else if ($this->estado == 'A') {
             return [
                 'estado' => 'Armado',
                 'html' => '<span class="badge bg-yura_primary">Armado</span>',

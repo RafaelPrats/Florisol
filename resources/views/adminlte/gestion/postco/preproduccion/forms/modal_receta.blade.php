@@ -19,10 +19,10 @@
             INV. TOTAL
         </th>
         <th class="text-center th_yura_green" rowspan="2" style="width: 60px">
-            INV. <br>DISP.
+            INV. DISP.
         </th>
         <th class="text-center th_yura_green" rowspan="2" style="width: 60px">
-            OT / OA
+            OT
         </th>
         <th class="text-center th_yura_green" rowspan="2" style="width: 60px">
             ARMADOS
@@ -54,53 +54,54 @@
     @php
         $resumen_variedades = [];
     @endphp
-    @foreach ($listado as $postco)
+    @foreach ($listado as $detalle)
         @php
-            $distribuciones = $postco->distribuciones;
+            $distribuciones = $detalle->distribuciones;
             $tallos_x_ramo = 0;
-            $disponibles = $postco->ramos;
+            $disponibles = $detalle->ramos;
         @endphp
         @foreach ($distribuciones as $pos_d => $dist)
             @php
-                $variedad = $dist->item;
+                $variedad = $dist->variedad;
                 $tallos_x_ramo += $dist->unidades;
-                $inventario = getTotalInventarioByVariedad($dist->id_item);
-                $inventarioDisponible = getInventarioDisponibleByVariedadFecha($variedad, $postco->fecha);
-                $tallos_variedad = $dist->unidades * $postco->ramos;
+                $inventario = getTotalInventarioByVariedad($dist->id_variedad);
+                $inventarioDisponible = getInventarioDisponibleByVariedadFecha($variedad, $detalle->fecha);
+                $tallos_variedad = $dist->unidades * $detalle->ramos;
                 $posibles = intval($inventarioDisponible / $dist->unidades);
                 if ($posibles < $disponibles) {
                     $disponibles = $posibles;
                 }
-                $getRamosOt = $postco->getRamosOt();
-                $getRamosOa = $postco->getRamosOa();
+                $getRamosOt = $detalle->getRamosOt();
 
                 $pos_en_resumen = -1;
                 foreach ($resumen_variedades as $pos => $r) {
-                    if ($r['variedad']->id_variedad == $dist->id_item) {
+                    if ($r['variedad']->id_variedad == $dist->id_variedad) {
                         $pos_en_resumen = $pos;
                     }
                 }
                 if ($pos_en_resumen != -1) {
-                    $resumen_variedades[$pos_en_resumen]['tallos'] += $dist->unidades * $postco->ramos;
+                    $resumen_variedades[$pos_en_resumen]['tallos'] += $dist->unidades * $detalle->ramos;
                 } else {
                     $resumen_variedades[] = [
                         'variedad' => $variedad,
-                        'tallos' => $dist->unidades * $postco->ramos,
+                        'tallos' => $dist->unidades * $detalle->ramos,
                         'inventario' => $inventarioDisponible,
                     ];
                 }
             @endphp
-            <tr onmouseover="$('.row_{{ $postco->id_postco }}').css('background-color', '#dddddd')"
-                onmouseleave="$('.row_{{ $postco->id_postco }}').css('background-color', '')"
-                class="row_{{ $postco->id_postco }}">
+            <tr onmouseover="$('.row_{{ $detalle->id_detalle_caja_proyecto }}').css('background-color', '#dddddd')"
+                onmouseleave="$('.row_{{ $detalle->id_detalle_caja_proyecto }}').css('background-color', '')"
+                class="row_{{ $detalle->id_detalle_caja_proyecto }}">
                 @if ($pos_d == 0)
                     <th class="text-center" style="border-color: #9d9d9d;" rowspan="{{ count($distribuciones) }}">
-                        {{ convertDateToText($postco->fecha) }}
+                        {{ convertDateToText($detalle->fecha) }}
+                        <br>
+                        <small><em>{{ $detalle->cliente_nombre }}</em></small>
                     </th>
                     <th class="text-center" style="border-color: #9d9d9d;" rowspan="{{ count($distribuciones) }}">
-                        {{ $postco->ramos }}
-                        <input type="hidden" class="postco_ramos_{{ $postco->id_postco }}"
-                            value="{{ $postco->ramos }}">
+                        {{ $detalle->ramos }}
+                        <input type="hidden" class="postco_ramos_{{ $detalle->id_detalle_caja_proyecto }}"
+                            value="{{ $detalle->ramos }}">
                     </th>
                 @endif
                 <th class="text-center" style="border-color: #9d9d9d">
@@ -111,17 +112,17 @@
                 </th>
                 <th class="text-center" style="border-color: #9d9d9d">
                     {{ $dist->unidades }}
-                    <input type="hidden" class="unidades_item_{{ $postco->id_postco }}"
-                        data-id_item="{{ $dist->id_item }}" value="{{ $dist->unidades }}"
+                    <input type="hidden" class="unidades_item_{{ $detalle->id_detalle_caja_proyecto }}"
+                        data-id_item="{{ $dist->id_variedad }}" value="{{ $dist->unidades }}"
                         data-inventario="{{ $inventarioDisponible }}">
                 </th>
                 @if ($pos_d == 0)
                     <th class="text-center" style="border-color: #9d9d9d;" rowspan="{{ count($distribuciones) }}"
-                        id="celda_tallos_x_ramo_{{ $postco->id_postco }}">
+                        id="celda_tallos_x_ramo_{{ $detalle->id_detalle_caja_proyecto }}">
                     </th>
                 @endif
                 <th class="text-center" style="border-color: #9d9d9d">
-                    {{ $dist->unidades * $postco->ramos }}
+                    {{ $dist->unidades * $detalle->ramos }}
                 </th>
                 <th class="text-center" style="border-color: #9d9d9d">
                     {{ $inventario }}
@@ -133,112 +134,61 @@
                     <th class="text-center" style="border-color: #9d9d9d;" rowspan="{{ count($distribuciones) }}">
                         <div class="btn-group">
                             <button type="button" class="btn btn-xs btn-yura_dark" title="Ver Ordenes de Trabajo"
-                                onclick="listar_ordenes_trabajo('{{ $postco->id_postco }}')">
+                                onclick="listar_ordenes_trabajo('{{ $detalle->id_detalle_caja_proyecto }}')">
                                 {{ $getRamosOt }}
-                            </button>
-                            <button type="button" class="btn btn-xs btn-yura_default"
-                                title="Ver Ordenes de Alistamiento"
-                                onclick="listar_ordenes_alistamiento('{{ $postco->id_postco }}')">
-                                {{ $getRamosOa }}
                             </button>
                         </div>
                     </th>
                     <th class="text-center" style="border-color: #9d9d9d;" rowspan="{{ count($distribuciones) }}">
-                        {{ $postco->armados }}
-                        @if ($postco->armados < $postco->ramos)
+                        {{ $detalle->armados }}
+                        @if ($detalle->armados < $detalle->ramos)
                             <input type="number" style="width: 100%; color: black" class="text-center"
-                                placeholder="Armar" min="1" id="armar_ramos_{{ $postco->id_postco }}">
+                                placeholder="Armar" min="1"
+                                id="armar_ramos_{{ $detalle->id_detalle_caja_proyecto }}">
                             <button type="button" class="btn btn-xs btn-block btn-yura_dark"
-                                onclick="armar_ramos('{{ $postco->id_postco }}')" style="height: 26px">
+                                onclick="armar_ramos('{{ $detalle->id_detalle_caja_proyecto }}')" style="height: 26px">
                                 Grabar
                             </button>
                         @endif
                     </th>
                     <th class="text-center" style="border-color: #9d9d9d;" rowspan="{{ count($distribuciones) }}">
-                        <span class="btn-xs btn-yura_info" id="celda_disponibles_{{ $postco->id_postco }}"></span>
+                        <span class="btn-xs btn-yura_info"
+                            id="celda_disponibles_{{ $detalle->id_detalle_caja_proyecto }}"></span>
                     </th>
                     <th class="text-center" style="border-color: #9d9d9d;" rowspan="{{ count($distribuciones) }}">
                         <input type="number" style="width: 100%; color: black" class="text-center" placeholder="OT"
-                            min="1" id="procesar_ramos_{{ $postco->id_postco }}"
-                            onchange="calcular_uso('{{ $postco->id_postco }}')">
-                        @if ($postco->armados < $postco->ramos)
-                            <div class="input-group-btn">
-                                <button type="button"
-                                    class="btn btn-block btn-yura_primary btn-xs dropdown-toggle btn_procesar_{{ $postco->id_postco }}"
-                                    data-toggle="dropdown" aria-expanded="false">
-                                    Procesar <span class="fa fa-caret-down"></span>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-right sombra_pequeña"
-                                    style="background-color: #c8c8c8">
-                                    @foreach ($postco->clientes as $cli)
-                                        <li>
-                                            <a href="javascript:void(0)" style="color: black"
-                                                onclick="store_ot('{{ $postco->id_postco }}', '{{ $cli->id_cliente }}')">
-                                                {{ $cli->cliente->detalle()->nombre }}
-                                                <sup>
-                                                    {{ $cli->cantidad }}
-                                                </sup>
-                                            </a>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                            @if ($postco->bloqueado == 0)
-                                <button type="button"
-                                    class="btn btn-xs btn-block btn-yura_default btn_procesar_{{ $postco->id_postco }}"
-                                    style="height: 21px; margin-top: 0;"
-                                    onclick="admin_receta('{{ $postco->id_postco }}')">
-                                    Distribucion
-                                </button>
-                            @endif
+                            min="1" id="procesar_ramos_{{ $detalle->id_detalle_caja_proyecto }}"
+                            onchange="calcular_uso('{{ $detalle->id_detalle_caja_proyecto }}')">
+                        @if ($detalle->armados < $detalle->ramos)
+                            <button type="button" onclick="store_ot('{{ $detalle->id_detalle_caja_proyecto }}')"
+                                class="btn btn-block btn-yura_primary btn-xs btn_procesar_{{ $detalle->id_detalle_caja_proyecto }}">
+                                Procesar
+                            </button>
                             <button type="button"
-                                class="btn btn-xs btn-block btn-yura_dark btn_procesar_{{ $postco->id_postco }}"
+                                class="btn btn-xs btn-block btn-yura_default btn_procesar_{{ $detalle->id_detalle_caja_proyecto }}"
                                 style="height: 21px; margin-top: 0;"
-                                onclick="copiar_receta('{{ $postco->id_postco }}')">
+                                onclick="admin_receta('{{ $detalle->id_detalle_caja_proyecto }}')">
+                                Distribucion
+                            </button>
+                            <button type="button"
+                                class="btn btn-xs btn-block btn-yura_dark btn_procesar_{{ $detalle->id_detalle_caja_proyecto }}"
+                                style="height: 21px; margin-top: 0;"
+                                onclick="copiar_receta('{{ $detalle->id_detalle_caja_proyecto }}')">
                                 <i class="fa fa-fw fa-copy"></i> Copiar
                             </button>
-                            <button type="button"
-                                class="btn btn-xs btn-block btn-yura_{{ $postco->bloqueado == 0 ? 'warning' : 'danger' }} btn_procesar_{{ $postco->id_postco }}"
-                                style="height: 21px; margin-top: 0;"
-                                onclick="bloquear_postco('{{ $postco->id_postco }}', '{{ $postco->bloqueado }}')">
-                                <i class="fa fa-fw fa-{{ $postco->bloqueado == 0 ? 'lock' : 'unlock' }}"></i>
-                                {{ $postco->bloqueado == 0 ? 'Bloquear' : 'Desbloquear' }}
-                            </button>
-
-                            <div class="input-group-btn">
-                                <button type="button"
-                                    class="btn btn-block btn-yura_primary btn-xs dropdown-toggle hidden"
-                                    data-toggle="dropdown" aria-expanded="false"
-                                    id="btn_procesar_oa_{{ $postco->id_postco }}">
-                                    Procesar OA <span class="fa fa-caret-down"></span>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-right sombra_pequeña"
-                                    style="background-color: #c8c8c8">
-                                    @foreach ($postco->clientes as $cli)
-                                        <li>
-                                            <a href="javascript:void(0)" style="color: black"
-                                                onclick="store_oa('{{ $postco->id_postco }}', '{{ $cli->id_cliente }}')">
-                                                {{ $cli->cliente->detalle()->nombre }}
-                                                <sup>
-                                                    {{ $cli->cantidad }}
-                                                </sup>
-                                            </a>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
                         @endif
                     </th>
                 @endif
                 <th class="text-center" style="border-color: #9d9d9d">
                     <input type="number" style="width: 100%; color: black" class="text-center" min="1"
-                        id="usar_tallos_{{ $postco->id_postco }}_{{ $dist->id_item }}" max="1">
+                        id="usar_tallos_{{ $detalle->id_detalle_caja_proyecto }}_{{ $dist->id_variedad }}"
+                        max="1">
                 </th>
             </tr>
         @endforeach
         <script type="text/javascript">
-            $('#celda_tallos_x_ramo_{{ $postco->id_postco }}').html('{{ $tallos_x_ramo }}')
-            $('#celda_disponibles_{{ $postco->id_postco }}').html('{{ $disponibles }}')
+            $('#celda_tallos_x_ramo_{{ $detalle->id_detalle_caja_proyecto }}').html('{{ $tallos_x_ramo }}')
+            $('#celda_disponibles_{{ $detalle->id_detalle_caja_proyecto }}').html('{{ $disponibles }}')
         </script>
     @endforeach
 </table>
@@ -293,7 +243,8 @@
                             <td class="text-center" style="border-color: #9d9d9d">
                                 {{ number_format($r['tallos']) }}
                             </td>
-                            <td class="text-center" style="border-color: #9d9d9d">
+                            <td class="text-center"
+                                style="border-color: #9d9d9d; background-color: #eeeeee; color: black">
                                 {{ number_format($inventario) }}
                                 <input type="hidden"
                                     id="inventario_variedad_armar_{{ $r['variedad']->id_variedad }}"
@@ -330,33 +281,44 @@
 
 <script type="text/javascript">
     function armar_ramos(id) {
-        datos = {
-            _token: '{{ csrf_token() }}',
-            id: id,
-            cantidad: $('#armar_ramos_' + id).val()
-        }
-        post_jquery_m('{{ url('preproduccion/armar_ramos') }}', datos, function() {
-            cerrar_modals();
-            modal_receta('{{ $receta->id_variedad }}', '{{ $longitud }}');
-            listar_reporte();
-        })
+        texto =
+            "<div class='alert alert-warning text-center'>¿Esta seguro de <b>ARMAR</b> los ramos manualmente?</div>";
+
+        modal_quest('modal_armar_ramos', texto, 'Mensaje de confirmacion', true, false, '40%',
+            function() {
+                datos = {
+                    _token: '{{ csrf_token() }}',
+                    id: id,
+                    cantidad: $('#armar_ramos_' + id).val()
+                }
+                post_jquery_m('{{ url('preproduccion/armar_ramos') }}', datos, function() {
+                    cerrar_modals();
+                    modal_receta('{{ $receta->id_variedad }}', '{{ $longitud }}');
+                    listar_reporte();
+                });
+            });
     }
 
-    function store_ot(id, cliente = '') {
-        datos = {
-            _token: '{{ csrf_token() }}',
-            id: id,
-            cliente: cliente,
-            cantidad: parseInt($('#procesar_ramos_' + id).val()),
-            fecha: $('#fecha_filtro').val(),
-            longitud: '{{ $longitud }}',
-        }
-        if (datos['cantidad'] > 0 && cliente != '')
-            post_jquery_m('{{ url('preproduccion/store_ot') }}', datos, function() {
-                cerrar_modals();
-                modal_receta('{{ $receta->id_variedad }}', '{{ $longitud }}');
-                listar_reporte();
-            })
+    function store_ot(id) {
+        texto =
+            "<div class='alert alert-warning text-center'>¿Esta seguro de <b>PROCESAR</b> la orden de trabajo?</div>";
+
+        modal_quest('modal_store_ot', texto, 'Mensaje de confirmacion', true, false, '40%',
+            function() {
+                datos = {
+                    _token: '{{ csrf_token() }}',
+                    id: id,
+                    cantidad: parseInt($('#procesar_ramos_' + id).val()),
+                    fecha: $('#fecha_filtro').val(),
+                    longitud: '{{ $longitud }}',
+                }
+                if (datos['cantidad'] > 0)
+                    post_jquery_m('{{ url('preproduccion/store_ot') }}', datos, function() {
+                        cerrar_modals();
+                        modal_receta('{{ $receta->id_variedad }}', '{{ $longitud }}');
+                        listar_reporte();
+                    });
+            });
     }
 
     function store_oa(id, cliente = '') {
@@ -376,9 +338,9 @@
             })
     }
 
-    function calcular_uso(postco) {
-        procesar_ramos = parseInt($('#procesar_ramos_' + postco).val());
-        unidades_item = $('.unidades_item_' + postco);
+    function calcular_uso(id_detalle) {
+        procesar_ramos = parseInt($('#procesar_ramos_' + id_detalle).val());
+        unidades_item = $('.unidades_item_' + id_detalle);
         fallos = false;
         for (i = 0; i < unidades_item.length; i++) {
             unidades = parseInt(unidades_item[i].value);
@@ -389,20 +351,20 @@
                 inventario = 0;
 
             uso = unidades * procesar_ramos;
-            $('#usar_tallos_' + postco + '_' + id_item).val(uso);
+            $('#usar_tallos_' + id_detalle + '_' + id_item).val(uso);
             if (uso > inventario) {
-                $('#usar_tallos_' + postco + '_' + id_item).css('background-color', '#ffb2b2');
+                $('#usar_tallos_' + id_detalle + '_' + id_item).css('background-color', '#ffb2b2');
                 fallos = true;
             } else {
-                $('#usar_tallos_' + postco + '_' + id_item).css('background-color', '');
+                $('#usar_tallos_' + id_detalle + '_' + id_item).css('background-color', '');
             }
         }
         if (fallos) {
-            $('.btn_procesar_' + postco).addClass('hidden');
-            $('#btn_procesar_oa_' + postco).removeClass('hidden');
+            $('.btn_procesar_' + id_detalle).addClass('hidden');
+            $('#btn_procesar_oa_' + id_detalle).removeClass('hidden');
         } else {
-            $('.btn_procesar_' + postco).removeClass('hidden');
-            $('#btn_procesar_oa_' + postco).addClass('hidden');
+            $('.btn_procesar_' + id_detalle).removeClass('hidden');
+            $('#btn_procesar_oa_' + id_detalle).addClass('hidden');
         }
     }
 
@@ -416,9 +378,9 @@
         });
     }
 
-    function listar_ordenes_trabajo(postco) {
+    function listar_ordenes_trabajo(id) {
         datos = {
-            postco: postco,
+            id: id,
         };
         get_jquery('{{ url('preproduccion/listar_ordenes_trabajo') }}', datos, function(retorno) {
             modal_view('modal_listar_ordenes_trabajo', retorno,

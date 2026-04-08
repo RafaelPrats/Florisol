@@ -189,6 +189,8 @@
                 'pedidos',
                 'importar_pedidos',
                 'plantas_variedades',
+                'clientes',
+                'proyectos',
                 '/control_diario',
                 '/dashboard_personal'
             ];

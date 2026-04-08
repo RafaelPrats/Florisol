@@ -12,7 +12,7 @@ class DistribucionReceta extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'id_detalle_import_pedido',
+        'id_detalle_caja_proyecto',
         'id_variedad',
         'longitud',
         'unidades',
@@ -23,8 +23,8 @@ class DistribucionReceta extends Model
         return $this->belongsTo('\yura\Modelos\Variedad', 'id_variedad');
     }
 
-    public function detalle_import_pedido()
+    public function detalle_caja_proyecto()
     {
-        return $this->belongsTo('\yura\Modelos\DetalleImportPedido', 'id_detalle_import_pedido');
+        return $this->belongsTo('\yura\Modelos\DetalleCajaProyecto', 'id_detalle_caja_proyecto');
     }
 }

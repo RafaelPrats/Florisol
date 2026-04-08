@@ -20,16 +20,24 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PDF;
 use Picqer\Barcode\BarcodeGeneratorHTML;
+use yura\Modelos\ArmadoManual;
 use yura\Modelos\CodigoAutorizacion;
+use yura\Modelos\DetalleArmadoManual;
+use yura\Modelos\DetalleCajaProyecto;
 use yura\Modelos\DetalleOaPostco;
+use yura\Modelos\DetalleOrdenTrabajo;
+use yura\Modelos\DistribucionReceta;
 use yura\Modelos\OaPostco;
+use yura\Modelos\OrdenTrabajo;
 
 class PreproduccionController extends Controller
 {
     public function inicio(Request $request)
     {
+        $finca = getFincaActiva();
         $variedades = Variedad::where('estado', 1)
             ->where('receta', 1)
+            ->where('id_empresa', $finca)
             ->orderBy('nombre')
             ->get();
         return view('adminlte.gestion.postco.preproduccion.inicio', [
@@ -41,44 +49,51 @@ class PreproduccionController extends Controller
 
     public function listar_reporte(Request $request)
     {
-        $fechas = DB::table('postco')
-            ->select('fecha')->distinct()
-            ->where('fecha', '>=', $request->desde)
-            ->where('fecha', '<=', $request->hasta);
-        if ($request->variedad != 'T')
-            $fechas = $fechas->where('id_variedad', $request->variedad);
-        $fechas = $fechas->orderBy('fecha')->get()->pluck('fecha')->toArray();
-
-        $recetas = DB::table('postco as p')
-            ->join('variedad as v', 'v.id_variedad', '=', 'p.id_variedad')
-            ->select('p.id_variedad', 'v.nombre', 'p.longitud')->distinct()
+        $fechas = DB::table('proyecto as p')
+            ->join('caja_proyecto as cp', 'cp.id_proyecto', '=', 'p.id_proyecto')
+            ->join('detalle_caja_proyecto as dc', 'dc.id_caja_proyecto', '=', 'cp.id_caja_proyecto')
+            ->select('p.fecha')->distinct()
             ->where('p.fecha', '>=', $request->desde)
             ->where('p.fecha', '<=', $request->hasta);
         if ($request->variedad != 'T')
-            $recetas = $recetas->where('p.id_variedad', $request->variedad);
+            $fechas = $fechas->where('dc.id_variedad', $request->variedad);
+        $fechas = $fechas->orderBy('p.fecha')->get()->pluck('fecha')->toArray();
+
+        $recetas = DB::table('proyecto as p')
+            ->join('caja_proyecto as cp', 'cp.id_proyecto', '=', 'p.id_proyecto')
+            ->join('detalle_caja_proyecto as dc', 'dc.id_caja_proyecto', '=', 'cp.id_caja_proyecto')
+            ->join('variedad as v', 'v.id_variedad', '=', 'dc.id_variedad')
+            ->select('dc.id_variedad', 'v.nombre', 'dc.longitud_ramo')->distinct()
+            ->where('p.fecha', '>=', $request->desde)
+            ->where('p.fecha', '<=', $request->hasta);
+        if ($request->variedad != 'T')
+            $recetas = $recetas->where('dc.id_variedad', $request->variedad);
         $recetas = $recetas->orderBy('v.nombre')
             ->get();
 
         $listado = [];
         foreach ($recetas as $receta) {
-            $valores = DB::table('postco')
+            $valores = DB::table('proyecto as p')
+                ->join('caja_proyecto as cp', 'cp.id_proyecto', '=', 'p.id_proyecto')
+                ->join('detalle_caja_proyecto as dc', 'dc.id_caja_proyecto', '=', 'cp.id_caja_proyecto')
                 ->select(
-                    DB::raw('sum(ramos) as ramos'),
-                    DB::raw('sum(armados) as armados'),
-                    DB::raw('sum(despachados) as despachados'),
-                    'fecha'
+                    DB::raw('sum(cp.cantidad * dc.ramos_x_caja) as ramos'),
+                    DB::raw('sum(dc.armados) as armados'),
+                    DB::raw('sum(dc.despachados) as despachados'),
+                    'p.fecha'
                 )
-                ->where('id_variedad', $receta->id_variedad)
-                ->where('longitud', $receta->longitud)
-                ->whereIn('fecha', $fechas)
-                ->orderBy('fecha')
-                ->groupBy('fecha')
+                ->where('dc.id_variedad', $receta->id_variedad)
+                ->where('dc.longitud_ramo', $receta->longitud_ramo)
+                ->whereIn('p.fecha', $fechas)
+                ->orderBy('p.fecha')
+                ->groupBy('p.fecha')
                 ->get();
             $listado[] = [
                 'receta' => $receta,
                 'valores' => $valores,
             ];
         }
+
         return view('adminlte.gestion.postco.preproduccion.partials.listado', [
             'listado' => $listado,
             'fechas' => $fechas,
@@ -87,10 +102,22 @@ class PreproduccionController extends Controller
 
     public function modal_receta(Request $request)
     {
-        $listado = Postco::where('id_variedad', $request->variedad)
-            ->where('longitud', $request->longitud)
-            ->whereIn('fecha', json_decode($request->fechas))
-            ->orderBy('fecha')
+        $listado = DetalleCajaProyecto::join('caja_proyecto as cp', 'cp.id_caja_proyecto', '=', 'detalle_caja_proyecto.id_caja_proyecto')
+            ->join('proyecto as p', 'p.id_proyecto', '=', 'cp.id_proyecto')
+            ->join('detalle_cliente as c', 'c.id_cliente', '=', 'p.id_cliente')
+            ->select(
+                'detalle_caja_proyecto.id_detalle_caja_proyecto',
+                'detalle_caja_proyecto.longitud_ramo',
+                'detalle_caja_proyecto.armados',
+                'p.fecha',
+                'c.nombre as cliente_nombre',
+                DB::raw('cp.cantidad * detalle_caja_proyecto.ramos_x_caja as ramos')
+            )->distinct()
+            ->where('detalle_caja_proyecto.id_variedad', $request->variedad)
+            ->where('detalle_caja_proyecto.longitud_ramo', $request->longitud)
+            ->where('c.estado', 1)
+            ->whereIn('p.fecha', json_decode($request->fechas))
+            ->orderBy('p.fecha')
             ->get();
         return view('adminlte.gestion.postco.preproduccion.forms.modal_receta', [
             'listado' => $listado,
@@ -103,25 +130,24 @@ class PreproduccionController extends Controller
     {
         DB::beginTransaction();
         try {
-            $model = Postco::find($request->id);
+            $model = DetalleCajaProyecto::find($request->id);
             $model->armados += $request->cantidad;
             $model->save();
-            $texto = $model->id_variedad . ' ' . $model->longitud . 'cm' . '; fecha = ' . $model->fecha;
-            bitacora('POSTCO', $request->id, 'U', 'ARMAR MANUALMENTE: (' . $request->cantidad . ') ramos de ' . $texto);
+            $texto = $model->id_variedad . ' ' . $model->longitud_ramo . 'cm' . '; fecha = ' . $model->getFecha();
+            bitacora('DETALLE_CAJA_PROYECTO', $request->id, 'U', 'ARMAR MANUALMENTE: (' . $request->cantidad . ') ramos de ' . $texto);
 
-            $model_armado = new ArmadoPostco();
-            $model_armado->id_postco = $model->id_postco;
+            $model_armado = new ArmadoManual();
+            $model_armado->id_detalle_caja_proyecto = $model->id_detalle_caja_proyecto;
             $model_armado->ramos = $request->cantidad;
-            $model_armado->id_cliente = $model->clientes[0]->id_cliente;
             $model_armado->save();
-            $model_armado->id_armado_postco = DB::table('armado_postco')
-                ->select(DB::raw('max(id_armado_postco) as id'))
+            $model_armado->id_armado_manual = DB::table('armado_manual')
+                ->select(DB::raw('max(id_armado_manual) as id'))
                 ->get()[0]->id;
 
             foreach ($model->distribuciones as $key => $dist) {
-                $det_armado = new DetalleArmadoPostco();
-                $det_armado->id_armado_postco = $model_armado->id_armado_postco;
-                $det_armado->id_item = $dist->id_item;
+                $det_armado = new DetalleArmadoManual();
+                $det_armado->id_armado_manual = $model_armado->id_armado_manual;
+                $det_armado->id_variedad = $dist->id_variedad;
                 $det_armado->unidades = $dist->unidades;
                 $det_armado->save();
             }
@@ -148,26 +174,26 @@ class PreproduccionController extends Controller
     {
         DB::beginTransaction();
         try {
-            $postco = Postco::find($request->id);
-            $ot = new OtPostco();
-            $ot->id_postco  = $request->id;
+            $detalle = DetalleCajaProyecto::find($request->id);
+            $ot = new OrdenTrabajo();
+            $ot->id_detalle_caja_proyecto = $request->id;
             $ot->ramos = $request->cantidad;
             $ot->fecha = $request->fecha;
-            $ot->id_cliente = $request->cliente;
+            $ot->id_cliente = $detalle->caja_proyecto->proyecto->id_cliente;
             $ot->longitud = $request->longitud;
             $ot->estado = 'P';
             $ot->save();
-            $ot->id_ot_postco = DB::table('ot_postco')
-                ->select(DB::raw('max(id_ot_postco) as id'))
+            $ot->id_orden_trabajo = DB::table('orden_trabajo')
+                ->select(DB::raw('max(id_orden_trabajo) as id'))
                 ->get()[0]->id;
 
-            $texto = $postco->id_variedad . ' ' . $postco->longitud . 'cm' . '; fecha = ' . $postco->fecha . ' id_postco = ' . $postco->id_postco;
-            bitacora('OT_POSTCO', $ot->id_ot_postco, 'I', 'PROCESAR OT: (' . $request->cantidad . ') ramos de ' . $texto);
+            $texto = $detalle->id_variedad . ' ' . $detalle->longitud . 'cm' . '; fecha = ' . $detalle->getFecha() . ' id_detalle_caja_proyecto = ' . $detalle->id_detalle_caja_proyecto;
+            bitacora('ORDEN_TRABAJO', $ot->id_orden_trabajo, 'I', 'PROCESAR OT: (' . $request->cantidad . ') ramos de ' . $texto);
 
-            foreach ($postco->distribuciones as $dist) {
-                $det_ot = new DetalleOtPostco();
-                $det_ot->id_ot_postco = $ot->id_ot_postco;
-                $det_ot->id_item = $dist->id_item;
+            foreach ($detalle->distribuciones as $dist) {
+                $det_ot = new DetalleOrdenTrabajo();
+                $det_ot->id_orden_trabajo = $ot->id_orden_trabajo;
+                $det_ot->id_variedad = $dist->id_variedad;
                 $det_ot->unidades = $dist->unidades;
                 $det_ot->save();
             }
@@ -192,15 +218,19 @@ class PreproduccionController extends Controller
 
     public function admin_receta(Request $request)
     {
-        $postco = Postco::find($request->id);
+        $finca = getFincaActiva();
+        $det_caja = DetalleCajaProyecto::find($request->id);
+        $caja = $det_caja->caja_proyecto;
         $numeros_receta = DB::table('detalle_receta')
             ->select('numero_receta')->distinct()
-            ->where('id_variedad', $postco->id_variedad)
+            ->where('id_variedad', $det_caja->id_variedad)
             ->get()->pluck('numero_receta')->toArray();
         return view('adminlte.gestion.postco.preproduccion.forms.admin_receta', [
-            'postco' => $postco,
+            'proyecto' => $caja->proyecto,
+            'caja' => $caja,
+            'det_caja' => $det_caja,
             'numeros_receta' => $numeros_receta,
-            'plantas' => Planta::where('estado', '=', 1)->orderBy('nombre')->get(),
+            'plantas' => Planta::where('estado', '=', 1)->where('id_empresa', $finca)->orderBy('nombre')->get(),
         ]);
     }
 
@@ -224,10 +254,9 @@ class PreproduccionController extends Controller
     {
         DB::beginTransaction();
         try {
-            $postco = Postco::find($request->id_postco);
             $variedades = [];
 
-            $delete = DistribucionPostco::where('id_postco', $request->id_postco)
+            $delete = DistribucionReceta::where('id_detalle_caja_proyecto', $request->id_detalle)
                 ->get();
             foreach ($delete as $del) {
                 $variedades[] = $del->id_variedad;  // guardar en este listado los ids de variedades para actualizar la tabla resumen_agrogana
@@ -235,15 +264,15 @@ class PreproduccionController extends Controller
             }
 
             foreach (json_decode($request->data) as $d) {
-                $model = new DistribucionPostco();
-                $model->id_postco = $request->id_postco;
-                $model->id_item = $d->id_item;
+                $model = new DistribucionReceta();
+                $model->id_detalle_caja_proyecto = $request->id_detalle;
+                $model->id_variedad = $d->id_variedad;
                 $model->longitud = $d->longitud;
                 $model->unidades = $d->unidades;
                 $model->save();
 
-                if (!in_array($d->id_item, $variedades))
-                    $variedades[] = $d->id_item;  // guardar en este listado los ids de variedades para actualizar la tabla resumen_agrogana
+                if (!in_array($d->id_variedad, $variedades))
+                    $variedades[] = $d->id_variedad;  // guardar en este listado los ids de variedades para actualizar la tabla resumen_agrogana
             }
 
             DB::commit();
@@ -279,8 +308,8 @@ class PreproduccionController extends Controller
 
     public function listar_ordenes_trabajo(Request $request)
     {
-        $listado = OtPostco::where('id_postco', $request->postco)
-            ->orderBy('id_ot_postco')
+        $listado = OrdenTrabajo::where('id_detalle_caja_proyecto', $request->id)
+            ->orderBy('id_orden_trabajo')
             ->orderBy('longitud')
             ->get();
         $despachadores = Despachador::where('estado', 1)
@@ -289,7 +318,7 @@ class PreproduccionController extends Controller
         return view('adminlte.gestion.postco.preproduccion.forms.listar_ordenes_trabajo', [
             'listado' => $listado,
             'despachadores' => $despachadores,
-            'postco' => Postco::find($request->postco)
+            'detalle' => DetalleCajaProyecto::find($request->id)
         ]);
     }
 
@@ -297,13 +326,13 @@ class PreproduccionController extends Controller
     {
         try {
             DB::beginTransaction();
-            $model = OtPostco::find($request->id_ot);
+            $model = OrdenTrabajo::find($request->id_ot);
             $model->id_despachador = $request->despachador;
             $model->save();
 
             $success = true;
             $msg = 'Se ha <strong>ASIGNADO</strong> el responsable correctamente';
-            bitacora('OT_POSTCO', $model->id_ot_postco, 'U', 'MODIFICAR EL DESPACHADOR de la OT desde PREPRODUCCION (' . $model->ramos . ' ramos)');
+            bitacora('ORDEN_TRABAJO', $model->id_orden_trabajo, 'U', 'MODIFICAR EL DESPACHADOR de la OT desde PREPRODUCCION (' . $model->ramos . ' ramos)');
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
@@ -325,13 +354,13 @@ class PreproduccionController extends Controller
         DB::beginTransaction();
         try {
             $variedades = [];
-            $model = OtPostco::find($request->id);
+            $model = OrdenTrabajo::find($request->id);
             foreach ($model->detalles as $det) {
                 $variedades[] = $det->id_variedad;
             }
-            $postco = $model->postco;
-            $texto = $postco->id_variedad . ' ' . $postco->longitud . 'cm' . '; fecha = ' . $postco->fecha . ' id_postco = ' . $postco->id_postco;
-            bitacora('OT_POSTCO', $model->id_ot_postco, 'D', 'ELIMINAR OT desde PREPRODUCCION: (' . $model->ramos . ') ramos de ' . $texto);
+            $detalle = $model->detalle_caja_proyecto;
+            $texto = $detalle->id_variedad . ' ' . $detalle->longitud_ramo . 'cm' . '; fecha = ' . $detalle->getFecha() . ' id_detalle_caja_proyecto = ' . $detalle->id_detalle_caja_proyecto;
+            bitacora('ORDEN_TRABAJO', $model->id_orden_trabajo, 'D', 'ELIMINAR OT desde PREPRODUCCION: (' . $model->ramos . ') ramos de ' . $texto);
 
             $model->delete();
 
@@ -371,7 +400,7 @@ class PreproduccionController extends Controller
 
     public function excel_orden_trabajo($spread, $request)
     {
-        $orden_trabajo = OtPostco::find($request->id);
+        $orden_trabajo = OrdenTrabajo::find($request->id);
         $despachador = $orden_trabajo->despachador;
         $columnas = getColumnasExcel();
         $sheet = $spread->getActiveSheet();
@@ -397,6 +426,8 @@ class PreproduccionController extends Controller
         $col++;
         setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'UNIDADES');
         $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'TxR');
+        $col++;
         setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'RESPONSABLE');
         $col++;
         setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'OBSERVACION');
@@ -404,49 +435,53 @@ class PreproduccionController extends Controller
         setBgToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, '00b388');
         setColorTextToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, 'ffffff');
 
-        $postco = $orden_trabajo->postco;
+        $detalle = $orden_trabajo->detalle_caja_proyecto;
         $tallos_x_ramo = 0;
         $total_tallos = 0;
-        foreach ($orden_trabajo->detalles as $det) {
+        $detalles_ot = $orden_trabajo->detalles;
+        foreach ($detalles_ot as $det) {
             $total_tallos += $det->unidades * $orden_trabajo->ramos;
             $tallos_x_ramo += $det->unidades;
         }
 
-        foreach ($orden_trabajo->detalles as $pos_d => $det) {
+        foreach ($detalles_ot as $pos_d => $det_ot) {
             $row++;
             if ($pos_d == 0) {
                 $col = 0;
-                setValueToCeldaExcel($sheet, $columnas[$col] . $row, '#' . $orden_trabajo->id_ot_postco);
-                $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($orden_trabajo->detalles) - 1));
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, '#' . $orden_trabajo->id_orden_trabajo);
+                $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($detalles_ot) - 1));
                 $col++;
-                setValueToCeldaExcel($sheet, $columnas[$col] . $row, convertDateToText($postco->fecha));
-                $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($orden_trabajo->detalles) - 1));
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, convertDateToText($detalle->getFecha()));
+                $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($detalles_ot) - 1));
                 $col++;
                 setValueToCeldaExcel($sheet, $columnas[$col] . $row, $orden_trabajo->cliente->detalle()->nombre);
-                $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($orden_trabajo->detalles) - 1));
+                $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($detalles_ot) - 1));
                 $col++;
-                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $postco->variedad->nombre);
-                $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($orden_trabajo->detalles) - 1));
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $detalle->variedad->nombre);
+                $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($detalles_ot) - 1));
                 $col++;
                 setValueToCeldaExcel($sheet, $columnas[$col] . $row, $orden_trabajo->longitud);
-                $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($orden_trabajo->detalles) - 1));
+                $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($detalles_ot) - 1));
                 $col++;
                 setValueToCeldaExcel($sheet, $columnas[$col] . $row, $orden_trabajo->ramos);
-                $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($orden_trabajo->detalles) - 1));
+                $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($detalles_ot) - 1));
             }
             $col = 6;
-            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det->item->nombre);
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det_ot->variedad->nombre);
             $col++;
-            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det->unidades * $orden_trabajo->ramos);
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det_ot->unidades * $orden_trabajo->ramos);
             $col++;
-            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det->unidades);
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det_ot->unidades);
             if ($pos_d == 0) {
                 $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $tallos_x_ramo);
+                $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($detalles_ot) - 1));
+                $col++;
                 setValueToCeldaExcel($sheet, $columnas[$col] . $row, $despachador != '' ? $despachador->nombre : '');
-                $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($orden_trabajo->detalles) - 1));
+                $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($detalles_ot) - 1));
                 $col++;
                 setValueToCeldaExcel($sheet, $columnas[$col] . $row, $orden_trabajo->observacion);
-                $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($orden_trabajo->detalles) - 1));
+                $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($detalles_ot) - 1));
             }
         }
         $row++;
@@ -454,7 +489,7 @@ class PreproduccionController extends Controller
         setValueToCeldaExcel($sheet, $columnas[$col] . $row, $total_tallos);
         $col++;
         setValueToCeldaExcel($sheet, $columnas[$col] . $row, $tallos_x_ramo);
-        $col = 10;
+        $col = 11;
         setBgToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, '00b388');
         setColorTextToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, 'ffffff');
 
@@ -469,19 +504,25 @@ class PreproduccionController extends Controller
     {
         DB::beginTransaction();
         try {
-            $postco = Postco::find($request->id);
-            $query = Postco::where('fecha', '>=', $request->desde)
-                ->where('fecha', '<=', $request->hasta)
-                ->where('id_variedad', $postco->id_variedad)
-                ->where('longitud', $postco->longitud)
-                ->get();
-            $distribucion = $postco->distribuciones;
-            foreach ($query as $p_query) {
-                DB::select('delete from distribucion_postco where id_postco = ' . $p_query->id_postco);
+            $detalle = DetalleCajaProyecto::find($request->id);
+            $distribucion = $detalle->distribuciones;
+            $recetas = DB::table('proyecto as p')
+                ->join('caja_proyecto as cp', 'cp.id_proyecto', '=', 'p.id_proyecto')
+                ->join('detalle_caja_proyecto as dc', 'dc.id_caja_proyecto', '=', 'cp.id_caja_proyecto')
+                ->join('variedad as v', 'v.id_variedad', '=', 'dc.id_variedad')
+                ->select('dc.*')->distinct()
+                ->where('p.fecha', '>=', $request->desde)
+                ->where('p.fecha', '<=', $request->hasta)
+                ->where('dc.id_variedad', $detalle->id_variedad)
+                ->where('dc.longitud_ramo', $detalle->longitud_ramo)
+                ->orderBy('v.nombre')
+                ->get()->pluck('id_detalle_caja_proyecto')->toArray();
+            foreach ($recetas as $p_query) {
+                DB::select('delete from distribucion_receta where id_detalle_caja_proyecto = ' . $p_query);
                 foreach ($distribucion as $dist) {
-                    $model = new DistribucionPostco();
-                    $model->id_postco = $p_query->id_postco;
-                    $model->id_item = $dist->id_item;
+                    $model = new DistribucionReceta();
+                    $model->id_detalle_caja_proyecto = $p_query;
+                    $model->id_variedad = $dist->id_variedad;
                     $model->unidades = $dist->unidades;
                     $model->longitud = $dist->longitud;
                     $model->save();
@@ -490,7 +531,7 @@ class PreproduccionController extends Controller
 
             DB::commit();
             $success = true;
-            $msg = 'Se ha <strong>ELIMINADO</strong> la orden de trabajo correctamente';
+            $msg = 'Se ha <strong>COPIADO</strong> la distribucion correctamente';
         } catch (\Exception $e) {
             DB::rollBack();
             $success = false;

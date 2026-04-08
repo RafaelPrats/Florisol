@@ -180,12 +180,14 @@ class ClienteController extends Controller
 
     public function buscar_clientes(Request $request)
     {
+        $finca = getFincaActiva();
         $busqueda = $request->has('busqueda') ? espacios($request->busqueda) : '';
         $bus = str_replace(' ', '%%', $busqueda);
         $mi_busqueda_toupper = mb_strtoupper($bus);
         $mi_busqueda_tolower = mb_strtolower($bus);
 
         $listado = DB::table('cliente as cl')
+            ->where('cl.id_empresa', $finca)
             ->where('dc.estado', 1)
             ->join('detalle_cliente as dc', 'dc.id_cliente', '=', 'cl.id_cliente')
             //->join('pais as pa',  'dc.codigo_pais', '=', 'pa.codigo')
@@ -195,6 +197,7 @@ class ClienteController extends Controller
                 'dc.direccion',
                 'dc.ruc',
                 'dc.correo',
+                'dc.segmento',
                 //'pa.nombre as pa_nombre',
                 'cl.id_cliente'
             );
@@ -207,7 +210,7 @@ class ClienteController extends Controller
                 ->orWhere('dc.direccion', 'like', '%' . espacios(mb_strtoupper($busqueda)) . '%');
         });
 
-        $listado = $listado->orderBy('dc.nombre', 'asc')->paginate(20);
+        $listado = $listado->orderBy('dc.nombre', 'asc')->paginate(100);
 
         $datos = [
             'listado' => $listado
@@ -242,7 +245,6 @@ class ClienteController extends Controller
 
     public function store_clientes(Request $request)
     {
-
         $valida = Validator::make($request->all(), [
             'nombre'              => 'required',
             'identificacion'      => 'required',
@@ -281,6 +283,7 @@ class ClienteController extends Controller
                     $objDetalleCliente->codigo_porcentaje_impuesto    = 0;
                     $objDetalleCliente->codigo_identificacion         = $request->tipo_identificacion;
                     $objDetalleCliente->codigo_impuesto               = 2;
+                    $objDetalleCliente->segmento                       = $request->segmento;
                     $objDetalleCliente->almacen                       = $request->almacen;
                     $objDetalleCliente->puerto_entrada                = $request->puerto_entrada;
                     $objDetalleCliente->tipo_credito                  = $request->tipo_credito;
@@ -360,6 +363,7 @@ class ClienteController extends Controller
                     $objDetalleCliente->codigo_identificacion         = $request->tipo_identificacion;
                     $objDetalleCliente->codigo_impuesto               = $request->codigo_impuesto;
                     $objDetalleCliente->almacen                       = $request->almacen;
+                    $objDetalleCliente->segmento                       = $request->segmento;
                     $objDetalleCliente->puerto_entrada                = $request->puerto_entrada;
                     $objDetalleCliente->tipo_credito                  = $request->tipo_credito;
                     $objDetalleCliente->id_marca                      = $request->marca;
