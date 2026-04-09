@@ -32,15 +32,25 @@ use PHPExcel_Style_Color;
 use PHPExcel_Style_Alignment;
 use Storage as Almacenamiento;
 use \PhpOffice\PhpSpreadsheet\IOFactory as IOFactory;
+use yura\Modelos\Especificaciones;
+use yura\Modelos\Planta;
+use yura\Modelos\Variedad;
 
 class ClienteController extends Controller
 {
     public function inicio(Request $request)
     {
+        $segmentos = DB::table('detalle_cliente as dc')
+            ->where('dc.estado', 1)
+            ->join('cliente as c', 'c.id_cliente', '=', 'dc.id_cliente')
+            ->select('dc.segmento')
+            ->distinct()
+            ->get()->pluck('segmento')->toArray();
         return view('adminlte.gestion.postcocecha.clientes.inicio', [
             'url' => $request->getRequestUri(),
             'submenu' => Submenu::Where('url', '=', substr($request->getRequestUri(), 1))->get()[0],
-            'text' => ['titulo' => 'Clientes', 'subtitulo' => 'módulo de postcocecha']
+            'text' => ['titulo' => 'Clientes', 'subtitulo' => 'módulo de postcocecha'],
+            'segmentos' => $segmentos
         ]);
     }
 
@@ -201,6 +211,9 @@ class ClienteController extends Controller
                 //'pa.nombre as pa_nombre',
                 'cl.id_cliente'
             );
+        if ($request->segmento != '') {
+            $listado = $listado->where('dc.segmento', $request->segmento);
+        }
 
         if ($request->busqueda != '') $listado = $listado->Where(function ($q) use ($busqueda) {
             $q->Where('dc.nombre', 'like', '%' . espacios(mb_strtoupper($busqueda)) . '%')
@@ -803,6 +816,106 @@ class ClienteController extends Controller
         return [
             'mensaje' => $msg,
             'success' => $success
+        ];
+    }
+
+    // ---- ESPECIFICACIONES DE LOS CLIENTES ---- //
+
+    public function admin_especificaciones(Request $request)
+    {
+        $finca = getFincaActiva();
+        $listado = Especificaciones::where('id_cliente', $request->id_cliente)->get();
+        $plantas = Planta::where('estado', 1)->where('id_empresa', $finca)->orderBy('nombre')->get();
+        return view('adminlte.gestion.postcocecha.clientes.partials.especificaciones', [
+            'listado' => $listado,
+            'plantas' => $plantas,
+            'id_cliente' => $request->id_cliente,
+        ]);
+    }
+
+    public function store_especificaciones(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $model = new Especificaciones();
+            $model->id_cliente = $request->cliente;
+            $model->id_variedad = $request->variedad;
+            $model->tipo_caja = $request->tipo_caja;
+            $model->ramos_x_caja = $request->ramos_x_caja;
+            $model->tallos_x_ramo = $request->tallos_x_ramo;
+            $model->longitud = $request->longitud;
+            $model->save();
+
+            $success = true;
+            $msg = 'Se ha guardado la especificación con éxito';
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $success = false;
+            $msg = '<div class="alert alert-danger text-center">' .
+                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
+                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
+                . '</div>';
+        }
+
+        return [
+            'success' => $success,
+            'mensaje' => $msg,
+        ];
+    }
+
+    public function update_especificaciones(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $model = Especificaciones::find($request->id);
+            $model->id_variedad = $request->variedad;
+            $model->tipo_caja = $request->tipo_caja;
+            $model->ramos_x_caja = $request->ramos_x_caja;
+            $model->tallos_x_ramo = $request->tallos_x_ramo;
+            $model->longitud = $request->longitud;
+            $model->save();
+
+            $success = true;
+            $msg = 'Se ha eliminado la especificación con éxito';
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $success = false;
+            $msg = '<div class="alert alert-danger text-center">' .
+                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
+                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
+                . '</div>';
+        }
+
+        return [
+            'success' => $success,
+            'mensaje' => $msg,
+        ];
+    }
+
+    public function delete_especificaciones(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $model = Especificaciones::find($request->id);
+            $model->delete();
+
+            $success = true;
+            $msg = 'Se ha eliminado la especificación con éxito';
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $success = false;
+            $msg = '<div class="alert alert-danger text-center">' .
+                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
+                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
+                . '</div>';
+        }
+
+        return [
+            'success' => $success,
+            'mensaje' => $msg,
         ];
     }
 }

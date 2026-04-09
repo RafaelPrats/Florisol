@@ -110,11 +110,12 @@
                 onclick="cargar_opcion('campos_agencia_carga','','clientes/ver_agencias_carga')">
                 Agencia de carga
             </a>
-            {{-- <a href="javascript:void(0)" class="list-group-item list-group-item-action" title="Administrar especificaciones"
-               onclick="admin_especificaciones('{{$dataCliente->id_cliente}}')">
+            <a href="javascript:void(0)" class="list-group-item list-group-item-action"
+                title="Administrar especificaciones"
+                onclick="admin_especificaciones('{{ $dataCliente->id_cliente }}')">
                 Especificaciones
             </a>
-            <a href="javascript:void(0)" class="list-group-item list-group-item-action" title="Administrar pedidos"
+            {{-- <a href="javascript:void(0)" class="list-group-item list-group-item-action" title="Administrar pedidos"
                onclick="cargar_opcion('div_pedidos','{{$dataCliente->id_cliente}}','clientes/listar_pedidos')">
                 Pedidos
             </a> --}}

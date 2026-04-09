@@ -21,11 +21,28 @@
                         <td>
                             <div class="input-group">
                                 <div class="input-group-addon bg-yura_dark span-input-group-yura-fixed">
-                                    Fecha
+                                    Búsqueda
                                 </div>
                                 <input type="text" id="busqueda_clientes" name="busqueda_clientes" required
-                                    placeholder="Búsqueda" class="form-control input-yura_default text-center"
+                                    placeholder="Búsqueda" class="form-control text-center"
                                     onchange="listar_reporte()" style="width: 100% !important;">
+                            </div>
+                        </td>
+                        <td style="width: 350px">
+                            <div class="input-group">
+                                <div class="input-group-addon bg-yura_dark">
+                                    Segmento
+                                </div>
+                                <select id="filtro_segmento" name="filtro_segmento" required
+                                    class="form-control input-yura_default" onchange="buscar_listado()"
+                                    style="width: 100% !important;">
+                                    <option value="">Todos</option>
+                                    @foreach ($segmentos as $segmento)
+                                        <option value="{{ $segmento }}">
+                                            {{ $segmento }}
+                                        </option>
+                                    @endforeach
+                                </select>
                                 <div class="input-group-btn">
                                     <button class="btn btn-yura_dark" onclick="buscar_listado()">
                                         <i class="fa fa-fw fa-search"></i>
@@ -33,12 +50,6 @@
                                     <button class="btn btn-yura_primary" onclick="add_cliente()">
                                         <i class="fa fa-fw fa-plus"></i>
                                     </button>
-                                    {{-- <button class="btn btn-primary btn-yura_dark" onclick="add_importar_clientes()">
-                                        <i class="fa fa-fw fa-upload"></i>
-                                    </button>
-                                    <button class="btn btn-yura_default" onclick="exportar_clientes()">
-                                        <i class="fa fa-fw fa-file-excel-o"></i>
-                                    </button> --}}
                                 </div>
                             </div>
                         </td>

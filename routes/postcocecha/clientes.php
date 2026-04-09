@@ -21,5 +21,11 @@ Route::post('clientes/post_importar_clientes', 'ClienteController@post_importar_
 Route::get('clientes/get_importar_clientes', 'ClienteController@get_importar_clientes');
 Route::post('clientes/store_importar_clientes', 'ClienteController@store_importar_clientes');
 
-include 'especificaciones_cliente.php';
+Route::get('clientes/admin_especificaciones', 'ClienteController@admin_especificaciones');
+Route::post('clientes/store_especificaciones', 'ClienteController@store_especificaciones');
+Route::post('clientes/update_especificaciones', 'ClienteController@update_especificaciones');
+Route::post('clientes/delete_especificaciones', 'ClienteController@delete_especificaciones');
+
+
+//include 'especificaciones_cliente.php';
 include 'pedidos.php';

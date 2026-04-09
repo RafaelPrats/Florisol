@@ -6,6 +6,7 @@
         $.LoadingOverlay('show');
         datos = {
             busqueda: $('#busqueda_clientes').val().trim(),
+            segmento: $('#filtro_segmento').val()
         };
         $.get('{{ url('clientes/buscar') }}', datos, function(retorno) {
             $('#div_listado_clientes').html(retorno);
@@ -202,9 +203,7 @@
             id_cliente: id_cliente
         };
         get_jquery('{{ url('clientes/admin_especificaciones') }}', datos, function(retorno) {
-            modal_view('modal_admin_especificaciones', retorno,
-                '<i class="fa fa-fw fa-gift"></i> Especificaciones', true, false,
-                '{{ isPC() ? '90%' : '' }}');
+            $('#div_content_opciones').html(retorno);
         });
     }
 
