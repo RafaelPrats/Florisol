@@ -209,7 +209,7 @@
             precio = $('#precio_variedad_seleccionado_' + pos).val();
             id_item = $('#id_variedad_seleccionado_' + pos).val();
             id_var = $('#id_variedad_seleccionado').val();
-            if (unidades > 0 && longitud != '')
+            if (unidades > 0)
                 data.push({
                     id_item: id_item,
                     longitud: longitud,

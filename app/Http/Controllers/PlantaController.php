@@ -129,7 +129,7 @@ class PlantaController extends Controller
     public function store_planta(Request $request)
     {
         $valida = Validator::make($request->all(), [
-            'nombre' => 'required|max:250|unique:planta',
+            'nombre' => 'required|max:250',
             'siglas' => 'required',
             'tarifa' => 'required',
             'nandina' => 'required'
@@ -231,6 +231,8 @@ class PlantaController extends Controller
                 $model->id_planta = $request->id_planta;
                 $model->id_empresa = getFincaActiva();
                 $model->color = $request->color;
+                $model->codigo_latin = $request->codigo_latin;
+                $model->codigo_exportacion = $request->codigo_exportacion;
                 $model->tipo = $request->tipo;
                 $model->tallos_x_ramo_estandar = $request->tallos_x_ramo_estandar;
                 //  $model->unidad_de_medida = $request->unidad_medida;
@@ -1008,10 +1010,11 @@ class PlantaController extends Controller
         try {
             if ($request->new_nombre_receta != '') {
                 $numero_receta = mb_strtoupper($request->new_nombre_receta);
-            } else
-                $numero_receta = $request->filtro_numero_receta;
-
-            DB::select('delete from detalle_receta where id_variedad = ' . $request->id_var . ' and numero_receta = "' . $numero_receta . '"');
+                DB::select('delete from detalle_receta where id_variedad = ' . $request->id_var . ' and numero_receta = "' . $numero_receta . '"');
+            } else {
+                $numero_receta = 'DEFAULT';
+                DB::select('delete from detalle_receta where id_variedad = ' . $request->id_var . ' and numero_receta is null');
+            }
 
             foreach (json_decode($request->data) as $d) {
                 $model = new DetalleReceta();
