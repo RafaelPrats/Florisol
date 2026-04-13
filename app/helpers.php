@@ -1318,6 +1318,23 @@ function getEspecificacion($idEspecificacion)
     return Especificacion::find($idEspecificacion);
 }
 
+function getDetalleApiStoreCajasByVariedad($variedad, $tallos_x_ramo, $longitud, $empresa)
+{
+    return DB::table('detalle_api_store_cajas as d')
+        ->join('api_store_cajas as api', 'api.id_api_store_cajas', '=', 'd.id_api_store_cajas')
+        ->select(
+            'd.*',
+            'api.fecha',
+            'api.documento',
+        )
+        ->where('d.id_variedad', $variedad)
+        ->where('d.tallos_x_ramo', $tallos_x_ramo)
+        ->where('d.longitud', $longitud)
+        ->where('d.id_empresa', $empresa)
+        ->where('d.estado', 'P')
+        ->get();
+}
+
 function getTotalInventarioByVariedad($variedad)
 {
     $finca = getFincaActiva();

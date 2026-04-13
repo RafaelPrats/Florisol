@@ -5,6 +5,7 @@ namespace yura\Http\Controllers\Postco;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use yura\Http\Controllers\Controller;
+use yura\Modelos\DetalleApiStoreCajas;
 use yura\Modelos\InventarioRecepcion;
 use yura\Modelos\Planta;
 use yura\Modelos\Submenu;
@@ -31,10 +32,17 @@ class InventarioRecepcionController extends Controller
         $plantas = DB::table('inventario_recepcion as i')
             ->join('variedad as v', 'v.id_variedad', '=', 'i.id_variedad')
             ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
+            ->leftJoin('detalle_api_store_cajas as da', function ($join) use ($finca) {
+                $join->on('da.id_variedad', '=', 'i.id_variedad')
+                    ->where('da.id_empresa', '=', $finca);
+            })
             ->select('v.id_planta', 'p.nombre')
             ->distinct()
             ->where('i.id_empresa', $finca)
-            ->whereRaw('(i.disponibles > 0 OR i.ramos_pendiente > 0)')
+            ->where(function ($query) {
+                $query->where('i.disponibles', '>', 0)
+                    ->orWhere('da.estado', 'P');
+            })
             ->when($request->planta != '', function ($query) use ($request) {
                 return $query->where('v.id_planta', $request->planta);
             })
@@ -44,13 +52,21 @@ class InventarioRecepcionController extends Controller
         foreach ($plantas as $pta) {
             $variedades = DB::table('inventario_recepcion as i')
                 ->join('variedad as v', 'v.id_variedad', '=', 'i.id_variedad')
+                ->leftJoin('detalle_api_store_cajas as da', function ($join) use ($finca) {
+                    $join->on('da.id_variedad', '=', 'i.id_variedad')
+                        ->where('da.id_empresa', '=', $finca);
+                })
                 ->select(
                     'i.*',
                     'v.nombre'
-                )->distinct()
+                )
+                ->distinct()
                 ->where('i.id_empresa', $finca)
                 ->where('v.id_planta', $pta->id_planta)
-                ->whereRaw('(i.disponibles > 0 OR i.ramos_pendiente > 0)')
+                ->where(function ($query) {
+                    $query->where('i.disponibles', '>', 0)
+                        ->orWhere('da.estado', 'P');
+                })
                 ->orderBy('i.fecha')
                 ->get();
             $listado[] = [
@@ -124,36 +140,6 @@ class InventarioRecepcionController extends Controller
         ];
     }
 
-    public function recibir_pendientes(Request $request)
-    {
-        try {
-            DB::beginTransaction();
-            $model = InventarioRecepcion::find($request->id);
-            $model->ramos += $request->ramos;
-            $model->disponibles += $request->ramos * $model->tallos_x_ramo;
-            $model->ingreso = 'I';
-            $model->ramos_pendiente = 0;
-            $model->save();
-
-            $success = true;
-            $msg = 'Se ha <strong>GRABADO</strong> la informacion correctamente';
-
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            $success = false;
-            $msg = '<div class="alert alert-danger text-center">' .
-                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
-                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
-                . '</div>';
-        }
-
-        return [
-            'success' => $success,
-            'mensaje' => $msg,
-        ];
-    }
-
     public function recibir_all_pendientes(Request $request)
     {
         try {
@@ -163,9 +149,12 @@ class InventarioRecepcionController extends Controller
                 $model = InventarioRecepcion::find($data->id_inv);
                 $model->ramos += $data->ramos;
                 $model->disponibles += $data->ramos * $model->tallos_x_ramo;
-                $model->ingreso = 'I';
-                $model->ramos_pendiente = 0;
                 $model->save();
+
+                $detApi = DetalleApiStoreCajas::find($data->id_detApi);
+                $detApi->recibido += $data->ramos;
+                $detApi->estado = 'R';
+                $detApi->save();
             }
 
             $success = true;

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use yura\Http\Controllers\Controller;
 use yura\Modelos\ApiStoreCajas;
 use yura\Modelos\ConfiguracionEmpresa;
+use yura\Modelos\DetalleApiStoreCajas;
 use yura\Modelos\InventarioRecepcion;
 use yura\Modelos\Variedad;
 
@@ -41,6 +42,9 @@ class IngresoCajasController extends Controller
             $model_api->documento = $request->id_documento;
             $model_api->fecha = $request->fecha;
             $model_api->save();
+            $model_api->id_api_store_cajas = DB::table('api_store_cajas')
+                ->select(DB::raw('max(id_api_store_cajas) as id'))
+                ->get()[0]->id;
 
             foreach ($request->cajas as $caja) {
                 $id_empresa = $caja['destino'] == 1 ? 1 : 2;
@@ -66,14 +70,19 @@ class IngresoCajasController extends Controller
                                 $model_inventario->longitud = $var['longitud'];
                                 $model_inventario->disponibles = 0;
                                 $model_inventario->id_empresa = $id_empresa;
-                                $model_inventario->ingreso = 'P';
-                                $model_inventario->ramos_pendiente = $caja['cantidad_cajas'] * $var['ramos_x_caja'];
-                                $model_inventario->save();
-                            } else {
-                                $model_inventario->ramos_pendiente += $caja['cantidad_cajas'] * $var['ramos_x_caja'];
-                                $model_inventario->ingreso = 'P';
                                 $model_inventario->save();
                             }
+
+                            // DETALLE API
+                            $det_api = new DetalleApiStoreCajas();
+                            $det_api->id_api_store_cajas = $model_api->id_api_store_cajas;
+                            $det_api->id_variedad = $variedad->id_variedad;
+                            $det_api->tallos_x_ramo = $var['tallos_x_ramo'];
+                            $det_api->ramos = $caja['cantidad_cajas'] * $var['ramos_x_caja'];
+                            $det_api->longitud = $var['longitud'];
+                            $det_api->id_empresa = $id_empresa;
+                            $det_api->estado = 'P';
+                            $det_api->save();
                         } else {
                             DB::rollBack();
 

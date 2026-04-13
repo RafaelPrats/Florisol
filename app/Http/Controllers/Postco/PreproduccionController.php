@@ -1057,6 +1057,7 @@ class PreproduccionController extends Controller
 
     public function modal_flor(Request $request)
     {
+        dd('en desarrollo');
         $listado = DetalleCajaProyecto::join('caja_proyecto as cp', 'cp.id_caja_proyecto', '=', 'detalle_caja_proyecto.id_caja_proyecto')
             ->join('proyecto as p', 'p.id_proyecto', '=', 'cp.id_proyecto')
             ->join('detalle_cliente as c', 'c.id_cliente', '=', 'p.id_cliente')
