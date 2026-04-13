@@ -70,7 +70,7 @@ class InventarioRecepcionController extends Controller
                 ->when($request->variedad != '', function ($query) use ($request) {
                     return $query->where('i.id_variedad', $request->variedad);
                 })
-                ->orderBy('i.fecha')
+                ->orderBy('v.nombre')
                 ->get();
             $listado[] = [
                 'planta' => $pta,
