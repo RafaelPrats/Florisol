@@ -38,8 +38,6 @@ class IngresoCajasController extends Controller
         try {
             DB::beginTransaction();
 
-            $variedades_faltantes = [];
-            //return response()->json($request->all());
             $model_api = new ApiStoreCajas();
             $model_api->documento = $request->id_documento;
             $model_api->fecha = $request->fecha;
@@ -48,6 +46,7 @@ class IngresoCajasController extends Controller
                 ->select(DB::raw('max(id_api_store_cajas) as id'))
                 ->get()[0]->id;
 
+            $variedades_faltantes = [];
             foreach ($request->cajas as $caja) {
                 $id_empresa = $caja['destino'] == 1 ? 1 : 2;
                 $empresa = ConfiguracionEmpresa::find($id_empresa);
