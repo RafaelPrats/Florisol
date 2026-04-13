@@ -68,15 +68,9 @@ class ProyectoController extends Controller
             ->where('c.id_empresa', $finca)
             ->get()->pluck('segmento')->toArray();
         $datos_exportacion = DatosExportacion::where('estado', 1)->get();
-        $recetas = Variedad::where('estado', 1)
-            ->where('receta', 1)
-            ->where('id_empresa', $finca)
-            ->orderBy('nombre')
-            ->get();
         return view('adminlte.gestion.comercializacion.proyectos.forms.add_proyecto', [
             'segmentos' => $segmentos,
             'datos_exportacion' => $datos_exportacion,
-            'recetas' => $recetas,
         ]);
     }
 
@@ -112,6 +106,23 @@ class ProyectoController extends Controller
 
     public function seleccionar_cliente(Request $request)
     {
+        $variedades = DB::table('especificaciones as e')
+            ->join('variedad as v', 'v.id_variedad', '=', 'e.id_variedad')
+            ->select('v.nombre', 'e.id_variedad')->distinct()
+            ->where('e.id_cliente', $request->cliente)
+            ->orderBy('v.nombre')
+            ->get();
+        if (count($variedades) == 0) {
+            $variedades = Variedad::where('estado', 1)
+                //->where('receta', 1)
+                ->orderBy('nombre')
+                ->get();
+        }
+        $options_variedades = '<option>Seleccione...</option>';
+        foreach ($variedades as $var) {
+            $options_variedades .= '<option value="' . $var->id_variedad . '">' . $var->nombre . '</option>';
+        }
+
         $consignatarios = DB::table('cliente_consignatario as cc')
             ->join('consignatario as c', 'c.id_consignatario', '=', 'cc.id_consignatario')
             ->select('c.nombre', 'cc.id_consignatario')->distinct()
@@ -147,18 +158,25 @@ class ProyectoController extends Controller
         return [
             'options_consignatario' => $options_consignatario,
             'options_agencia' => $options_agencia,
+            'options_variedades' => $options_variedades,
         ];
     }
 
     public function form_combos_seleccionar_receta(Request $request)
     {
+        $especificacion = DB::table('especificaciones')
+            ->where('id_cliente', $request->cliente)
+            ->where('id_variedad', $request->receta)
+            ->first();
         $tallos_x_ramo = DB::table('detalle_receta')
             ->select(DB::raw('sum(unidades) as cantidad'))
             ->where('id_variedad', $request->receta)
             ->get()[0]->cantidad;
+        $inventario = getTotalInventarioByVariedad($request->receta);
         return [
-            'longitud' => '',
-            'tallos_x_ramos' => $tallos_x_ramo,
+            'especificacion' => $especificacion,
+            'tallos_x_ramo' => $tallos_x_ramo,
+            'inventario' => $inventario,
         ];
     }
 
@@ -205,13 +223,27 @@ class ProyectoController extends Controller
     {
         $proyecto = Proyecto::find($request->id);
         $datos_exportacion = DatosExportacion::where('estado', 1)->get();
-        $recetas = Variedad::where('estado', 1)
-            ->where('receta', 1)
-            ->orderBy('nombre')
+
+        $query_variedades = DB::table('especificaciones as e')
+            ->join('variedad as v', 'v.id_variedad', '=', 'e.id_variedad')
+            ->select('v.nombre', 'e.id_variedad')->distinct()
+            ->where('e.id_cliente', $proyecto->id_cliente)
+            ->orderBy('v.nombre')
             ->get();
+        if (count($query_variedades) == 0) {
+            $query_variedades = Variedad::where('estado', 1)
+                //->where('receta', 1)
+                ->orderBy('nombre')
+                ->get();
+        }
+        $options_variedades = '<option>Seleccione...</option>';
+        foreach ($query_variedades as $var) {
+            $options_variedades .= '<option value="' . $var->id_variedad . '">' . $var->nombre . '</option>';
+        }
         return view('adminlte.gestion.comercializacion.proyectos.forms.editar_proyecto', [
             'datos_exportacion' => $datos_exportacion,
-            'recetas' => $recetas,
+            'variedades' => $query_variedades,
+            'options_variedades' => $options_variedades,
             'proyecto' => $proyecto,
         ]);
     }
@@ -284,7 +316,7 @@ class ProyectoController extends Controller
                         }
                     } elseif ($isCambioReceta) {
                         DB::select('delete from distribucion_receta where id_detalle_caja_proyecto = ' . $detalle->id_detalle_caja_proyecto);
-                        
+
                         $getDetallesReceta = Variedad::find($detalle->id_variedad)->getDetallesReceta();
                         foreach ($getDetallesReceta as $det_receta) {
                             $dist_receta = new DistribucionReceta();

@@ -166,7 +166,7 @@
 
 <script>
     setTimeout(() => {
-        $("#form_cliente, #form_consignatario, #form_agencia")
+        $("#form_cliente, #form_consignatario, #form_agencia, #form_combos_receta_1")
             .select2({
                 dropdownParent: $('#div_modal-modal_add_proyecto')
             });
@@ -222,10 +222,14 @@
             _token: '{{ csrf_token() }}',
             cliente: $('#form_cliente').val(),
         }
+        $('#btn_add_detalle_combo').addClass('hidden');
         $.LoadingOverlay('show');
         $.post('{{ url('proyectos/seleccionar_cliente') }}', datos, function(retorno) {
             $('#form_consignatario').html(retorno.options_consignatario);
             $('#form_agencia').html(retorno.options_agencia);
+            $('.select_variedades').html(retorno.options_variedades);
+            if (datos['cliente'] != '')
+                $('#btn_add_detalle_combo').removeClass('hidden');
         }, 'json').fail(function(retorno) {
             console.log(retorno);
             alerta_errores(retorno.responseText);

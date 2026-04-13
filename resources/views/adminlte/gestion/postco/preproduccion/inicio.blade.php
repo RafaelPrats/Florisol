@@ -38,10 +38,20 @@
                 <td>
                     <div class="input-group">
                         <div class="input-group-addon span-input-group-yura-fixed bg-yura_dark">
-                            Fecha de trabajo
+                            Fecha
                         </div>
-                        <input type="date" id="fecha_filtro" class="form-control"
-                            value="{{ hoy() }}">
+                        <input type="date" id="fecha_filtro" class="form-control" value="{{ hoy() }}">
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <div class="input-group-addon bg-yura_dark">
+                            Tipo
+                        </div>
+                        <select id="tipo_filtro" class="form-control" onchange="listar_reporte()" style="width: 100%">
+                            <option value="R">Recetas</option>
+                            <option value="F">Flores</option>
+                        </select>
                     </div>
                 </td>
                 <td>
@@ -62,7 +72,7 @@
                         <div class="input-group-addon bg-yura_dark">
                             Desde
                         </div>
-                        <input type="date" id="desde_filtro" class="form-control" value="{{hoy()}}">
+                        <input type="date" id="desde_filtro" class="form-control" value="{{ hoy() }}">
                     </div>
                 </td>
                 <td>
@@ -70,14 +80,15 @@
                         <div class="input-group-addon bg-yura_dark">
                             Hasta
                         </div>
-                        <input type="date" id="hasta_filtro" class="form-control" value="{{opDiasFecha('+', 7, hoy())}}">
+                        <input type="date" id="hasta_filtro" class="form-control"
+                            value="{{ opDiasFecha('+', 7, hoy()) }}">
                         <div class="input-group-btn">
                             <button class="btn btn-yura_primary" onclick="listar_reporte()">
                                 <i class="fa fa-fw fa-search"></i>
                             </button>
-                            <button class="btn btn-yura_default" onclick="exportar_reporte()">
+                            {{-- <button class="btn btn-yura_default" onclick="exportar_reporte()">
                                 <i class="fa fa-fw fa-file-excel-o"></i>
-                            </button>
+                            </button> --}}
                         </div>
                     </div>
                 </td>

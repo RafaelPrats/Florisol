@@ -6,7 +6,7 @@
                 PIEZAS
             </th>
             <th class="text-center th_yura_green" style="min-width: 160px">
-                BQT
+                ITEM
             </th>
             <th class="text-center th_yura_green" style="min-width: 30px">
                 TIPO CAJA

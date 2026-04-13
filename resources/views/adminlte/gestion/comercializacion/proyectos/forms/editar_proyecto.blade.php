@@ -23,8 +23,9 @@
                     <span class="input-group-addon bg-yura_dark">
                         Cliente
                     </span>
-                    <input type="text" readonly id="form_cliente" class="form-control"
+                    <input type="text" readonly id="form_nombre_cliente" class="form-control"
                         value="{{ $proyecto->cliente->detalle()->nombre }}">
+                    <input type="hidden" id="form_cliente" value="{{ $proyecto->id_cliente }}">
                 </div>
             </th>
         </tr>
@@ -91,7 +92,7 @@
                         PIEZAS
                     </th>
                     <th class="text-center th_yura_green" style="min-width: 160px">
-                        BQT
+                        ITEM
                     </th>
                     <th class="text-center th_yura_green" style="min-width: 30px">
                         TIPO CAJA
@@ -145,10 +146,10 @@
                             onmouseleave="$('.tr_form_ped_{{ $pos_c + 1 }}').removeClass('bg-yura_dark')">
                             @if ($pos_d == 0)
                                 <td class="text-center" rowspan="{{ count($detalles) }}" style="border-color: #9d9d9d">
-                                    <input type="number" style="width: 100%; color: black" class="text-center"
-                                        onchange="calcular_totales_pedido()" onkeyup="calcular_totales_pedido()"
-                                        id="ped_piezas_{{ $pos_c + 1 }}" min="0"
-                                        value="{{ $caja->cantidad }}">
+                                    <input type="number" style="width: 100%; color: black; height: 34px;"
+                                        class="text-center" onchange="calcular_totales_pedido()"
+                                        onkeyup="calcular_totales_pedido()" id="ped_piezas_{{ $pos_c + 1 }}"
+                                        min="0" value="{{ $caja->cantidad }}">
                                     <input type="hidden" class="pos_ped_especificaciones pos_ped_combo"
                                         value="{{ $pos_c + 1 }}">
                                     <input type="hidden" id="id_caja_proyecto_{{ $pos_c + 1 }}"
@@ -159,8 +160,8 @@
                             @endif
                             <td class="text-center" style="border-color: #9d9d9d">
                                 <select id="ped_receta_{{ $pos_c + 1 }}_{{ $pos_d }}"
-                                    style="width: 100%; color: black; height: 26px;">
-                                    @foreach ($recetas as $rec)
+                                    class="select_variedades" style="width: 100%; color: black; height: 26px;">
+                                    @foreach ($variedades as $rec)
                                         <option value="{{ $rec->id_variedad }}"
                                             {{ $rec->id_variedad == $detalle->id_variedad ? 'selected' : '' }}>
                                             {{ $rec->nombre }}
@@ -175,7 +176,7 @@
                                 <td class="text-center" style="border-color: #9d9d9d"
                                     rowspan="{{ count($detalles) }}">
                                     <select id="ped_tipo_caja_{{ $pos_c + 1 }}"
-                                        style="width: 100%; color: black; height: 26px;">
+                                        style="width: 100%; color: black; height: 34px;">
                                         <option value="FB" {{ $caja->tipo_caja == 'FB' ? 'selected' : '' }}>FB
                                         </option>
                                         <option value="HB" {{ $caja->tipo_caja == 'HB' ? 'selected' : '' }}>HB
@@ -188,7 +189,7 @@
                                 </td>
                             @endif
                             <td class="text-center" style="border-color: #9d9d9d">
-                                <input type="number" style="width: 100%; color: black"
+                                <input type="number" style="width: 100%; color: black; height: 34px;"
                                     class="text-center ramos_x_caja_combo_{{ $pos_c + 1 }}"
                                     onchange="calcular_totales_pedido()" onkeyup="calcular_totales_pedido()"
                                     id="ped_ramos_x_caja_{{ $pos_c + 1 }}_{{ $pos_d }}" min="0"
@@ -197,12 +198,13 @@
                             @if ($pos_d == 0)
                                 <td class="text-center" rowspan="{{ count($detalles) }}"
                                     style="border-color: #9d9d9d">
-                                    <input type="number" style="width: 100%; color: black" class="text-center"
-                                        id="ped_total_ramos_{{ $pos_c + 1 }}" readonly="" disabled="">
+                                    <input type="number" style="width: 100%; color: black; height: 34px;"
+                                        class="text-center" id="ped_total_ramos_{{ $pos_c + 1 }}" readonly=""
+                                        disabled="">
                                 </td>
                             @endif
                             <td class="text-center" style="border-color: #9d9d9d">
-                                <input type="number" style="width: 100%; color: black"
+                                <input type="number" style="width: 100%; color: black; height: 34px;"
                                     class="text-center tallos_x_ramos_combo_{{ $pos_c + 1 }}"
                                     onchange="calcular_totales_pedido()" onkeyup="calcular_totales_pedido()"
                                     id="ped_tallos_x_ramos_{{ $pos_c + 1 }}_{{ $pos_d }}" min="0"
@@ -211,27 +213,29 @@
                             @if ($pos_d == 0)
                                 <td class="text-center" rowspan="{{ count($detalles) }}"
                                     style="border-color: #9d9d9d">
-                                    <input type="number" style="width: 100%; color: black" class="text-center"
-                                        id="ped_total_tallos_{{ $pos_c + 1 }}" readonly="" disabled="">
+                                    <input type="number" style="width: 100%; color: black; height: 34px;"
+                                        class="text-center" id="ped_total_tallos_{{ $pos_c + 1 }}" readonly=""
+                                        disabled="">
                                 </td>
                             @endif
                             <td class="text-center" style="border-color: #9d9d9d">
                                 <input type="number" id="ped_longitud_{{ $pos_c + 1 }}_{{ $pos_d }}"
-                                    class="text-center" style="width: 100%; color: black"
+                                    class="text-center" style="width: 100%; color: black; height: 34px;"
                                     value="{{ $detalle->longitud_ramo }}">
                             </td>
                             <td class="text-center" style="border-color: #9d9d9d">
-                                <input type="number" style="width: 100%; color: black" class="text-center"
-                                    onchange="calcular_totales_pedido()" onkeyup="calcular_totales_pedido()"
+                                <input type="number" style="width: 100%; color: black; height: 34px;"
+                                    class="text-center" onchange="calcular_totales_pedido()"
+                                    onkeyup="calcular_totales_pedido()"
                                     id="ped_precio_esp_{{ $pos_c + 1 }}_{{ $pos_d }}" min="0"
                                     value="{{ $detalle->precio }}">
                             </td>
                             @if ($pos_d == 0)
                                 <td class="text-center" rowspan="{{ count($detalles) }}"
                                     style="border-color: #9d9d9d">
-                                    <input type="text" style="width: 100%; color: black" class="text-center"
-                                        id="ped_total_precio_caja_{{ $pos_c + 1 }}" readonly=""
-                                        disabled="">
+                                    <input type="text" style="width: 100%; color: black; height: 34px;"
+                                        class="text-center" id="ped_total_precio_caja_{{ $pos_c + 1 }}"
+                                        readonly="" disabled="">
                                 </td>
                                 @foreach ($datos_exportacion as $m)
                                     @php
@@ -244,8 +248,8 @@
                                     @endphp
                                     <td class="text-center" style="border-color: #9d9d9d"
                                         rowspan="{{ count($detalles) }}">
-                                        <input type="text" style="width: 100%; color: black" class="text-center"
-                                            value="{{ $valor_marcacion }}"
+                                        <input type="text" style="width: 100%; color: black; height: 34px;"
+                                            class="text-center" value="{{ $valor_marcacion }}"
                                             id="ped_marcacion_{{ $m->id_dato_exportacion }}_{{ $pos_c + 1 }}">
                                     </td>
                                 @endforeach
@@ -320,6 +324,16 @@
 </div>
 
 <script>
+    setTimeout(() => {
+        $(".select_variedades")
+            .select2({
+                dropdownParent: $('#div_modal-modal_add_proyecto')
+            });
+        $('.select2-container').css('width', '100%');
+        $('.select2-selection').css('height', '34px');
+        $('#btn_add_detalle_combo').removeClass('hidden');
+    }, 500);
+
     form_cant_detalles = {{ count($proyecto->cajas) }};
     calcular_totales_pedido();
 
@@ -348,6 +362,9 @@
         $.post('{{ url('proyectos/seleccionar_cliente') }}', datos, function(retorno) {
             $('#form_consignatario').html(retorno.options_consignatario);
             $('#form_agencia').html(retorno.options_agencia);
+            $('.select_variedades').html(retorno.options_variedades);
+            if (datos['cliente'] != '')
+                $('#btn_add_detalle_combo').removeClass('hidden');
         }, 'json').fail(function(retorno) {
             console.log(retorno);
             alerta_errores(retorno.responseText);

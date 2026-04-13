@@ -49,52 +49,109 @@ class PreproduccionController extends Controller
 
     public function listar_reporte(Request $request)
     {
-        $fechas = DB::table('proyecto as p')
-            ->join('caja_proyecto as cp', 'cp.id_proyecto', '=', 'p.id_proyecto')
-            ->join('detalle_caja_proyecto as dc', 'dc.id_caja_proyecto', '=', 'cp.id_caja_proyecto')
-            ->select('p.fecha')->distinct()
-            ->where('p.fecha', '>=', $request->desde)
-            ->where('p.fecha', '<=', $request->hasta);
-        if ($request->variedad != 'T')
-            $fechas = $fechas->where('dc.id_variedad', $request->variedad);
-        $fechas = $fechas->orderBy('p.fecha')->get()->pluck('fecha')->toArray();
-
-        $recetas = DB::table('proyecto as p')
-            ->join('caja_proyecto as cp', 'cp.id_proyecto', '=', 'p.id_proyecto')
-            ->join('detalle_caja_proyecto as dc', 'dc.id_caja_proyecto', '=', 'cp.id_caja_proyecto')
-            ->join('variedad as v', 'v.id_variedad', '=', 'dc.id_variedad')
-            ->select('dc.id_variedad', 'v.nombre', 'dc.longitud_ramo')->distinct()
-            ->where('p.fecha', '>=', $request->desde)
-            ->where('p.fecha', '<=', $request->hasta);
-        if ($request->variedad != 'T')
-            $recetas = $recetas->where('dc.id_variedad', $request->variedad);
-        $recetas = $recetas->orderBy('v.nombre')
-            ->get();
-
-        $listado = [];
-        foreach ($recetas as $receta) {
-            $valores = DB::table('proyecto as p')
+        if ($request->tipo == 'R') {
+            $views = 'listado_recetas';
+            $fechas = DB::table('proyecto as p')
                 ->join('caja_proyecto as cp', 'cp.id_proyecto', '=', 'p.id_proyecto')
                 ->join('detalle_caja_proyecto as dc', 'dc.id_caja_proyecto', '=', 'cp.id_caja_proyecto')
-                ->select(
-                    DB::raw('sum(cp.cantidad * dc.ramos_x_caja) as ramos'),
-                    DB::raw('sum(dc.armados) as armados'),
-                    DB::raw('sum(dc.despachados) as despachados'),
-                    'p.fecha'
-                )
-                ->where('dc.id_variedad', $receta->id_variedad)
-                ->where('dc.longitud_ramo', $receta->longitud_ramo)
-                ->whereIn('p.fecha', $fechas)
-                ->orderBy('p.fecha')
-                ->groupBy('p.fecha')
+                ->join('variedad as v', 'v.id_variedad', '=', 'dc.id_variedad')
+                ->select('p.fecha')->distinct()
+                ->where('v.receta', 1)
+                ->where('p.fecha', '>=', $request->desde)
+                ->where('p.fecha', '<=', $request->hasta);
+            if ($request->variedad != 'T')
+                $fechas = $fechas->where('dc.id_variedad', $request->variedad);
+            $fechas = $fechas->orderBy('p.fecha')->get()->pluck('fecha')->toArray();
+
+            $recetas = DB::table('proyecto as p')
+                ->join('caja_proyecto as cp', 'cp.id_proyecto', '=', 'p.id_proyecto')
+                ->join('detalle_caja_proyecto as dc', 'dc.id_caja_proyecto', '=', 'cp.id_caja_proyecto')
+                ->join('variedad as v', 'v.id_variedad', '=', 'dc.id_variedad')
+                ->select('dc.id_variedad', 'v.nombre', 'dc.longitud_ramo')->distinct()
+                ->where('v.receta', 1)
+                ->where('p.fecha', '>=', $request->desde)
+                ->where('p.fecha', '<=', $request->hasta);
+            if ($request->variedad != 'T')
+                $recetas = $recetas->where('dc.id_variedad', $request->variedad);
+            $recetas = $recetas->orderBy('v.nombre')
                 ->get();
-            $listado[] = [
-                'receta' => $receta,
-                'valores' => $valores,
-            ];
+
+            $listado = [];
+            foreach ($recetas as $receta) {
+                $valores = DB::table('proyecto as p')
+                    ->join('caja_proyecto as cp', 'cp.id_proyecto', '=', 'p.id_proyecto')
+                    ->join('detalle_caja_proyecto as dc', 'dc.id_caja_proyecto', '=', 'cp.id_caja_proyecto')
+                    ->select(
+                        DB::raw('sum(cp.cantidad * dc.ramos_x_caja) as ramos'),
+                        DB::raw('sum(dc.armados) as armados'),
+                        DB::raw('sum(dc.despachados) as despachados'),
+                        'p.fecha'
+                    )
+                    ->where('dc.id_variedad', $receta->id_variedad)
+                    ->where('dc.longitud_ramo', $receta->longitud_ramo)
+                    ->whereIn('p.fecha', $fechas)
+                    ->orderBy('p.fecha')
+                    ->groupBy('p.fecha')
+                    ->get();
+                $listado[] = [
+                    'receta' => $receta,
+                    'valores' => $valores,
+                ];
+            }
+        } else {
+            $views = 'listado_flores';
+            $fechas = DB::table('proyecto as p')
+                ->join('caja_proyecto as cp', 'cp.id_proyecto', '=', 'p.id_proyecto')
+                ->join('detalle_caja_proyecto as dc', 'dc.id_caja_proyecto', '=', 'cp.id_caja_proyecto')
+                ->join('variedad as v', 'v.id_variedad', '=', 'dc.id_variedad')
+                ->select('p.fecha')->distinct()
+                ->where('v.receta', 0)
+                ->where('p.fecha', '>=', $request->desde)
+                ->where('p.fecha', '<=', $request->hasta);
+            if ($request->variedad != 'T')
+                $fechas = $fechas->where('dc.id_variedad', $request->variedad);
+            $fechas = $fechas->orderBy('p.fecha')->get()->pluck('fecha')->toArray();
+
+            $flores = DB::table('proyecto as p')
+                ->join('caja_proyecto as cp', 'cp.id_proyecto', '=', 'p.id_proyecto')
+                ->join('detalle_caja_proyecto as dc', 'dc.id_caja_proyecto', '=', 'cp.id_caja_proyecto')
+                ->join('variedad as v', 'v.id_variedad', '=', 'dc.id_variedad')
+                ->select(
+                    'dc.id_variedad',
+                    'v.nombre'
+                )->distinct()
+                ->where('v.receta', 0)
+                ->where('p.fecha', '>=', $request->desde)
+                ->where('p.fecha', '<=', $request->hasta);
+            if ($request->variedad != 'T')
+                $flores = $flores->where('dc.id_variedad', $request->variedad);
+            $flores = $flores->orderBy('v.nombre')
+                ->get();
+
+            $listado = [];
+            foreach ($flores as $flor) {
+                $valores = DB::table('proyecto as p')
+                    ->join('caja_proyecto as cp', 'cp.id_proyecto', '=', 'p.id_proyecto')
+                    ->join('detalle_caja_proyecto as dc', 'dc.id_caja_proyecto', '=', 'cp.id_caja_proyecto')
+                    ->select(
+                        DB::raw('sum(cp.cantidad * dc.ramos_x_caja * dc.tallos_x_ramo) as tallos'),
+                        DB::raw('sum(cp.cantidad * dc.ramos_x_caja) as ramos'),
+                        DB::raw('sum(dc.armados) as armados'),
+                        'p.fecha'
+                    )
+                    ->where('dc.id_variedad', $flor->id_variedad)
+                    ->whereIn('p.fecha', $fechas)
+                    ->orderBy('p.fecha')
+                    ->groupBy('p.fecha')
+                    ->get();
+                $listado[] = [
+                    'flor' => $flor,
+                    'valores' => $valores,
+                ];
+            }
         }
 
-        return view('adminlte.gestion.postco.preproduccion.partials.listado', [
+        return view('adminlte.gestion.postco.preproduccion.partials.' . $views, [
             'listado' => $listado,
             'fechas' => $fechas,
         ]);
@@ -996,5 +1053,33 @@ class PreproduccionController extends Controller
             'success' => $success,
             'mensaje' => $msg,
         ];
+    }
+
+    public function modal_flor(Request $request)
+    {
+        $listado = DetalleCajaProyecto::join('caja_proyecto as cp', 'cp.id_caja_proyecto', '=', 'detalle_caja_proyecto.id_caja_proyecto')
+            ->join('proyecto as p', 'p.id_proyecto', '=', 'cp.id_proyecto')
+            ->join('detalle_cliente as c', 'c.id_cliente', '=', 'p.id_cliente')
+            ->select(
+                'detalle_caja_proyecto.id_detalle_caja_proyecto',
+                'detalle_caja_proyecto.longitud_ramo',
+                'detalle_caja_proyecto.tallos_x_ramo',
+                'detalle_caja_proyecto.armados',
+                'p.fecha',
+                'c.nombre as cliente_nombre',
+                DB::raw('cp.cantidad * detalle_caja_proyecto.ramos_x_caja as ramos'),
+                DB::raw('cp.cantidad * detalle_caja_proyecto.ramos_x_caja * detalle_caja_proyecto.tallos_x_ramo as tallos')
+            )->distinct()
+            ->where('detalle_caja_proyecto.id_variedad', $request->variedad)
+            ->where('detalle_caja_proyecto.longitud_ramo', $request->longitud)
+            ->where('c.estado', 1)
+            ->whereIn('p.fecha', json_decode($request->fechas))
+            ->orderBy('p.fecha')
+            ->get();
+        return view('adminlte.gestion.postco.preproduccion.forms.modal_flor', [
+            'listado' => $listado,
+            'receta' => Variedad::find($request->variedad),
+            'longitud' => $request->longitud,
+        ]);
     }
 }

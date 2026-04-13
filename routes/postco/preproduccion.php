@@ -21,3 +21,4 @@ Route::post('preproduccion/update_despachador_oa', 'Postco\PreproduccionControll
 Route::post('preproduccion/eliminar_orden_alistamiento', 'Postco\PreproduccionController@eliminar_orden_alistamiento');
 Route::post('preproduccion/convertir_ot', 'Postco\PreproduccionController@convertir_ot');
 Route::get('preproduccion/buscar_variedades', 'Postco\PreproduccionController@buscar_variedades');
+Route::get('preproduccion/modal_flor', 'Postco\PreproduccionController@modal_flor');

@@ -1,4 +1,4 @@
-<div style="overflow-x: scroll; overflow-y: scroll; height: 700px">
+<div style="overflow-x: scroll; overflow-y: scroll; max-height: 700px">
     <table class="table-bordered" style="width: 100%; border: 1px solid #9d9d9d">
         <tr style="font-size: 0.8em">
             <th class="text-center th_yura_green">
@@ -35,6 +35,10 @@
                 OPCIONES
             </th>
         </tr>
+        @php
+            $resumen_variedad_longitud = [];
+            $resumen_piezas = [];
+        @endphp
         @foreach ($proyectos as $proyecto)
             @php
                 $cant_rows = 0;
@@ -56,8 +60,56 @@
             @foreach ($cajas as $pos_c => $caja)
                 @php
                     $detalles = $caja->detalles;
+
+                    //RESUMEN PIEZAS
+                    $pos_en_resumen = -1;
+                    foreach ($resumen_piezas as $pos => $r) {
+                        if ($r['tipo_caja'] == $caja->tipo_caja) {
+                            $pos_en_resumen = $pos;
+                        }
+                    }
+                    if ($pos_en_resumen != -1) {
+                        $resumen_piezas[$pos_en_resumen]['cantidad'] += $caja->cantidad;
+                    } else {
+                        $resumen_piezas[] = [
+                            'tipo_caja' => $caja->tipo_caja,
+                            'cantidad' => $caja->cantidad,
+                        ];
+                    }
                 @endphp
                 @foreach ($detalles as $pos_d => $detalle)
+                    @php
+                        $variedad = $detalle->variedad;
+                        $tallos = $caja->cantidad * $detalle->ramos_x_caja * $detalle->tallos_x_ramo;
+                        $ramos = $caja->cantidad * $detalle->ramos_x_caja;
+                        $venta = $caja->cantidad * $detalle->ramos_x_caja * $detalle->precio;
+
+                        //RESUMEN VARIEDAD/LONGITUD
+                        $pos_en_resumen = -1;
+                        foreach ($resumen_variedad_longitud as $pos => $r) {
+                            if (
+                                $r['id_variedad'] == $detalle->id_variedad &&
+                                $r['longitud'] == $detalle->longitud_ramo
+                            ) {
+                                $pos_en_resumen = $pos;
+                            }
+                        }
+                        if ($pos_en_resumen != -1) {
+                            $resumen_variedad_longitud[$pos_en_resumen]['tallos'] += $tallos;
+                            $resumen_variedad_longitud[$pos_en_resumen]['ramos'] += $ramos;
+                            $resumen_variedad_longitud[$pos_en_resumen]['venta'] += $venta;
+                        } else {
+                            $resumen_variedad_longitud[] = [
+                                'id_variedad' => $detalle->id_variedad,
+                                'longitud' => $detalle->longitud_ramo,
+                                'nombre_planta' => $variedad->planta->nombre,
+                                'nombre_variedad' => $variedad->nombre,
+                                'tallos' => $tallos,
+                                'ramos' => $ramos,
+                                'venta' => $venta,
+                            ];
+                        }
+                    @endphp
                     <tr class="tr_pedido_{{ $proyecto->id_proyecto }}" style="font-size: 0.9em"
                         onmouseover="$('.tr_pedido_{{ $proyecto->id_proyecto }}').css('background-color', 'cyan')"
                         onmouseleave="$('.tr_pedido_{{ $proyecto->id_proyecto }}').css('background-color', '')">
@@ -97,7 +149,7 @@
                             </th>
                         @endif
                         <th class="text-center" style="border-color: #9d9d9d">
-                            {{ $detalle->variedad->nombre }}
+                            {{ $variedad->nombre }}
                         </th>
                         <th class="text-center" style="border-color: #9d9d9d">
                             {{ $detalle->ramos_x_caja }}
@@ -121,7 +173,7 @@
                         @if ($pos_d == 0 && $pos_c == 0)
                             <th class="text-center" style="border-color: #9d9d9d" rowspan="{{ $cant_rows }}">
                                 <div class="input-group-btn">
-                                    <button type="button" class="btn btn-yura_default btn-xs dropdown-toggle"
+                                    <button type="button" class="btn btn-yura_default btn-xs dropdown-toggle btn-block"
                                         data-toggle="dropdown" aria-expanded="true">
                                         Acciones <span class="fa fa-caret-down"></span>
                                     </button>
@@ -169,13 +221,128 @@
     </table>
 </div>
 
+<legend class="text-center" style="margin-bottom: 5px; font-size: 1.1em">
+    RESUMEN
+</legend>
+<div style="overflow-x: scroll">
+    <table style="width: 100%; font-size: 0.9em">
+        <tbody>
+            <tr>
+                <td style="vertical-align: top; width: 85%; min-width: 420px" class="padding_lateral_5">
+                    <table class="table-bordered" style="width: 100%; border: 1px solid #9d9d9d">
+                        <tbody>
+                            <tr>
+                                <th class="padding_lateral_5 th_yura_green" colspan="2">
+                                    VARIEDAD-LONGNITUD
+                                </th>
+                                <th class="padding_lateral_5 th_yura_green padding_lateral_5">
+                                    TALLOS
+                                </th>
+                                <th class="padding_lateral_5 th_yura_green padding_lateral_5">
+                                    RAMOS
+                                </th>
+                                <th class="padding_lateral_5 th_yura_green padding_lateral_5">
+                                    MONTO
+                                </th>
+                            </tr>
+                            @php
+                                $total_tallos = 0;
+                                $total_ramos = 0;
+                                $total_monto = 0;
+                            @endphp
+                            @foreach ($resumen_variedad_longitud as $item)
+                                @php
+                                    $total_tallos += $item['tallos'];
+                                    $total_ramos += $item['ramos'];
+                                    $total_monto += $item['venta'];
+                                @endphp
+                                <tr onmouseover="$(this).addClass('bg-yura_dark')"
+                                    onmouseleave="$(this).removeClass('bg-yura_dark')" class="">
+                                    <th class="padding_lateral_5" style="border-color: #9d9d9d;">
+                                        {{ $item['nombre_planta'] }}
+                                    </th>
+                                    <th class="padding_lateral_5" style="border-color: #9d9d9d; width: 25%">
+                                        {{ $item['nombre_variedad'] }} {{ $item['longitud'] }}cm
+                                    </th>
+                                    <th class="padding_lateral_5" style="border-color: #9d9d9d">
+                                        {{ $item['tallos'] }}
+                                    </th>
+                                    <th class="padding_lateral_5" style="border-color: #9d9d9d">
+                                        {{ $item['ramos'] }}
+                                    </th>
+                                    <th class="padding_lateral_5" style="border-color: #9d9d9d">
+                                        ${{ round($item['venta'], 2) }}
+                                    </th>
+                                </tr>
+                            @endforeach
+                            <tr>
+                                <th class="padding_lateral_5 th_yura_green" colspan="2">
+                                    TOTALES
+                                </th>
+                                <th class="padding_lateral_5 th_yura_green padding_lateral_5">
+                                    {{ $total_tallos }}
+                                </th>
+                                <th class="padding_lateral_5 th_yura_green padding_lateral_5">
+                                    {{ $total_ramos }}
+                                </th>
+                                <th class="padding_lateral_5 th_yura_green padding_lateral_5">
+                                    ${{ round($total_monto, 2) }}
+                                </th>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+                <td style="vertical-align: top;" class="padding_lateral_5">
+                    <table class="table-bordered" style="width: 100%; border: 1px solid #9d9d9d">
+                        <tbody>
+                            <tr>
+                                <th class="text-center th_yura_green">
+                                    PIEZAS
+                                </th>
+                                <th class="text-center th_yura_green padding_lateral_5">
+                                    FULL
+                                </th>
+                            </tr>
+                            @php
+                                $total_piezas = 0;
+                            @endphp
+                            @foreach ($resumen_piezas as $item)
+                                @php
+                                    $total_piezas += $item['cantidad'];
+                                @endphp
+                                <tr onmouseover="$(this).addClass('bg-yura_dark')"
+                                    onmouseleave="$(this).removeClass('bg-yura_dark')" class="">
+                                    <th class="text-center" style="border-color: #9d9d9d">
+                                        {{ $item['tipo_caja'] }}
+                                    </th>
+                                    <th class="text-center" style="border-color: #9d9d9d">
+                                        {{ $item['cantidad'] }}
+                                    </th>
+                                </tr>
+                            @endforeach
+                            <tr>
+                                <th class="text-center th_yura_green">
+                                    TOTALES
+                                </th>
+                                <th class="text-center th_yura_green padding_lateral_5">
+                                    {{ $total_piezas }}
+                                </th>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
 <script>
     function editar_proyecto(id) {
         datos = {
             id: id
         }
         get_jquery('{{ url('proyectos/editar_proyecto') }}', datos, function(retorno) {
-            modal_view('modal_editar_proyecto', retorno, '<i class="fa fa-fw fa-plus"></i> Editar Pedido',
+            modal_view('modal_add_proyecto', retorno, '<i class="fa fa-fw fa-plus"></i> Editar Pedido',
                 true, false, '{{ isPC() ? '95%' : '' }}',
                 function() {});
         })

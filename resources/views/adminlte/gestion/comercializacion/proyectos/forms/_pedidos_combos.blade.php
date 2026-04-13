@@ -6,7 +6,7 @@
                     PIEZAS
                 </th>
                 <th class="text-center th_yura_green" style="min-width: 160px">
-                    BQT
+                    ITEM
                 </th>
                 <th class="text-center th_yura_green" style="min-width: 60px">
                     TIPO CAJA
@@ -41,6 +41,9 @@
                             onkeyup="$('.form_combos_marcacion_{{ $dat_exp->id_dato_exportacion }}').val($(this).val())">
                     </th>
                 @endforeach
+                <th class="text-center th_yura_green" style="min-width: 60px">
+                    INVENTARIO
+                </th>
                 <th class="text-center th_yura_green col_fija_right_0" style="min-width: 40px">
                 </th>
             </tr>
@@ -48,23 +51,22 @@
         <tbody id="table_form_combos">
             <tr>
                 <td class="text-center" style="border-color: #9d9d9d" id="td_piezas_combos">
-                    <input type="number" style="width: 100%" class="text-center" id="form_combos_piezas"
+                    <input type="number" style="width: 100%; height: 34px;" class="text-center" id="form_combos_piezas"
                         onchange="calcular_totales_form_combos()" onkeyup="calcular_totales_form_combos()">
                 </td>
                 <td class="text-center" style="border-color: #9d9d9d">
-                    <select style="width: 100%; height: 24px;" id="form_combos_receta_1"
+                    <select style="width: 100%; height: 34px;" class="select_variedades" id="form_combos_receta_1"
                         onchange="form_combos_seleccionar_receta(1)">
-                        <option value="">Seleccione...</option>
-                        @foreach ($recetas as $rec)
-                            <option value="{{ $rec->id_variedad }}">
-                                {{ $rec->nombre }}
-                            </option>
-                        @endforeach
+                        @if (isset($options_variedades))
+                            {!! $options_variedades !!}
+                        @else
+                            <option value="">Seleccione...</option>
+                        @endif
                     </select>
                     <input type="hidden" class="form_num_detalle_combos" value="1">
                 </td>
                 <td class="text-center" style="border-color: #9d9d9d" id="td_cajas_combos">
-                    <select style="width: 100%; height: 24px;" id="form_combos_tipo_caja">
+                    <select style="width: 100%; height: 34px;" id="form_combos_tipo_caja">
                         <option value="FB">FB</option>
                         <option value="HB">HB</option>
                         <option value="QB">QB</option>
@@ -72,39 +74,46 @@
                     </select>
                 </td>
                 <td class="text-center" style="border-color: #9d9d9d">
-                    <input type="number" style="width: 100%" class="text-center" id="form_combos_ramos_x_caja_1"
-                        onchange="calcular_totales_form_combos()" onkeyup="calcular_totales_form_combos()"
-                        value="1">
+                    <input type="number" style="width: 100%; height: 34px;" class="text-center"
+                        id="form_combos_ramos_x_caja_1" onchange="calcular_totales_form_combos()"
+                        onkeyup="calcular_totales_form_combos()" value="1">
                 </td>
                 <td class="text-center" style="border-color: #9d9d9d" id="td_total_ramos_combos">
-                    <input type="number" style="width: 100%" class="text-center" id="form_combos_total_ramos"
-                        readonly="" disabled="">
+                    <input type="number" style="width: 100%; height: 34px;" class="text-center"
+                        id="form_combos_total_ramos" readonly="" disabled="">
                 </td>
                 <td class="text-center" style="border-color: #9d9d9d">
-                    <input type="number" style="width: 100%" class="text-center" id="form_combos_tallos_x_ramos_1"
-                        onchange="calcular_totales_form_combos()" onkeyup="calcular_totales_form_combos()">
+                    <input type="number" style="width: 100%; height: 34px;" class="text-center"
+                        id="form_combos_tallos_x_ramos_1" onchange="calcular_totales_form_combos()"
+                        onkeyup="calcular_totales_form_combos()">
                 </td>
                 <td class="text-center" style="border-color: #9d9d9d" id="td_total_tallos_combos">
-                    <input type="number" style="width: 100%" class="text-center" id="form_combos_total_tallos"
-                        readonly="" disabled="">
+                    <input type="number" style="width: 100%; height: 34px;" class="text-center"
+                        id="form_combos_total_tallos" readonly="" disabled="">
                 </td>
                 <td class="text-center" style="border-color: #9d9d9d">
-                    <input type="number" style="width: 100%" class="text-center" id="form_combos_longitud_1">
+                    <input type="number" style="width: 100%; height: 34px;" class="text-center"
+                        id="form_combos_longitud_1">
                 </td>
                 <td class="text-center" style="border-color: #9d9d9d">
-                    <input type="number" style="width: 100%" class="text-center form_combos_precio"
+                    <input type="number" style="width: 100%; height: 34px;" class="text-center form_combos_precio"
                         id="form_combos_precio_1">
                 </td>
                 @foreach ($datos_exportacion as $dat_exp)
                     <td class="text-center" style="border-color: #9d9d9d"
                         id="td_form_combos_marcacion_{{ $dat_exp->id_dato_exportacion }}">
-                        <input type="text" style="width: 100%; color: black"
+                        <input type="text" style="width: 100%; height: 34px; color: black"
                             class="text-center form_combos_marcacion_{{ $dat_exp->id_dato_exportacion }}"
                             id="form_combos_marcacion_{{ $dat_exp->id_dato_exportacion }}">
                     </td>
                 @endforeach
+                <td class="text-center" style="border-color: #9d9d9d">
+                    <input type="number" style="width: 100%; height: 34px;" class="text-center" readonly
+                        id="form_combos_inventario_1">
+                </td>
                 <td class="text-center col_fija_right_0 bg-yura_dark" style="border-color: #9d9d9d">
-                    <button type="button" class="btn btn-xs btn-yura_default" onclick="form_add_detalle_combos()">
+                    <button type="button" class="btn btn-xs btn-yura_default hidden"
+                        onclick="form_add_detalle_combos()" id="btn_add_detalle_combo">
                         <i class="fa fa-fw fa-plus"></i>
                     </button>
                 </td>
@@ -137,12 +146,20 @@
         datos = {
             _token: '{{ csrf_token() }}',
             receta: $('#form_combos_receta_' + num_combo).val(),
+            cliente: $('#form_cliente').val(),
         }
         if (datos['receta'] != '') {
             $.LoadingOverlay('show');
             $.post('{{ url('proyectos/form_combos_seleccionar_receta') }}', datos, function(retorno) {
-                $('#form_combos_longitud_' + num_combo).val(retorno.longitud);
-                $('#form_combos_tallos_x_ramos_' + num_combo).val(retorno.tallos_x_ramos);
+                if (retorno.especificacion != null) {
+                    $('#form_combos_tipo_caja').val(retorno.especificacion.tipo_caja);
+                    $('#form_combos_ramos_x_caja_' + num_combo).val(retorno.especificacion.ramos_x_caja);
+                    $('#form_combos_tallos_x_ramos_' + num_combo).val(retorno.especificacion.tallos_x_ramo);
+                    $('#form_combos_longitud_' + num_combo).val(retorno.especificacion.longitud);
+                } else {
+                    $('#form_combos_tallos_x_ramos_' + num_combo).val(retorno.tallos_x_ramo);
+                }
+                $('#form_combos_inventario_' + num_combo).val(retorno.inventario);
                 calcular_totales_form_combos();
             }, 'json').fail(function(retorno) {
                 console.log(retorno);
@@ -162,28 +179,29 @@
 
         $('#table_form_combos').append('<tr id="tr_form_combos_' + form_combos_cant_detalles + '">' +
             '<td class="text-center" style="border-color: #9d9d9d" id="td_piezas_combos">' +
-            '<select style="width: 100%; height: 24px;" id="form_combos_receta_' + form_combos_cant_detalles +
+            '<select style="width: 100%; height: 34px;" class="select_variedades" id="form_combos_receta_' +
+            form_combos_cant_detalles +
             '" onchange="form_combos_seleccionar_receta(' + form_combos_cant_detalles + ')">' +
             select_receta_combos +
             '</select>' +
             '<input type="hidden" class="form_num_detalle_combos" value="' + form_combos_cant_detalles + '">' +
             '</td>' +
             '<td class="text-center" style="border-color: #9d9d9d">' +
-            '<input type="number" style="width: 100%" class="text-center" id="form_combos_ramos_x_caja_' +
+            '<input type="number" style="width: 100%; height: 34px;" class="text-center" id="form_combos_ramos_x_caja_' +
             form_combos_cant_detalles +
             '" onchange="calcular_totales_form_combos()" onkeyup="calcular_totales_form_combos()" value="1">' +
             '</td>' +
             '<td class="text-center" style="border-color: #9d9d9d">' +
-            '<input type="number" style="width: 100%" class="text-center" id="form_combos_tallos_x_ramos_' +
+            '<input type="number" style="width: 100%; height: 34px;" class="text-center" id="form_combos_tallos_x_ramos_' +
             form_combos_cant_detalles +
             '" onchange="calcular_totales_form_combos()" onkeyup="calcular_totales_form_combos()">' +
             '</td>' +
             '<td class="text-center" style="border-color: #9d9d9d">' +
-            '<input type="number" style="width: 100%" class="text-center" id="form_combos_longitud_' +
+            '<input type="number" style="width: 100%; height: 34px;" class="text-center" id="form_combos_longitud_' +
             form_combos_cant_detalles + '">' +
             '</td>' +
             '<td class="text-center" style="border-color: #9d9d9d">' +
-            '<input type="number" style="width: 100%" class="text-center form_combos_precio"' +
+            '<input type="number" style="width: 100%; height: 34px;" class="text-center form_combos_precio"' +
             'id="form_combos_precio_' + form_combos_cant_detalles + '">' +
             '</td>' +
             '<td class="text-center col_fija_right_0" style="border-color: #9d9d9d; background-color: white">' +
@@ -206,6 +224,13 @@
                 id_marcacion).prop('rowspan')) + 1);
         }
         calcular_totales_form_combos();
+
+        $("#form_combos_receta_" + form_combos_cant_detalles)
+            .select2({
+                dropdownParent: $('#div_modal-modal_add_proyecto')
+            });
+        $('.select2-container').css('width', '100%');
+        $('.select2-selection').css('height', '34px');
     }
 
     function form_delete_detalle_combos(pos_combo) {
