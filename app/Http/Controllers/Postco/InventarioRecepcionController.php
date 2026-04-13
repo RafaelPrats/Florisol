@@ -67,6 +67,9 @@ class InventarioRecepcionController extends Controller
                     $query->where('i.disponibles', '>', 0)
                         ->orWhere('da.estado', 'P');
                 })
+                ->when($request->variedad != '', function ($query) use ($request) {
+                    return $query->where('i.id_variedad', $request->variedad);
+                })
                 ->orderBy('i.fecha')
                 ->get();
             $listado[] = [
