@@ -37,6 +37,8 @@ class IngresoCajasController extends Controller
         }
         try {
             DB::beginTransaction();
+
+            $variedades_faltantes = [];
             //return response()->json($request->all());
             $model_api = new ApiStoreCajas();
             $model_api->documento = $request->id_documento;
@@ -84,12 +86,7 @@ class IngresoCajasController extends Controller
                             $det_api->estado = 'P';
                             $det_api->save();
                         } else {
-                            DB::rollBack();
-
-                            return response()->json([
-                                'success' => false,
-                                'message' => 'No se ha encontrado la variedad con codigo: ' . $var['codigo_variedad'] . ' en ' . $empresa->nombre,
-                            ], 422);
+                            $variedades_faltantes[] = $var['codigo_variedad'];
                         }
                     }
                 } else {
@@ -100,6 +97,15 @@ class IngresoCajasController extends Controller
                         'message' => 'Hay cajas vacias',
                     ], 422);
                 }
+            }
+
+            if (count($variedades_faltantes) > 0) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Las siguientes variedades no existen en el sistema: ' . implode(', ', $variedades_faltantes),
+                ], 422);
             }
 
             DB::commit();

@@ -153,12 +153,13 @@
             @endforeach
         </tbody>
         <tr>
-            <th style="border-color: #9d9d9d" colspan="4"></th>
+            <th class="th_yura_green" colspan="4"></th>
             <th style="border-color: #9d9d9d">
                 <button type="button" class="btn btn-xs btn-yura_dark" onclick="recibir_all_pendientes()">
                     <i class="fa fa-fw fa-check"></i> Recibir todo
                 </button>
             </th>
+            <th class="th_yura_green" colspan="3"></th>
         </tr>
     </table>
 </div>
