@@ -53,7 +53,7 @@
                     }
                 @endphp
                 <tr style="background-color: #dddddd" class="mouse-hand"
-                    onclick="$('.tr_planta_{{ $item['planta']->id_planta }}').toggleClass('hidden')">
+                    onclick="$('.tr_planta_{{ $item['planta']->id_planta }}').toggleClass('hidden'); $('.tr_detApi_{{ $var->id_variedad }}').addClass('hidden')">
                     <th class="padding_lateral_5" style="border-color: #9d9d9d" colspan="4">
                         {{ $item['planta']->nombre }} <i class="fa fa-fw fa-caret-down"></i>
                     </th>
@@ -91,8 +91,12 @@
                         <th class="padding_lateral_5" style="border-color: #9d9d9d">
                             {{ $var->fecha }}
                         </th>
-                        <th class="padding_lateral_5" style="border-color: #9d9d9d">
+                        <th class="padding_lateral_5 mouse-hand" style="border-color: #9d9d9d"
+                            onclick="$('.tr_detApi_{{ $var->id_variedad }}').toggleClass('hidden')">
                             {{ $var->nombre }}
+                            @if ($ramos_pendientes > 0)
+                                <i class="fa fa-fw fa-caret-down"></i>
+                            @endif
                         </th>
                         <th class="padding_lateral_5" style="border-color: #9d9d9d">
                             {{ $var->tallos_x_ramo }}
@@ -126,7 +130,7 @@
                         </th>
                     </tr>
                     @foreach ($getDetalleApiStoreCajasByVariedad as $detApi)
-                        <tr class="tr_planta_{{ $item['planta']->id_planta }} hidden">
+                        <tr class="tr_detApi_{{ $var->id_variedad }} hidden">
                             <td class="text-right padding_lateral_5"
                                 style="border-color: #9d9d9d; background-color: #eeeeee" colspan="4">
                                 <input type="checkbox" id="check_detApi_{{ $detApi->id_detalle_api_store_cajas }}"
