@@ -1436,52 +1436,44 @@ class ComandoDev extends Command
 
     function caca()
     {
-        $codigos_latin = DB::table('variedad')
-            ->select('codigo_exportacion')->distinct()
-            ->where('id_empresa', 1)
-            ->where('receta', 0)
-            ->whereNotNull('codigo_exportacion')
-            ->get()->pluck('codigo_exportacion')->toArray();
-        $codigos = DB::table('variedad')
-            ->select('codigo_exportacion')->distinct()
-            ->where('id_empresa', 2)
-            ->where('receta', 0)
-            ->whereNotIn('codigo_exportacion', $codigos_latin)
-            ->get()->pluck('codigo_exportacion')->toArray();
-
-        foreach ($codigos as $pos_c => $codigo) {
-            dump('codigo: ' . ($pos_c + 1) . '/' . count($codigos) . '; ' . $codigo);
-            $variedad = Variedad::where('codigo_exportacion', $codigo)
-                ->where('id_empresa', 1)
-                ->where('receta', 0)
-                ->first();
-            if ($variedad == '') {
-                $var_florisol = Variedad::where('id_empresa', 2)
-                    ->where('receta', 0)
-                    ->where('codigo_exportacion', $codigo)
-                    ->first();
-                $variedad = Variedad::where('id_empresa', 1)
-                    ->where('receta', 0)
-                    ->where('nombre', $var_florisol->nombre)
-                    ->first();
-                if ($variedad != '') {
-                    $variedad->codigo_exportacion = $codigo;
-                    $variedad->save();
-                } else {
-                    $variedad = new Variedad();
-                    $variedad->nombre = $var_florisol->nombre;
-                    $variedad->siglas = $var_florisol->siglas;
-                    $variedad->id_planta = $var_florisol->id_planta;
-                    $variedad->tallos_x_malla = $var_florisol->tallos_x_malla;
-                    $variedad->color = $var_florisol->color;
-                    $variedad->tipo = $var_florisol->tipo;
-                    $variedad->dias_rotacion_recepcion = $var_florisol->dias_rotacion_recepcion;
-                    $variedad->receta = 0;
-                    $variedad->id_empresa = 1;
-                    $variedad->codigo_exportacion = $codigo;
-                    $variedad->codigo_latin = $codigo;
-                    $variedad->save();
+        $plantas_latin = Planta::where('id_empresa', 1)->get();
+        foreach ($plantas_latin as $pta) {
+            foreach ($pta->variedades as $var) {
+                foreach ($var->detalles_receta as $det) {
+                    $det->delete();
                 }
+                $var->delete();
+            }
+            $pta->delete();
+        }
+        $variedades_latin = Variedad::where('id_empresa', 1)->get();
+        foreach($variedades_latin as $var){
+            $var->delete();
+        }
+
+        $plantas_florisol = Planta::where('id_empresa', 2)->get();
+        foreach ($plantas_florisol as $ptaOriginal) {
+            $planta = new Planta();
+            $planta->nombre = $ptaOriginal->nombre;
+            $planta->tipo = $ptaOriginal->tipo;
+            $planta->id_empresa = 1;
+            $planta->save();
+            $planta->id_planta = DB::table('planta')->max('id_planta');
+
+            foreach ($ptaOriginal->variedades->where('receta', 0) as $varOriginal) {
+                $variedad = new Variedad();
+                $variedad->nombre = $varOriginal->nombre;
+                $variedad->siglas = $varOriginal->siglas;
+                $variedad->id_planta = $planta->id_planta;
+                $variedad->tallos_x_malla = $varOriginal->tallos_x_malla;
+                $variedad->color = $varOriginal->color;
+                $variedad->tipo = $varOriginal->tipo;
+                $variedad->dias_rotacion_recepcion = $varOriginal->dias_rotacion_recepcion;
+                $variedad->receta = 0;
+                $variedad->id_empresa = 1;
+                $variedad->codigo_exportacion = $varOriginal->codigo_exportacion;
+                $variedad->codigo_latin = $varOriginal->codigo_latin;
+                $variedad->save();
             }
         }
     }
