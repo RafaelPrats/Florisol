@@ -1448,7 +1448,6 @@ class ComandoDev extends Command
             ->where('receta', 0)
             ->whereNotIn('codigo_exportacion', $codigos_latin)
             ->get()->pluck('codigo_exportacion')->toArray();
-        dd($codigos);
 
         foreach ($codigos as $pos_c => $codigo) {
             dump('codigo: ' . ($pos_c + 1) . '/' . count($codigos) . '; ' . $codigo);
