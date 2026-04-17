@@ -82,7 +82,9 @@
                             $var->id_empresa,
                         );
                         foreach ($getDetalleApiStoreCajasByVariedad as $detApi) {
-                            $ramos_pendientes += $detApi->ramos;
+                            if ($detApi->id_api_store_cajas == $documento || $documento == '') {
+                                $ramos_pendientes += $detApi->ramos;
+                            }
                         }
                     @endphp
                     <tr onmouseover="$(this).css('background-color', 'cyan')"
@@ -130,24 +132,27 @@
                         </th>
                     </tr>
                     @foreach ($getDetalleApiStoreCajasByVariedad as $detApi)
-                        <tr class="tr_detApi_{{ $var->id_variedad }} hidden">
-                            <td class="text-right padding_lateral_5"
-                                style="border-color: #9d9d9d; background-color: #eeeeee" colspan="4">
-                                <input type="checkbox" id="check_detApi_{{ $detApi->id_detalle_api_store_cajas }}"
-                                    data-id_inventario_recepcion="{{ $var->id_inventario_recepcion }}"
-                                    class="ramos_pendiente"
-                                    data-id_detalle_api_store_cajas="{{ $detApi->id_detalle_api_store_cajas }}">
-                                {{ $detApi->documento }}
-                            </td>
-                            <th style="border-color: #9d9d9d">
-                                <input type="number" style="width: 100%; background-color: #b0ffff" class="text-center"
-                                    id="detApi_ramos_pendiente_{{ $detApi->id_detalle_api_store_cajas }}"
-                                    value="{{ $detApi->ramos }}"
-                                    onchange="$('#check_detApi_{{ $detApi->id_detalle_api_store_cajas }}').prop('checked', true)">
-                            </th>
-                            <th style="border-color: #9d9d9d" colspan="3">
-                            </th>
-                        </tr>
+                        @if ($detApi->id_api_store_cajas == $documento || $documento == '')
+                            <tr class="tr_detApi_{{ $var->id_variedad }} hidden">
+                                <td class="text-right padding_lateral_5"
+                                    style="border-color: #9d9d9d; background-color: #eeeeee" colspan="4">
+                                    <input type="checkbox" id="check_detApi_{{ $detApi->id_detalle_api_store_cajas }}"
+                                        data-id_inventario_recepcion="{{ $var->id_inventario_recepcion }}"
+                                        class="ramos_pendiente"
+                                        data-id_detalle_api_store_cajas="{{ $detApi->id_detalle_api_store_cajas }}">
+                                    {{ $detApi->documento }}
+                                </td>
+                                <th style="border-color: #9d9d9d">
+                                    <input type="number" style="width: 100%; background-color: #b0ffff"
+                                        class="text-center"
+                                        id="detApi_ramos_pendiente_{{ $detApi->id_detalle_api_store_cajas }}"
+                                        value="{{ $detApi->ramos }}"
+                                        onchange="$('#check_detApi_{{ $detApi->id_detalle_api_store_cajas }}').prop('checked', true)">
+                                </th>
+                                <th style="border-color: #9d9d9d" colspan="3">
+                                </th>
+                            </tr>
+                        @endif
                     @endforeach
                 @endforeach
             @endforeach

@@ -19,10 +19,18 @@ class InventarioRecepcionController extends Controller
             ->where('id_empresa', $finca)
             ->orderBy('nombre')
             ->get();
+        $documentos = DB::table('api_store_cajas as api')
+            ->join('detalle_api_store_cajas as detApi', 'detApi.id_api_store_cajas', '=', 'api.id_api_store_cajas')
+            ->select('api.*')
+            ->distinct()
+            ->where('detApi.id_empresa', $finca)
+            ->where('detApi.estado', 'P')
+            ->get();
         return view('adminlte.gestion.postco.ingreso_inventario.inicio', [
             'url' => $request->getRequestUri(),
             'submenu' => Submenu::Where('url', '=', substr($request->getRequestUri(), 1))->get()[0],
             'plantas' => $plantas,
+            'documentos' => $documentos,
         ]);
     }
 
@@ -32,7 +40,7 @@ class InventarioRecepcionController extends Controller
         $plantas = DB::table('inventario_recepcion as i')
             ->join('variedad as v', 'v.id_variedad', '=', 'i.id_variedad')
             ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
-            ->leftJoin('detalle_api_store_cajas as da', function ($join) use ($finca) {
+            ->leftJoin('detalle_api_store_cajas as da', function ($join) use ($finca, $request) {
                 $join->on('da.id_variedad', '=', 'i.id_variedad')
                     ->where('da.id_empresa', '=', $finca);
             })
@@ -52,7 +60,7 @@ class InventarioRecepcionController extends Controller
         foreach ($plantas as $pta) {
             $variedades = DB::table('inventario_recepcion as i')
                 ->join('variedad as v', 'v.id_variedad', '=', 'i.id_variedad')
-                ->leftJoin('detalle_api_store_cajas as da', function ($join) use ($finca) {
+                ->leftJoin('detalle_api_store_cajas as da', function ($join) use ($finca, $request) {
                     $join->on('da.id_variedad', '=', 'i.id_variedad')
                         ->where('da.id_empresa', '=', $finca);
                 })
@@ -80,6 +88,7 @@ class InventarioRecepcionController extends Controller
 
         return view('adminlte.gestion.postco.ingreso_inventario.partials.listado', [
             'listado' => $listado,
+            'documento' => $request->documento,
         ]);
     }
 

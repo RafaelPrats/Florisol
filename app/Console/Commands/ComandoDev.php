@@ -1436,10 +1436,54 @@ class ComandoDev extends Command
 
     function caca()
     {
-        $variedades = Variedad::where('nombre', 'like', '% X %')->get();
-        foreach ($variedades as $var) {
-            $var->nombre = explode(' X ', $var->nombre)[0];
-            $var->save();
+        $codigos_latin = DB::table('variedad')
+            ->select('codigo_exportacion')->distinct()
+            ->where('id_empresa', 1)
+            ->where('receta', 0)
+            ->whereNotNull('codigo_exportacion')
+            ->get()->pluck('codigo_exportacion')->toArray();
+        $codigos = DB::table('variedad')
+            ->select('codigo_exportacion')->distinct()
+            ->where('id_empresa', 2)
+            ->where('receta', 0)
+            ->whereNotIn('codigo_exportacion', $codigos_latin)
+            ->get()->pluck('codigo_exportacion')->toArray();
+        dd($codigos);
+
+        foreach ($codigos as $pos_c => $codigo) {
+            dump('codigo: ' . ($pos_c + 1) . '/' . count($codigos) . '; ' . $codigo);
+            $variedad = Variedad::where('codigo_exportacion', $codigo)
+                ->where('id_empresa', 1)
+                ->where('receta', 0)
+                ->first();
+            if ($variedad == '') {
+                $var_florisol = Variedad::where('id_empresa', 2)
+                    ->where('receta', 0)
+                    ->where('codigo_exportacion', $codigo)
+                    ->first();
+                $variedad = Variedad::where('id_empresa', 1)
+                    ->where('receta', 0)
+                    ->where('nombre', $var_florisol->nombre)
+                    ->first();
+                if ($variedad != '') {
+                    $variedad->codigo_exportacion = $codigo;
+                    $variedad->save();
+                } else {
+                    $variedad = new Variedad();
+                    $variedad->nombre = $var_florisol->nombre;
+                    $variedad->siglas = $var_florisol->siglas;
+                    $variedad->id_planta = $var_florisol->id_planta;
+                    $variedad->tallos_x_malla = $var_florisol->tallos_x_malla;
+                    $variedad->color = $var_florisol->color;
+                    $variedad->tipo = $var_florisol->tipo;
+                    $variedad->dias_rotacion_recepcion = $var_florisol->dias_rotacion_recepcion;
+                    $variedad->receta = 0;
+                    $variedad->id_empresa = 1;
+                    $variedad->codigo_exportacion = $codigo;
+                    $variedad->codigo_latin = $codigo;
+                    $variedad->save();
+                }
+            }
         }
     }
 }

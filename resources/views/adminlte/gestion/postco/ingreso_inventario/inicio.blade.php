@@ -61,6 +61,19 @@
                 <td>
                     <div class="input-group">
                         <div class="input-group-addon bg-yura_dark">
+                            Documento
+                        </div>
+                        <select name="documento_filtro" id="documento_filtro" class="form-control" style="width: 100%">
+                            <option value="">Todos los Documentos</option>
+                            @foreach ($documentos as $d)
+                                <option value="{{ $d->id_api_store_cajas }}">{{ $d->documento }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <div class="input-group-addon bg-yura_dark">
                             Fecha
                         </div>
                         <input type="date" name="fecha_filtro" id="fecha_filtro" class="form-control"
