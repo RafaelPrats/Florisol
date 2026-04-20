@@ -118,7 +118,7 @@
                                     @if ($ramos_pendientes > 0)
                                         <input type="number" style="width: 100%; background-color: #b0ffff"
                                             class="text-center"
-                                            id="ramos_pendiente_{{ $var->id_inventario_recepcion }}" readonly
+                                            id="ramos_pendiente_{{ $var->id_inventario_recepcion }}"
                                             value="{{ $ramos_pendientes }}">
                                     @endif
                                 </th>
