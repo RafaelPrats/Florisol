@@ -187,4 +187,58 @@ class InventarioRecepcionController extends Controller
             'mensaje' => $msg,
         ];
     }
+
+    public function update_inventario(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $model = InventarioRecepcion::find($request->id);
+            $model->ramos = $request->ramos_ingresados;
+            $model->disponibles = $request->tallos_disponibles;
+            $model->save();
+
+            $success = true;
+            $msg = 'Se ha <strong>MODIFICADO</strong> el inventario correctamente';
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $success = false;
+            $msg = '<div class="alert alert-danger text-center">' .
+                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
+                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
+                . '</div>';
+        }
+
+        return [
+            'success' => $success,
+            'mensaje' => $msg,
+        ];
+    }
+
+    public function delete_inventario(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $model = InventarioRecepcion::find($request->id);
+            $model->delete();
+
+            $success = true;
+            $msg = 'Se ha <strong>ELIMINADO</strong> el inventario correctamente';
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $success = false;
+            $msg = '<div class="alert alert-danger text-center">' .
+                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
+                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
+                . '</div>';
+        }
+
+        return [
+            'success' => $success,
+            'mensaje' => $msg,
+        ];
+    }
 }

@@ -124,18 +124,22 @@
                                 </th>
                                 <th style="border-color: #9d9d9d">
                                     <input type="number" style="width: 100%" class="text-center"
+                                        id="ramos_ingresados_{{ $var->id_inventario_recepcion }}"
                                         value="{{ $var->ramos }}">
                                 </th>
                                 <th style="border-color: #9d9d9d">
                                     <input type="number" style="width: 100%" class="text-center"
+                                        id="tallos_disponibles_{{ $var->id_inventario_recepcion }}"
                                         value="{{ $var->disponibles }}">
                                 </th>
                                 <th class="text-center" style="border-color: #9d9d9d">
                                     <div class="btn-group">
-                                        <button type="button" class="btn btn-xs btn-yura_warning">
+                                        <button type="button" class="btn btn-xs btn-yura_warning"
+                                            onclick="update_inventario('{{ $var->id_inventario_recepcion }}')">
                                             <i class="fa fa-fw fa-edit"></i>
                                         </button>
-                                        <button type="button" class="btn btn-xs btn-yura_danger">
+                                        <button type="button" class="btn btn-xs btn-yura_danger"
+                                            onclick="delete_inventario('{{ $var->id_inventario_recepcion }}')">
                                             <i class="fa fa-fw fa-trash"></i>
                                         </button>
                                     </div>
@@ -201,33 +205,26 @@
         })
     }
 
-    function update_flor_nacional(id) {
+    function update_inventario(id) {
         datos = {
             _token: '{{ csrf_token() }}',
             id: id,
-            fecha: $('#edit_fecha_' + id).val(),
-            motivo: $('#edit_motivo_' + id).val(),
-            finca_origen: $('#edit_finca_origen_' + id).val(),
-            produccion: $('#edit_produccion_' + id).val(),
-            porcentaje: parseInt($('#edit_porcentaje_' + id).val()),
-            nacional: $('#edit_nacional_' + id).val(),
+            ramos_ingresados: $('#ramos_ingresados_' + id).val(),
+            tallos_disponibles: $('#tallos_disponibles_' + id).val(),
         }
-        if (datos['fecha'] != '' && datos['motivo'] != '' && datos['finca_origen'] != '' && datos['produccion'] > 0 &&
-            datos['porcentaje'] >= 0 && datos['nacional'] >= 0) {
-            post_jquery_m('{{ url('ingreso_flor_nacional/update_flor_nacional') }}', datos, function() {});
-        }
+        post_jquery_m('{{ url('ingreso_inventario/update_inventario') }}', datos, function() {});
     }
 
-    function delete_flor_nacional(id) {
+    function delete_inventario(id) {
         texto =
-            "<div class='alert alert-warning text-center'><h3><i class='fa fa-fw fa-exclamation-triangle error'></i>¿Esta seguro de <b>ELIMINAR</b> el registro de flor nacional?</h3></div>";
+            "<div class='alert alert-warning text-center'><h3><i class='fa fa-fw fa-exclamation-triangle error'></i>¿Esta seguro de <b>ELIMINAR</b> el inventario?</h3></div>";
 
-        modal_quest('modal_delete_flor_nacional', texto, 'Grabar recetas', true, false, '40%', function() {
+        modal_quest('modal_delete_inventario', texto, 'Eliminar inventario', true, false, '40%', function() {
             datos = {
                 _token: '{{ csrf_token() }}',
                 id: id
             }
-            post_jquery_m('{{ url('ingreso_flor_nacional/delete_flor_nacional') }}', datos, function() {
+            post_jquery_m('{{ url('ingreso_inventario/delete_inventario') }}', datos, function() {
                 cerrar_modals();
                 listar_reporte();
             });
