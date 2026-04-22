@@ -20,6 +20,7 @@
                             'pedidos_ramos' => 0,
                             'pedidos_tallos' => 0,
                             'armados' => 0,
+                            'disponibles' => 0,
                         ];
                     @endphp
                 @endforeach
@@ -75,6 +76,7 @@
                                         $disponibles = $acumulado_inventario;
                                         $acumulado_inventario = 0;
                                     }
+                                    $totales[$pos_f]['disponibles'] += $disponibles;
                                 @endphp
                                 <div class="btn-group">
                                     <button class="btn btn-xs btn-yura_dark" title="Ramos">
@@ -84,7 +86,7 @@
                                         {{ $valor->tallos }}
                                     </button>
                                     <button
-                                        class="btn btn-xs btn-yura_{{ $valor->armados < $valor->ramos ? 'danger' : 'default' }}"
+                                        class="btn btn-xs btn-yura_{{ $valor->armados < $valor->tallos ? 'danger' : 'default' }}"
                                         title="Tallos por armar">
                                         {{ $por_armar }}
                                     </button>
@@ -117,7 +119,6 @@
                 @php
                     $total_armados += $v['armados'];
                     $por_armar = $v['pedidos_tallos'] - $v['armados'];
-                    $disponibles = 0;
                 @endphp
                 <th class="text-center" style="background-color: #eeeeee; border-color: #9d9d9d;">
                     <div class="btn-group">
@@ -132,9 +133,11 @@
                             title="Tallos por armar">
                             {{ $por_armar }}
                         </button>
-                        <button class="btn btn-xs btn-yura_info" title="Disponibles">
-                            {{ $disponibles }}
-                        </button>
+                        @if ($v['disponibles'] > 0)
+                            <button class="btn btn-xs btn-yura_info" title="Disponibles">
+                                {{ $v['disponibles'] }}
+                            </button>
+                        @endif
                     </div>
                 </th>
             @endforeach
@@ -175,7 +178,7 @@
         }
         get_jquery('{{ url('preproduccion/modal_flor') }}', datos, function(retorno) {
             modal_view('modal_modal_flor', retorno, '<i class="fa fa-fw fa-plus"></i> Pedidos de la Flor',
-                true, false, '{{ isPC() ? '75%' : '' }}',
+                true, false, '{{ isPC() ? '65%' : '' }}',
                 function() {});
         })
     }

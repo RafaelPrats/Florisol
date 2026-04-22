@@ -27,6 +27,7 @@ use yura\Modelos\DetalleCajaProyecto;
 use yura\Modelos\DetalleOaPostco;
 use yura\Modelos\DetalleOrdenTrabajo;
 use yura\Modelos\DistribucionReceta;
+use yura\Modelos\InventarioRecepcion;
 use yura\Modelos\OaPostco;
 use yura\Modelos\OrdenTrabajo;
 
@@ -136,7 +137,7 @@ class PreproduccionController extends Controller
                     ->select(
                         DB::raw('sum(cp.cantidad * dc.ramos_x_caja * dc.tallos_x_ramo) as tallos'),
                         DB::raw('sum(cp.cantidad * dc.ramos_x_caja) as ramos'),
-                        DB::raw('sum(dc.armados) as armados'),
+                        DB::raw('sum(dc.armados * dc.tallos_x_ramo) as armados'),
                         'p.fecha'
                     )
                     ->where('dc.id_variedad', $flor->id_variedad)
@@ -882,128 +883,6 @@ class PreproduccionController extends Controller
         ];
     }
 
-    public function store_oa(Request $request)
-    {
-        DB::beginTransaction();
-        try {
-            $postco = Postco::find($request->id);
-            $oa = new OaPostco();
-            $oa->id_postco  = $request->id;
-            $oa->ramos = $request->cantidad;
-            $oa->fecha = $request->fecha;
-            $oa->id_cliente = $request->cliente;
-            $oa->longitud = $request->longitud;
-            $oa->estado = 'P';
-            $oa->save();
-            $oa->id_oa_postco = DB::table('oa_postco')
-                ->select(DB::raw('max(id_oa_postco) as id'))
-                ->get()[0]->id;
-
-            $texto = $postco->id_variedad . ' ' . $postco->longitud . 'cm' . '; fecha = ' . $postco->fecha . ' id_postco = ' . $postco->id_postco;
-            bitacora('OA_POSTCO', $oa->id_oa_postco, 'I', 'PROCESAR OA: (' . $request->cantidad . ') ramos de ' . $texto);
-
-            foreach ($postco->distribuciones as $dist) {
-                $det_ot = new DetalleOaPostco();
-                $det_ot->id_oa_postco = $oa->id_oa_postco;
-                $det_ot->id_item = $dist->id_item;
-                $det_ot->unidades = $dist->unidades;
-                $det_ot->save();
-            }
-
-            DB::commit();
-            $success = true;
-            $msg = 'Se ha <strong>GRABADO</strong> la OA correctamente';
-        } catch (\Exception $e) {
-            DB::rollBack();
-            $success = false;
-            $msg = '<div class="alert alert-danger text-center">' .
-                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
-                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
-                . '</div>';
-        }
-
-        return [
-            'success' => $success,
-            'mensaje' => $msg,
-        ];
-    }
-
-    public function listar_ordenes_alistamiento(Request $request)
-    {
-        $listado = OaPostco::where('id_postco', $request->postco)
-            ->orderBy('id_oa_postco')
-            ->orderBy('longitud')
-            ->get();
-        $despachadores = Despachador::where('estado', 1)
-            ->orderBy('nombre')
-            ->get();
-        return view('adminlte.gestion.postco.preproduccion.forms.listar_ordenes_alistamiento', [
-            'listado' => $listado,
-            'despachadores' => $despachadores,
-            'postco' => Postco::find($request->postco)
-        ]);
-    }
-
-    public function update_despachador_oa(Request $request)
-    {
-        try {
-            DB::beginTransaction();
-            $model = OaPostco::find($request->id_oa);
-            $model->id_despachador = $request->despachador;
-            $model->save();
-
-            $success = true;
-            $msg = 'Se ha <strong>ASIGNADO</strong> el responsable correctamente';
-            bitacora('OA_POSTCO', $model->id_oa_postco, 'U', 'MODIFICAR EL DESPACHADOR de la OA desde PREPRODUCCION (' . $model->ramos . ' ramos)');
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            $success = false;
-            $msg = '<div class="alert alert-danger text-center">' .
-                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
-                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
-                . '</div>';
-        }
-
-        return [
-            'success' => $success,
-            'mensaje' => $msg,
-        ];
-    }
-
-    public function eliminar_orden_alistamiento(Request $request)
-    {
-        DB::beginTransaction();
-        try {
-            $variedades = [];
-            $model = OaPostco::find($request->id);
-            foreach ($model->detalles as $det) {
-                $variedades[] = $det->id_variedad;
-            }
-            $postco = $model->postco;
-            $texto = $postco->id_variedad . ' ' . $postco->longitud . 'cm' . '; fecha = ' . $postco->fecha . ' id_postco = ' . $postco->id_postco;
-            bitacora('OA_POSTCO', $model->id_oa_postco, 'D', 'ELIMINAR OA desde PREPRODUCCION: (' . $model->ramos . ') ramos de ' . $texto);
-
-            $model->delete();
-
-            DB::commit();
-            $success = true;
-            $msg = 'Se ha <strong>ELIMINADO</strong> la orden de trabajo correctamente';
-        } catch (\Exception $e) {
-            DB::rollBack();
-            $success = false;
-            $msg = '<div class="alert alert-danger text-center">' .
-                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
-                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
-                . '</div>';
-        }
-
-        return [
-            'success' => $success,
-            'mensaje' => $msg,
-        ];
-    }
-
     public function convertir_ot(Request $request)
     {
         try {
@@ -1057,7 +936,6 @@ class PreproduccionController extends Controller
 
     public function modal_flor(Request $request)
     {
-        dd('en desarrollo');
         $listado = DetalleCajaProyecto::join('caja_proyecto as cp', 'cp.id_caja_proyecto', '=', 'detalle_caja_proyecto.id_caja_proyecto')
             ->join('proyecto as p', 'p.id_proyecto', '=', 'cp.id_proyecto')
             ->join('detalle_cliente as c', 'c.id_cliente', '=', 'p.id_cliente')
@@ -1067,20 +945,74 @@ class PreproduccionController extends Controller
                 'detalle_caja_proyecto.tallos_x_ramo',
                 'detalle_caja_proyecto.armados',
                 'p.fecha',
+                'p.packing',
                 'c.nombre as cliente_nombre',
                 DB::raw('cp.cantidad * detalle_caja_proyecto.ramos_x_caja as ramos'),
                 DB::raw('cp.cantidad * detalle_caja_proyecto.ramos_x_caja * detalle_caja_proyecto.tallos_x_ramo as tallos')
             )->distinct()
             ->where('detalle_caja_proyecto.id_variedad', $request->variedad)
-            ->where('detalle_caja_proyecto.longitud_ramo', $request->longitud)
             ->where('c.estado', 1)
             ->whereIn('p.fecha', json_decode($request->fechas))
             ->orderBy('p.fecha')
             ->get();
+        $inventario = getTotalInventarioByVariedad($request->variedad);
         return view('adminlte.gestion.postco.preproduccion.forms.modal_flor', [
             'listado' => $listado,
-            'receta' => Variedad::find($request->variedad),
-            'longitud' => $request->longitud,
+            'variedad' => Variedad::find($request->variedad),
+            'inventario' => $inventario,
+            'fechas' => $request->fechas,
         ]);
+    }
+
+    public function store_armar_flor(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $finca = getFincaActiva();
+            $det_caja = DetalleCajaProyecto::find($request->id);
+
+            $inventarios = InventarioRecepcion::where('id_empresa', $finca)
+                ->where('disponibles', '>', 0)
+                ->where('id_variedad', $det_caja->id_variedad)
+                ->orderBy('fecha', 'asc')
+                ->get();
+
+            $sacar = $request->armar * $det_caja->tallos_x_ramo;
+            foreach ($inventarios as $model) {
+                if ($sacar >= 0) {
+                    $disponible = $model->disponibles;
+                    if ($sacar >= $disponible) {
+                        $sacar = $sacar - $disponible;
+                        $disponible = 0;
+                    } else {
+                        $disponible = $disponible - $sacar;
+                        $sacar = 0;
+                    }
+
+                    $model->disponibles = $disponible;
+                    $model->save();
+                }
+            }
+
+            $det_caja->armados += $request->armar;
+            $det_caja->save();
+
+            $success = true;
+            $msg = 'Se han <strong>ARMADO</strong> los ramos correctamente';
+            bitacora('POSTCO', $model->id_postco, 'U', 'BLOQUEO/DESBLOQUEO de RECETA');
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $success = false;
+            $msg = '<div class="alert alert-danger text-center">' .
+                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
+                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
+                . '</div>';
+        }
+
+        return [
+            'success' => $success,
+            'mensaje' => $msg,
+        ];
     }
 }

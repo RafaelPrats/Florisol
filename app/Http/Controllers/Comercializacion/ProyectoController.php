@@ -52,6 +52,7 @@ class ProyectoController extends Controller
         if ($request->tipo != 'T')
             $listado = $listado->where('tipo', $request->tipo);
         $listado = $listado->orderBy('packing')
+            ->orderBy('fecha')
             ->get();
         return view('adminlte.gestion.comercializacion.proyectos.partials.listado', [
             'proyectos' => $listado,
@@ -106,6 +107,7 @@ class ProyectoController extends Controller
 
     public function seleccionar_cliente(Request $request)
     {
+        $finca = getFincaActiva();
         $variedades = DB::table('especificaciones as e')
             ->join('variedad as v', 'v.id_variedad', '=', 'e.id_variedad')
             ->select('v.nombre', 'e.id_variedad')->distinct()
@@ -115,6 +117,7 @@ class ProyectoController extends Controller
         if (count($variedades) == 0) {
             $variedades = Variedad::where('estado', 1)
                 //->where('receta', 1)
+                ->where('id_empresa', $finca)
                 ->orderBy('nombre')
                 ->get();
         }
@@ -221,6 +224,7 @@ class ProyectoController extends Controller
 
     public function editar_proyecto(Request $request)
     {
+        $finca = getFincaActiva();
         $proyecto = Proyecto::find($request->id);
         $datos_exportacion = DatosExportacion::where('estado', 1)->get();
 
@@ -233,6 +237,7 @@ class ProyectoController extends Controller
         if (count($query_variedades) == 0) {
             $query_variedades = Variedad::where('estado', 1)
                 //->where('receta', 1)
+                ->where('id_empresa', $finca)
                 ->orderBy('nombre')
                 ->get();
         }

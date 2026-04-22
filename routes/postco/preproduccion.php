@@ -22,3 +22,4 @@ Route::post('preproduccion/eliminar_orden_alistamiento', 'Postco\PreproduccionCo
 Route::post('preproduccion/convertir_ot', 'Postco\PreproduccionController@convertir_ot');
 Route::get('preproduccion/buscar_variedades', 'Postco\PreproduccionController@buscar_variedades');
 Route::get('preproduccion/modal_flor', 'Postco\PreproduccionController@modal_flor');
+Route::post('preproduccion/store_armar_flor', 'Postco\PreproduccionController@store_armar_flor');

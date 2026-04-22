@@ -963,10 +963,10 @@ class PlantaController extends Controller
         $variedad = Variedad::find($request->id_var);
 
         if (!isset($request->numero_receta)) {
-            $numero_receta = DetalleReceta::All()
-                ->where('defecto', 1)
+            $numero_receta = DetalleReceta::where('defecto', 1)
                 ->where('id_variedad', $request->id_var)
-                ->first()->numero_receta;
+                ->first();
+            $numero_receta = $numero_receta != '' ? $numero_receta->numero_receta : 'DEFAULT';
         } else
             $numero_receta = $request->numero_receta;
 
@@ -987,7 +987,7 @@ class PlantaController extends Controller
             'numero_receta' => $numero_receta,
             'detalles' => $detalles,
             'bloqueado' => $bloqueado,
-            'plantas' => Planta::where('estado', '=', 1)->orderBy('nombre')->get(),
+            'plantas' => Planta::where('estado', '=', 1)->where('id_empresa', getFincaActiva())->orderBy('nombre')->get(),
         ]);
     }
 
