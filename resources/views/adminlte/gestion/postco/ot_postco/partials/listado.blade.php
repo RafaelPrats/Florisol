@@ -179,10 +179,10 @@
                                     onclick="exportar_orden_trabajo('{{ $item->id_orden_trabajo }}')">
                                     <i class="fa fa-fw fa-file-excel-o"></i>
                                 </button>
-                                <button type="button" class="btn btn-xs btn-yura_default" title="PDF"
+                                {{--<button type="button" class="btn btn-xs btn-yura_default" title="PDF"
                                     onclick="exportar_orden_trabajo_pdf('{{ $item->id_orden_trabajo }}')">
                                     <i class="fa fa-fw fa-file-pdf-o"></i>
-                                </button>
+                                </button>--}}
                             </div>
                         </th>
                     @endif
