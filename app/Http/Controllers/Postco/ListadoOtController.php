@@ -13,15 +13,19 @@ use yura\Modelos\SalidasRecepcion;
 use Picqer\Barcode\BarcodeGeneratorHTML;
 use PDF;
 use Illuminate\Support\Facades\DB;
+use yura\Modelos\InventarioRecepcion;
 use yura\Modelos\MotivoReclamo;
+use yura\Modelos\OrdenTrabajo;
 use yura\Modelos\OtReclamo;
 
 class ListadoOtController extends Controller
 {
     public function inicio(Request $request)
     {
+        $finca = getFincaActiva();
         $variedades = Variedad::where('estado', 1)
             ->where('receta', 1)
+            ->where('id_empresa', $finca)
             ->orderBy('nombre')
             ->get();
         return view('adminlte.gestion.postco.ot_postco.inicio', [
@@ -33,13 +37,17 @@ class ListadoOtController extends Controller
 
     public function listar_reporte(Request $request)
     {
-        $listado = OtPostco::join('postco as p', 'p.id_postco', '=', 'ot_postco.id_postco')
-            ->select('ot_postco.*')->distinct()
+        $finca = getFincaActiva();
+        $listado = OrdenTrabajo::join('detalle_caja_proyecto as dc', 'dc.id_detalle_caja_proyecto', '=', 'orden_trabajo.id_detalle_caja_proyecto')
+            ->join('caja_proyecto as c', 'c.id_caja_proyecto', '=', 'dc.id_caja_proyecto')
+            ->join('proyecto as p', 'p.id_proyecto', '=', 'c.id_proyecto')
+            ->select('orden_trabajo.*')->distinct()
+            ->where('p.id_empresa', $finca)
             ->where('p.fecha', '>=', $request->desde)
             ->where('p.fecha', '<=', $request->hasta);
         if ($request->variedad != 'T')
             $listado = $listado->where('p.id_variedad', $request->variedad);
-        $listado = $listado->orderBy('ot_postco.id_ot_postco')
+        $listado = $listado->orderBy('orden_trabajo.id_orden_trabajo')
             ->get();
         $despachadores = Despachador::where('estado', 1)
             ->orderBy('nombre')
@@ -65,7 +73,7 @@ class ListadoOtController extends Controller
     public function exportar_orden_trabajo_pdf(Request $request)
     {
         $barCode = new BarcodeGeneratorHTML();
-        $model = OtPostco::find($request->id);
+        $model = OrdenTrabajo::find($request->id);
         $datos = [
             'model' => $model,
         ];
@@ -77,12 +85,16 @@ class ListadoOtController extends Controller
     {
         DB::beginTransaction();
         try {
-            $orden_trabajo = OtPostco::find($request->id);
+            $finca = getFincaActiva();
+            $orden_trabajo = OrdenTrabajo::find($request->id);
+            $det_caj = $orden_trabajo->detalle_caja_proyecto;
+            $caja = $det_caj->caja_proyecto;
+            $proyecto = $caja->proyecto;
             if ($orden_trabajo->id_despachador != '' || 1) {
                 // --------- VALIDAR DISPONIBLES --------- //
                 $valida = true;
                 foreach ($orden_trabajo->detalles as $det) {
-                    $inventario = getTotalInventarioByVariedad($det->id_item);
+                    $inventario = getInventarioDisponibleByVariedadFecha($det->variedad, $proyecto->fecha);
                     if ($inventario < $det->unidades * $orden_trabajo->ramos) {
                         $valida = false;
                     }
@@ -91,46 +103,49 @@ class ListadoOtController extends Controller
                     $orden_trabajo->estado = 'D';
                     $orden_trabajo->save();
 
-                    $postco = $orden_trabajo->postco;
-                    $postco->despachados += $orden_trabajo->ramos;
-                    $postco->save();
+                    $det_caj->despachados += $orden_trabajo->ramos;
+                    $det_caj->save();
 
                     // --------- REGISTRAR LAS SALIDAS ------------ //
                     foreach ($orden_trabajo->detalles as $d) {
-                        $inventarios = DesgloseRecepcion::where('estado', 1)
+                        $inventarios = InventarioRecepcion::where('id_empresa', $finca)
                             ->where('disponibles', '>', 0)
-                            ->where('id_variedad', $d->id_item)
+                            ->where('id_variedad', $d->id_variedad)
                             ->orderBy('fecha', 'asc')
                             ->get();
 
                         $sacar = $d->unidades * $orden_trabajo->ramos;
                         foreach ($inventarios as $model) {
                             if ($sacar >= 0) {
+                                $usados = 0;
                                 $disponible = $model->disponibles;
                                 if ($sacar >= $disponible) {
                                     $sacar = $sacar - $disponible;
+                                    $usados = $disponible;
                                     $disponible = 0;
                                 } else {
                                     $disponible = $disponible - $sacar;
+                                    $usados = $sacar;
                                     $sacar = 0;
                                 }
 
                                 $model->disponibles = $disponible;
                                 $model->save();
+
+                                $new_salida = new SalidasRecepcion();
+                                $new_salida->id_inventario_recepcion = $model->id_inventario_recepcion;
+                                $new_salida->id_orden_trabajo = $orden_trabajo->id_orden_trabajo;
+                                $new_salida->id_variedad = $d->id_variedad;
+                                $new_salida->fecha = $orden_trabajo->fecha;
+                                $new_salida->cantidad = $usados;
+                                $new_salida->basura = 0;
+                                $new_salida->save();
                             }
                         }
-
-                        $new_salida = new SalidasRecepcion();
-                        $new_salida->id_variedad = $d->id_item;
-                        $new_salida->fecha = $orden_trabajo->fecha;
-                        $new_salida->cantidad = $d->unidades * $orden_trabajo->ramos;
-                        $new_salida->disponibles = $d->unidades * $orden_trabajo->ramos;
-                        $new_salida->basura = 0;
-                        $new_salida->save();
                     }
                     $success = true;
                     $msg = 'Se ha <strong>DESPACHADO</strong> la orden de trabajo correctamente';
-                    bitacora('ORDEN_TRABAJO', $orden_trabajo->id_ot_postco, 'U', 'DESPACHAR OT desde ORDENES DE TRABAJO');
+                    bitacora('ORDEN_TRABAJO', $orden_trabajo->id_orden_trabajo, 'U', 'DESPACHAR OT desde ORDENES DE TRABAJO');
                 } else {
                     $success = false;
                     $msg = '<div class="alert alert-warning text-center">No hay flor disponible en el inventario actualmente</div>';
@@ -160,16 +175,16 @@ class ListadoOtController extends Controller
     {
         DB::beginTransaction();
         try {
-            $model = OtPostco::find($request->id);
+            $model = OrdenTrabajo::find($request->id);
             if ($model->id_despachador != '') {
                 $model->armados += $request->armar;
                 if ($model->ramos == $model->armados)
                     $model->estado = 'A';
                 $model->save();
 
-                $postco = $model->postco;
-                $postco->armados += $request->armar;
-                $postco->save();
+                $det_caj = $model->detalle_caja_proyecto;
+                $det_caj->armados += $request->armar;
+                $det_caj->save();
 
                 $success = true;
                 $msg = 'Se ha <strong>ARMADO</strong> los ramos de la ot correctamente';
@@ -292,13 +307,13 @@ class ListadoOtController extends Controller
     {
         try {
             DB::beginTransaction();
-            $model = OtPostco::find($request->id_ot);
+            $model = OrdenTrabajo::find($request->id_ot);
             $model->observacion = $request->observacion;
             $model->save();
 
             $success = true;
             $msg = 'Se ha <strong>GRABADO</strong> la observacion correctamente';
-            bitacora('OT_POSTCO', $model->id_ot_postco, 'U', 'MODIFICAR la observacion de la OT desde PREPRODUCCION (' . $model->ramos . ' ramos)');
+            bitacora('ORDEN_TRABAJO', $model->id_orden_trabajo, 'U', 'MODIFICAR la observacion de la OT desde LISTADO OT');
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();

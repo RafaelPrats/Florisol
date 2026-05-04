@@ -44,15 +44,18 @@
     <tbody>
         @foreach ($listado as $pos_o => $item)
             @php
-                $postco = $item->postco;
+                $det_caj = $item->detalle_caja_proyecto;
+                $caja = $det_caj->caja_proyecto;
+                $proyecto = $caja->proyecto;
                 $cliente = $item->cliente;
                 $estado = $item->getEstado();
                 $despachador = $item->despachador;
                 $disponible = true;
+                $detalles = $item->detalles;
             @endphp
-            @foreach ($item->detalles as $pos_d => $det)
+            @foreach ($detalles as $pos_d => $det)
                 @php
-                    $inventario = getTotalInventarioByVariedad($det->id_item);
+                    $inventario = getInventarioDisponibleByVariedadFecha($det->variedad, $proyecto->fecha);
                     if ($inventario < $det->unidades * $item->ramos) {
                         $disponible = false;
                     }
@@ -60,34 +63,34 @@
                 <tr onmouseover="$(this).addClass('bg-aqua')" onmouseleave="$(this).removeClass('bg-aqua')">
                     @if ($pos_d == 0)
                         <th class="text-center padding_lateral_5" style="border-color: #9d9d9d"
-                            rowspan="{{ count($item->detalles) }}">
-                            #{{ $item->id_ot_postco }}
+                            rowspan="{{ count($detalles) }}">
+                            #{{ $item->id_orden_trabajo }}
                         </th>
                         <th class="text-center padding_lateral_5" style="border-color: #9d9d9d"
-                            rowspan="{{ count($item->detalles) }}">
+                            rowspan="{{ count($detalles) }}">
                             {{ $cliente->detalle()->nombre }}
                             <br>
-                            {{ convertDateToText($postco->fecha) }}
+                            {{ convertDateToText($proyecto->fecha) }}
                         </th>
                         <th class="text-center padding_lateral_5" style="border-color: #9d9d9d"
-                            rowspan="{{ count($item->detalles) }}">
-                            {{ $postco->variedad->nombre }}
+                            rowspan="{{ count($detalles) }}">
+                            {{ $det_caj->variedad->nombre }}
                         </th>
                         <th class="text-center padding_lateral_5" style="border-color: #9d9d9d"
-                            rowspan="{{ count($item->detalles) }}">
-                            {{ $postco->longitud }} <sup>cm</sup>
+                            rowspan="{{ count($detalles) }}">
+                            {{ $item->longitud }} <sup>cm</sup>
                         </th>
                         <th class="text-center padding_lateral_5" style="border-color: #9d9d9d"
-                            rowspan="{{ count($item->detalles) }}">
+                            rowspan="{{ count($detalles) }}">
                             {{ $item->ramos }}
                         </th>
                         <th class="text-center padding_lateral_5" style="border-color: #9d9d9d"
-                            rowspan="{{ count($item->detalles) }}">
+                            rowspan="{{ count($detalles) }}">
                             {{ $item->armados }}
                         </th>
                     @endif
                     <th class="text-center padding_lateral_5" style="border-color: #9d9d9d">
-                        {{ $det->item->nombre }}
+                        {{ $det->variedad->nombre }}
                     </th>
                     <th class="text-center padding_lateral_5" style="border-color: #9d9d9d">
                         {{ $det->unidades }}
@@ -97,8 +100,8 @@
                         {{ number_format($inventario) }}
                     </th>
                     @if ($pos_d == 0)
-                        <th class="text-center" style="border-color: #9d9d9d" rowspan="{{ count($item->detalles) }}">
-                            <select id="despachador_{{ $item->id_ot_postco }}" style="width: 100%; color: black">
+                        <th class="text-center" style="border-color: #9d9d9d" rowspan="{{ count($detalles) }}">
+                            <select id="despachador_{{ $item->id_orden_trabajo }}" style="width: 100%; color: black">
                                 <option value="">Seleccione...</option>
                                 @foreach ($despachadores as $desp)
                                     <option value="{{ $desp->id_despachador }}"
@@ -108,55 +111,59 @@
                                 @endforeach
                             </select>
                             <button type="button" class="btn btn-xs btn-block btn-yura_dark"
-                                onclick="update_despachador('{{ $item->id_ot_postco }}')">
+                                onclick="update_despachador('{{ $item->id_orden_trabajo }}')">
                                 <i class="fa fa-fw fa-save"></i> Grabar
                             </button>
-                            <button type="button" class="btn btn-xs btn-block btn-yura_warning"
-                                onclick="modal_reclamos('{{ $item->id_ot_postco }}')" style="margin-top: 0">
+                            {{-- <button type="button" class="btn btn-xs btn-block btn-yura_warning"
+                                onclick="modal_reclamos('{{ $item->id_orden_trabajo }}')" style="margin-top: 0">
                                 <i class="fa fa-fw fa-exchange"></i> Reclamos
-                            </button>
+                            </button> --}}
                         </th>
-                        <th class="text-center" style="border-color: #9d9d9d" rowspan="{{ count($item->detalles) }}">
-                            <textarea id="observacion_{{ $item->id_ot_postco }}" rows="3" style="width: 100%; color: black;"
+                        <th class="text-center" style="border-color: #9d9d9d" rowspan="{{ count($detalles) }}">
+                            <textarea id="observacion_{{ $item->id_orden_trabajo }}" rows="3" style="width: 100%; color: black;"
                                 placeholder="Observacion...">{{ $item->observacion }}</textarea>
                             <button type="button" class="btn btn-xs btn-block btn-yura_dark"
-                                onclick="update_observacion('{{ $item->id_ot_postco }}')">
+                                onclick="update_observacion('{{ $item->id_orden_trabajo }}')">
                                 <i class="fa fa-fw fa-save"></i> Grabar
                             </button>
                         </th>
-                        <th class="text-center" style="border-color: #9d9d9d" rowspan="{{ count($item->detalles) }}">
+                        <th class="text-center" style="border-color: #9d9d9d" rowspan="{{ count($detalles) }}">
                             @if (isset($estado))
                                 {!! $estado['html'] !!}
-                                @if ($estado['estado'] == 'Pendiente')
+                                @if ($estado['estado'] != 'Armado')
                                     <br>
                                     <div class="btn-group">
-                                        <button type="button" class="btn btn-xs btn-yura_primary"
-                                            style="margin-top: 5px"
-                                            onclick="despachar_orden_trabajo('{{ $item->id_ot_postco }}')"
-                                            id="btn_despachar_{{ $item->id_ot_postco }}">
-                                            <i class="fa fa-fw fa-check"></i> Despachar
-                                        </button>
+                                        @if ($estado['estado'] == 'Pendiente')
+                                            <button type="button" class="btn btn-xs btn-yura_primary"
+                                                style="margin-top: 5px"
+                                                onclick="despachar_orden_trabajo('{{ $item->id_orden_trabajo }}')"
+                                                id="btn_despachar_{{ $item->id_orden_trabajo }}">
+                                                <i class="fa fa-fw fa-check"></i> Despachar
+                                            </button>
+                                        @endif
                                         <button type="button" class="btn btn-xs btn-yura_primary" disabled
-                                            id="btn_sin_flor_{{ $item->id_ot_postco }}" style="margin-top: 5px">
+                                            id="btn_sin_flor_{{ $item->id_orden_trabajo }}" style="margin-top: 5px">
                                             <i class="fa fa-fw fa-ban"></i> Sin Flor
                                         </button>
-                                        <button type="button" class="btn btn-xs btn-yura_danger"
-                                            style="margin-top: 5px"
-                                            onclick="eliminar_orden_trabajo('{{ $item->id_ot_postco }}')">
-                                            <i class="fa fa-fw fa-trash"></i> Eliminar
-                                        </button>
+                                        @if ($estado['estado'] == 'Pendiente')
+                                            <button type="button" class="btn btn-xs btn-yura_danger"
+                                                style="margin-top: 5px"
+                                                onclick="eliminar_orden_trabajo('{{ $item->id_orden_trabajo }}')">
+                                                <i class="fa fa-fw fa-trash"></i> Eliminar
+                                            </button>
+                                        @endif
                                     </div>
                                 @endif
-                                @if ($item->armados == 0)
+                                @if ($item->armados < $item->ramos)
                                     <br>
                                     <div class="input-group">
                                         <input type="number" style="width: 100%; color: black" class="text-center"
                                             placeholder="Armar" min="1"
-                                            id="ramos_armados_{{ $item->id_ot_postco }}"
+                                            id="ramos_armados_{{ $item->id_orden_trabajo }}"
                                             max="{{ $item->ramos - $item->armados }}">
                                         <div class="input-group-btn">
                                             <button type="button" class="btn btn-xs btn-yura_dark"
-                                                onclick="store_armar('{{ $item->id_ot_postco }}')"
+                                                onclick="store_armar('{{ $item->id_orden_trabajo }}')"
                                                 style="height: 26px">
                                                 <i class="fa fa-fw fa-save"></i> Grabar
                                             </button>
@@ -166,14 +173,14 @@
                             @endif
                         </th>
                         <th class="text-center padding_lateral_5" style="border-color: #9d9d9d"
-                            rowspan="{{ count($item->detalles) }}">
+                            rowspan="{{ count($detalles) }}">
                             <div class="btn-group">
                                 <button type="button" class="btn btn-xs btn-yura_primary" title="Excel"
-                                    onclick="exportar_orden_trabajo('{{ $item->id_ot_postco }}')">
+                                    onclick="exportar_orden_trabajo('{{ $item->id_orden_trabajo }}')">
                                     <i class="fa fa-fw fa-file-excel-o"></i>
                                 </button>
                                 <button type="button" class="btn btn-xs btn-yura_default" title="PDF"
-                                    onclick="exportar_orden_trabajo_pdf('{{ $item->id_ot_postco }}')">
+                                    onclick="exportar_orden_trabajo_pdf('{{ $item->id_orden_trabajo }}')">
                                     <i class="fa fa-fw fa-file-pdf-o"></i>
                                 </button>
                             </div>
@@ -181,13 +188,13 @@
                     @endif
                 </tr>
             @endforeach
-            @if ($disponible)
+            @if (!$disponible)
                 <script>
-                    $('#btn_sin_flor_{{ $item->id_ot_postco }}').addClass('hidden')
+                    $('#btn_sin_flor_{{ $item->id_orden_trabajo }}').addClass('hidden')
                 </script>
             @else
                 <script>
-                    $('#btn_despachar_{{ $item->id_ot_postco }}').addClass('hidden')
+                    $('#btn_despachar_{{ $item->id_orden_trabajo }}').removeClass('hidden')
                 </script>
             @endif
         @endforeach

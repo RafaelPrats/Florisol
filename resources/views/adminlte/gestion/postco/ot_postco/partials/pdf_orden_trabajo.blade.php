@@ -38,7 +38,9 @@
         @php
             $orden_trabajo = $datos['model'];
             $despachador = $orden_trabajo->despachador;
-            $postco = $orden_trabajo->postco;
+            $det_caj = $orden_trabajo->detalle_caja_proyecto;
+            $caja = $det_caj->caja_proyecto;
+            $proyecto = $caja->proyecto;
             $cliente = $orden_trabajo->cliente;
             $total_tallos = 0;
             $total_tallos_ramo = 0;
@@ -57,10 +59,10 @@
                         {{ $cliente->detalle()->nombre }}
                     </td>
                     <td style="text-align: center" class="border-1px" rowspan="{{ count($orden_trabajo->detalles) }}">
-                        {{ convertDateToText($postco->fecha) }}
+                        {{ convertDateToText($proyecto->fecha) }}
                     </td>
                     <td style="text-align: center" class="border-1px" rowspan="{{ count($orden_trabajo->detalles) }}">
-                        {{ $postco->variedad->nombre }}
+                        {{ $det_caj->variedad->nombre }}
                     </td>
                     <td style="text-align: center" class="border-1px" rowspan="{{ count($orden_trabajo->detalles) }}">
                         {{ $orden_trabajo->longitud }}
@@ -70,7 +72,7 @@
                     </td>
                 @endif
                 <td style="text-align: center" class="border-1px">
-                    {{ $det->item->nombre }}
+                    {{ $det->variedad->nombre }}
                 </td>
                 <td style="text-align: center" class="border-1px">
                     {{ $det->unidades * $orden_trabajo->ramos }}
@@ -98,7 +100,7 @@
             <th style="vertical-align: top; text-align: center" class="border-1px">
                 {{ $total_tallos_ramo }}
             </th>
-            <th style="vertical-align: top; text-align: center" class="border-1px"  colspan="2">
+            <th style="vertical-align: top; text-align: center" class="border-1px" colspan="2">
             </th>
         </tr>
     </table>
