@@ -204,6 +204,10 @@
             '<input type="number" style="width: 100%; height: 34px;" class="text-center form_combos_precio"' +
             'id="form_combos_precio_' + form_combos_cant_detalles + '">' +
             '</td>' +
+            '<td class="text-center" style="border-color: #9d9d9d">' +
+            '<input type="number" style="width: 100%; height: 34px;" class="text-center" readonly ' +
+            'id="form_combos_inventario_' + form_combos_cant_detalles + '">' +
+            '</td>' +
             '<td class="text-center col_fija_right_0" style="border-color: #9d9d9d; background-color: white">' +
             '<button type="button" class="btn btn-xs btn-yura_danger" onclick="form_delete_detalle_combos(' +
             form_combos_cant_detalles + ')">' +

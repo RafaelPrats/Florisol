@@ -134,13 +134,17 @@
                                 </th>
                                 <th class="text-center" style="border-color: #9d9d9d">
                                     <div class="btn-group">
-                                        <button type="button" class="btn btn-xs btn-yura_warning"
+                                        <button type="button" class="btn btn-xs btn-yura_primary"
                                             onclick="update_inventario('{{ $var->id_inventario_recepcion }}')">
                                             <i class="fa fa-fw fa-edit"></i>
                                         </button>
+                                        <button type="button" class="btn btn-xs btn-yura_warning"
+                                            onclick="botar_inventario('{{ $var->id_inventario_recepcion }}')">
+                                            <i class="fa fa-fw fa-trash"></i>
+                                        </button>
                                         <button type="button" class="btn btn-xs btn-yura_danger"
                                             onclick="delete_inventario('{{ $var->id_inventario_recepcion }}')">
-                                            <i class="fa fa-fw fa-trash"></i>
+                                            <i class="fa fa-fw fa-times"></i>
                                         </button>
                                     </div>
                                 </th>
