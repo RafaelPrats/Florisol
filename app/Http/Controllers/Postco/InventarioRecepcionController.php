@@ -8,6 +8,7 @@ use yura\Http\Controllers\Controller;
 use yura\Modelos\DetalleApiStoreCajas;
 use yura\Modelos\InventarioRecepcion;
 use yura\Modelos\Planta;
+use yura\Modelos\SalidasRecepcion;
 use yura\Modelos\Submenu;
 
 class InventarioRecepcionController extends Controller
@@ -225,6 +226,52 @@ class InventarioRecepcionController extends Controller
 
             $success = true;
             $msg = 'Se ha <strong>ELIMINADO</strong> el inventario correctamente';
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $success = false;
+            $msg = '<div class="alert alert-danger text-center">' .
+                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
+                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
+                . '</div>';
+        }
+
+        return [
+            'success' => $success,
+            'mensaje' => $msg,
+        ];
+    }
+
+    public function botar_inventario(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $model = InventarioRecepcion::find($request->id);
+            if ($model->disponibles < $request->botar) {
+                DB::rollBack();
+                $success = false;
+                $msg = 'No se pueden botar mas tallos de los disponibles';
+
+                return [
+                    'success' => $success,
+                    'mensaje' => $msg,
+                ];
+            } else {
+                $model->disponibles -= $request->botar;
+                $model->save();
+
+                $salidas = new SalidasRecepcion();
+                $salidas->id_inventario_recepcion = $model->id_inventario_recepcion;
+                $salidas->id_variedad = $model->id_variedad;
+                $salidas->cantidad = 0;
+                $salidas->basura = $request->botar;
+                $salidas->fecha = $request->fecha;
+                $salidas->save();
+
+                $success = true;
+                $msg = 'Se ha <strong>ELIMINADO</strong> el inventario correctamente';
+            }
 
             DB::commit();
         } catch (\Exception $e) {

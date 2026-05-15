@@ -30,6 +30,7 @@ use yura\Modelos\DistribucionReceta;
 use yura\Modelos\InventarioRecepcion;
 use yura\Modelos\OaPostco;
 use yura\Modelos\OrdenTrabajo;
+use yura\Modelos\SalidasRecepcion;
 
 class PreproduccionController extends Controller
 {
@@ -232,6 +233,7 @@ class PreproduccionController extends Controller
     {
         DB::beginTransaction();
         try {
+            $finca = getFincaActiva();
             $detalle = DetalleCajaProyecto::find($request->id);
             $ot = new OrdenTrabajo();
             $ot->id_detalle_caja_proyecto = $request->id;
@@ -256,9 +258,79 @@ class PreproduccionController extends Controller
                 $det_ot->save();
             }
 
-            DB::commit();
-            $success = true;
-            $msg = 'Se ha <strong>GRABADO</strong> la OT correctamente';
+            // --------- DESPACHAR FLOR de la OT --------- //
+            $caja = $detalle->caja_proyecto;
+            $proyecto = $caja->proyecto;
+            // --------- VALIDAR DISPONIBLES --------- //
+            $valida = true;
+            foreach ($ot->detalles as $det) {
+                $inventario = getInventarioDisponibleByVariedadFecha($det->variedad, $proyecto->fecha);
+                if ($inventario < $det->unidades * $ot->ramos) {
+                    $valida = false;
+                }
+            }
+            if ($valida) {
+                $ot->estado = 'D';
+                $ot->save();
+
+                $detalle->despachados += $ot->ramos;
+                $detalle->save();
+
+                // --------- REGISTRAR LAS SALIDAS ------------ //
+                foreach ($ot->detalles as $d) {
+                    $variedad = $d->variedad;
+                    $query = DB::table('inventario_recepcion as i')
+                        ->select('i.*')->distinct()
+                        ->where('i.disponibles', '>', 0)
+                        ->where('i.id_variedad', $variedad->id_variedad)
+                        ->where('i.id_empresa', $finca)
+                        ->get();
+                    $inventarios = [];
+                    foreach ($query as $q) {
+                        $fecha_desde = $q->fecha;
+                        $fecha_hasta = opDiasFecha('+', $variedad->dias_rotacion_recepcion, $q->fecha);
+                        if ($proyecto->fecha >= $fecha_desde && $proyecto->fecha <= $fecha_hasta) {
+                            $inventarios[] = InventarioRecepcion::find($q->id_inventario_recepcion);
+                        }
+                    }
+
+                    $sacar = $d->unidades * $ot->ramos;
+                    foreach ($inventarios as $model) {
+                        if ($sacar >= 0) {
+                            $usados = 0;
+                            $disponible = $model->disponibles;
+                            if ($sacar >= $disponible) {
+                                $sacar = $sacar - $disponible;
+                                $usados = $disponible;
+                                $disponible = 0;
+                            } else {
+                                $disponible = $disponible - $sacar;
+                                $usados = $sacar;
+                                $sacar = 0;
+                            }
+
+                            $model->disponibles = $disponible;
+                            $model->save();
+
+                            $new_salida = new SalidasRecepcion();
+                            $new_salida->id_inventario_recepcion = $model->id_inventario_recepcion;
+                            $new_salida->id_orden_trabajo = $ot->id_orden_trabajo;
+                            $new_salida->id_variedad = $d->id_variedad;
+                            $new_salida->fecha = $ot->fecha;
+                            $new_salida->cantidad = $usados;
+                            $new_salida->basura = 0;
+                            $new_salida->save();
+                        }
+                    }
+                }
+                DB::commit();
+                $success = true;
+                $msg = 'Se ha <strong>GRABADO y DESPACHADO</strong> la OT correctamente';
+            } else {
+                DB::rollBack();
+                $success = false;
+                $msg = '<div class="alert alert-warning text-center">No hay flor disponible en el inventario actualmente</div>';
+            }
         } catch (\Exception $e) {
             DB::rollBack();
             $success = false;

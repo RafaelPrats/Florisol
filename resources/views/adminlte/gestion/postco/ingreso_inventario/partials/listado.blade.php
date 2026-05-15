@@ -28,6 +28,9 @@
                         <i class="fa fa-fw fa-plus"></i> Agregar
                     </button>
                 </th>
+                <th class="text-center bg-yura_warning" style="width: 90px">
+                    Botar
+                </th>
             </tr>
         </thead>
         <tbody>
@@ -74,7 +77,7 @@
                         <th class="text-center" style="border-color: #9d9d9d">
                             {{ number_format($tallos_pta) }}
                         </th>
-                        <th class="padding_lateral_5" style="border-color: #9d9d9d">
+                        <th class="padding_lateral_5" style="border-color: #9d9d9d" colspan="2">
                         </th>
                     </tr>
                     @foreach ($item['variedades'] as $pos_v => $var)
@@ -138,15 +141,20 @@
                                             onclick="update_inventario('{{ $var->id_inventario_recepcion }}')">
                                             <i class="fa fa-fw fa-edit"></i>
                                         </button>
-                                        <button type="button" class="btn btn-xs btn-yura_warning"
-                                            onclick="botar_inventario('{{ $var->id_inventario_recepcion }}')">
-                                            <i class="fa fa-fw fa-trash"></i>
-                                        </button>
                                         <button type="button" class="btn btn-xs btn-yura_danger"
+                                            title="Eliminar inventario"
                                             onclick="delete_inventario('{{ $var->id_inventario_recepcion }}')">
                                             <i class="fa fa-fw fa-times"></i>
                                         </button>
+                                        <button type="button" class="btn btn-xs btn-yura_warning" title="Botar flor"
+                                            onclick="botar_inventario('{{ $var->id_inventario_recepcion }}')">
+                                            <i class="fa fa-fw fa-trash"></i> <i class="fa fa-fw fa-caret-right"></i>
+                                        </button>
                                     </div>
+                                </th>
+                                <th style="border-color: #9d9d9d">
+                                    <input type="number" style="width: 100%" class="text-center"
+                                        id="tallos_botar_{{ $var->id_inventario_recepcion }}" value="0">
                                 </th>
                             </tr>
                             @foreach ($getDetalleApiStoreCajasByVariedad as $detApi)
@@ -169,7 +177,7 @@
                                                 value="{{ $detApi->ramos }}"
                                                 onchange="$('#check_detApi_{{ $detApi->id_detalle_api_store_cajas }}').prop('checked', true)">
                                         </th>
-                                        <th style="border-color: #9d9d9d" colspan="3">
+                                        <th style="border-color: #9d9d9d" colspan="4">
                                         </th>
                                     </tr>
                                 @endif
@@ -193,7 +201,7 @@
                     <i class="fa fa-fw fa-check"></i> Recibir todo
                 </button>
             </th>
-            <th class="th_yura_green" colspan="3"></th>
+            <th class="th_yura_green" colspan="4"></th>
         </tr>
     </table>
 </div>
@@ -282,6 +290,24 @@
                     listar_reporte();
                 });
             }
+        })
+    }
+
+    function botar_inventario(id) {
+        texto =
+            "<div class='alert alert-warning text-center'><h3><i class='fa fa-fw fa-exclamation-triangle error'></i>¿Esta seguro de <b>BOTAR</b> la flor del inventario?</h3></div>";
+
+        modal_quest('modal_botar_inventario', texto, 'Eliminar inventario', true, false, '40%', function() {
+            datos = {
+                _token: '{{ csrf_token() }}',
+                id: id,
+                botar: $('#tallos_botar_' + id).val(),
+                fecha: $('#fecha_filtro').val(),
+            }
+            post_jquery_m('{{ url('ingreso_inventario/botar_inventario') }}', datos, function() {
+                cerrar_modals();
+                listar_reporte();
+            });
         })
     }
 </script>

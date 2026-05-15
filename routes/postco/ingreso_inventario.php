@@ -8,3 +8,4 @@ Route::post('ingreso_inventario/recibir_pendientes', 'Postco\InventarioRecepcion
 Route::post('ingreso_inventario/recibir_all_pendientes', 'Postco\InventarioRecepcionController@recibir_all_pendientes');
 Route::post('ingreso_inventario/update_inventario', 'Postco\InventarioRecepcionController@update_inventario');
 Route::post('ingreso_inventario/delete_inventario', 'Postco\InventarioRecepcionController@delete_inventario');
+Route::post('ingreso_inventario/botar_inventario', 'Postco\InventarioRecepcionController@botar_inventario');
