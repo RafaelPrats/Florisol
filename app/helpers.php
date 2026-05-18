@@ -1318,7 +1318,7 @@ function getEspecificacion($idEspecificacion)
     return Especificacion::find($idEspecificacion);
 }
 
-function getDetalleApiStoreCajasByVariedad($variedad, $tallos_x_ramo, $longitud, $empresa)
+function getDetalleApiStoreCajasByVariedad($variedad, $tallos_x_ramo, $longitud, $empresa, $fecha)
 {
     return DB::table('detalle_api_store_cajas as d')
         ->join('api_store_cajas as api', 'api.id_api_store_cajas', '=', 'd.id_api_store_cajas')
@@ -1331,6 +1331,7 @@ function getDetalleApiStoreCajasByVariedad($variedad, $tallos_x_ramo, $longitud,
         ->where('d.tallos_x_ramo', $tallos_x_ramo)
         ->where('d.longitud', $longitud)
         ->where('d.id_empresa', $empresa)
+        ->where('api.fecha', $fecha)
         ->where('d.estado', 'P')
         ->get();
 }

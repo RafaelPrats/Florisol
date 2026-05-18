@@ -48,6 +48,7 @@
                             $var->tallos_x_ramo,
                             $var->longitud,
                             $var->id_empresa,
+                            $var->fecha,
                         );
                         $ramos_pendientes = 0;
                         foreach ($getDetalleApiStoreCajasByVariedad as $detApi) {
@@ -88,6 +89,7 @@
                                 $var->tallos_x_ramo,
                                 $var->longitud,
                                 $var->id_empresa,
+                                $var->fecha,
                             );
                             $existe_var = false;
                             foreach ($getDetalleApiStoreCajasByVariedad as $detApi) {
