@@ -74,6 +74,17 @@
                 <td>
                     <div class="input-group">
                         <div class="input-group-addon bg-yura_dark">
+                            Bodega
+                        </div>
+                        <select name="bodega_filtro" id="bodega_filtro" class="form-control" style="width: 100%">
+                            <option value="E">Exportacion</option>
+                            <option value="N">Nacional</option>
+                        </select>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <div class="input-group-addon bg-yura_dark">
                             Fecha
                         </div>
                         <input type="date" name="fecha_filtro" id="fecha_filtro" class="form-control"

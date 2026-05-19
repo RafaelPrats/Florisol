@@ -10,6 +10,7 @@
             variedad: $('#variedad_filtro').val(),
             fecha: $('#fecha_filtro').val(),
             documento: $('#documento_filtro').val(),
+            bodega: $('#bodega_filtro').val(),
         };
         get_jquery('{{ url('ingreso_inventario/listar_reporte') }}', datos, function(retorno) {
             $('#div_listado').html(retorno);

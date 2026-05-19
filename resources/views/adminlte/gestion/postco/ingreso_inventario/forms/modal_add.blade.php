@@ -154,7 +154,7 @@
             if ($('#new_tr_' + i).length) {
                 fecha = $('#new_fecha_' + i).val();
                 variedad = $('#new_variedad_' + i).val();
-                longitud = parseInt($('#new_longitud_' + i).val());
+                longitud = $('#new_longitud_' + i).val();
                 tallos_x_ramo = parseInt($('#new_tallos_x_ramo_' + i).val());
                 ramos = $('#new_ramos_' + i).val();
                 bodega = $('#new_bodega_' + i).val();

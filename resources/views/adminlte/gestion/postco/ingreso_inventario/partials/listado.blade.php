@@ -23,7 +23,7 @@
                 <th class="padding_lateral_5 bg-yura_dark" style="width: 90px">
                     Tallos
                 </th>
-                <th class="text-center bg-yura_dark" style="width: 110px">
+                <th class="text-center bg-yura_dark" style="width: 130px">
                     <button type="button" class="btn btn-xs btn-yura_default" onclick="modal_add()">
                         <i class="fa fa-fw fa-plus"></i> Agregar
                     </button>
@@ -122,7 +122,7 @@
                                 <th style="border-color: #9d9d9d">
                                     @if ($ramos_pendientes > 0)
                                         <input type="number" style="width: 100%; background-color: #b0ffff"
-                                            class="text-center"
+                                            class="text-center" readonly
                                             id="ramos_pendiente_{{ $var->id_inventario_recepcion }}"
                                             value="{{ $ramos_pendientes }}">
                                     @endif
@@ -143,6 +143,13 @@
                                             onclick="update_inventario('{{ $var->id_inventario_recepcion }}')">
                                             <i class="fa fa-fw fa-edit"></i>
                                         </button>
+                                        @if ($var->disponibles > 0)
+                                            <button type="button" class="btn btn-xs btn-yura_dark"
+                                                title="Mover inventario"
+                                                onclick="mover_inventario('{{ $var->id_inventario_recepcion }}')">
+                                                <i class="fa fa-fw fa-exchange"></i>
+                                            </button>
+                                        @endif
                                         <button type="button" class="btn btn-xs btn-yura_danger"
                                             title="Eliminar inventario"
                                             onclick="delete_inventario('{{ $var->id_inventario_recepcion }}')">
@@ -172,14 +179,27 @@
                                                 data-id_detalle_api_store_cajas="{{ $detApi->id_detalle_api_store_cajas }}">
                                             {{ $detApi->documento }}
                                         </td>
+                                        <th class="text-center text-sm" style="border-color: #9d9d9d">
+                                            Exportacion
+                                        </th>
                                         <th style="border-color: #9d9d9d">
                                             <input type="number" style="width: 100%; background-color: #b0ffff"
                                                 class="text-center"
-                                                id="detApi_ramos_pendiente_{{ $detApi->id_detalle_api_store_cajas }}"
+                                                id="detApi_ramos_pendiente_exportacion_{{ $detApi->id_detalle_api_store_cajas }}"
                                                 value="{{ $detApi->ramos }}"
                                                 onchange="$('#check_detApi_{{ $detApi->id_detalle_api_store_cajas }}').prop('checked', true)">
                                         </th>
-                                        <th style="border-color: #9d9d9d" colspan="4">
+                                        <th class="text-center text-sm" style="border-color: #9d9d9d">
+                                            Nacional
+                                        </th>
+                                        <th style="border-color: #9d9d9d">
+                                            <input type="number" style="width: 100%; background-color: #b0ffff"
+                                                class="text-center"
+                                                id="detApi_ramos_pendiente_nacional_{{ $detApi->id_detalle_api_store_cajas }}"
+                                                value="0"
+                                                onchange="$('#check_detApi_{{ $detApi->id_detalle_api_store_cajas }}').prop('checked', true)">
+                                        </th>
+                                        <th style="border-color: #9d9d9d">
                                         </th>
                                     </tr>
                                 @endif
@@ -277,7 +297,8 @@
                     data.push({
                         id_inv: id_inv,
                         id_detApi: id_detApi,
-                        ramos: $('#detApi_ramos_pendiente_' + id_detApi).val()
+                        ramos_exportacion: $('#detApi_ramos_pendiente_exportacion_' + id_detApi).val(),
+                        ramos_nacional: $('#detApi_ramos_pendiente_nacional_' + id_detApi).val(),
                     });
                 }
             }
@@ -310,6 +331,18 @@
                 cerrar_modals();
                 listar_reporte();
             });
+        })
+    }
+
+    function mover_inventario(id) {
+        datos = {
+            id: id,
+        }
+        get_jquery('{{ url('ingreso_inventario/mover_inventario') }}', datos, function(retorno) {
+            modal_view('modal_mover_inventario', retorno,
+                '<i class="fa fa-fw fa-plus"></i> Mover Inventario',
+                true, false, '{{ isPC() ? '75%' : '' }}',
+                function() {});
         })
     }
 </script>
