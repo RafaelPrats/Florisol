@@ -59,6 +59,11 @@
         </th>
     </tr>
     <tr>
+        <th class="text-center" colspan="8">
+            <i class="fa fa-fw fa-caret-down"></i> mover a <i class="fa fa-fw fa-caret-down"></i>
+        </th>
+    </tr>
+    <tr>
         <th class="text-center" style="border-color: #9d9d9d">
             <input type="date" style="width: 100%; background-color: #dddddd" readonly class="padding_lateral_5"
                 value="{{ $model->fecha }}">
