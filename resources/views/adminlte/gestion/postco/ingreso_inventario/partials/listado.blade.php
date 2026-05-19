@@ -214,7 +214,7 @@
         get_jquery('{{ url('ingreso_inventario/modal_add') }}', datos, function(retorno) {
             modal_view('modal_modal_add', retorno,
                 '<i class="fa fa-fw fa-plus"></i> Ingreso manual',
-                true, false, '{{ isPC() ? '75%' : '' }}',
+                true, false, '{{ isPC() ? '95%' : '' }}',
                 function() {});
         })
     }

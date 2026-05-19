@@ -18,6 +18,9 @@
         <th class="padding_lateral_5 bg-yura_dark" style="width: 60px">
             Ramos
         </th>
+        <th class="padding_lateral_5 bg-yura_dark">
+            Bodega
+        </th>
         <th class="text-center bg-yura_dark" style="width: 90px">
             <button type="button" class="btn btn-xs btn-yura_default" onclick="add_inventario()">
                 <i class="fa fa-fw fa-plus"></i> Agregar
@@ -53,6 +56,12 @@
             <input type="number" style="width: 100%; height: 34px;" class="padding_lateral_5" id="new_ramos_1">
         </th>
         <th class="text-center" style="border-color: #9d9d9d">
+            <select id="new_bodega_1" style="width: 100%; height: 34px;">
+                <option value="E">Exportacion</option>
+                <option value="N">Nacional</option>
+            </select>
+        </th>
+        <th class="text-center" style="border-color: #9d9d9d">
         </th>
     </tr>
 </table>
@@ -85,7 +94,8 @@
         max_fecha = $('#new_fecha_1').prop('max');
         $('#table_add_inventario').append('<tr id="new_tr_' + num_row + '">' +
             '<th class="text-center" style="border-color: #9d9d9d">' +
-            '<input type="date" style="width: 100%; height: 34px;" class="padding_lateral_5" id="new_fecha_' + num_row + '" ' +
+            '<input type="date" style="width: 100%; height: 34px;" class="padding_lateral_5" id="new_fecha_' +
+            num_row + '" ' +
             'value="' + fecha + '" max="' + max_fecha + '">' +
             '</th>' +
             '<th class="text-center" style="border-color: #9d9d9d">' +
@@ -101,16 +111,24 @@
             '</select>' +
             '</th>' +
             '<th class="text-center" style="border-color: #9d9d9d">' +
-            '<input type="text" style="width: 100%; height: 34px;" class="padding_lateral_5" id="new_longitud_' + num_row +
+            '<input type="text" style="width: 100%; height: 34px;" class="padding_lateral_5" id="new_longitud_' +
+            num_row +
             '">' +
             '</th>' +
             '<th class="text-center" style="border-color: #9d9d9d">' +
-            '<input type="number" style="width: 100%; height: 34px;" class="padding_lateral_5" id="new_tallos_x_ramo_' + num_row +
+            '<input type="number" style="width: 100%; height: 34px;" class="padding_lateral_5" id="new_tallos_x_ramo_' +
+            num_row +
             '">' +
             '</th>' +
             '<th class="text-center" style="border-color: #9d9d9d">' +
             '<input type="number" style="width: 100%; height: 34px;" class="padding_lateral_5" ' +
             'id="new_ramos_' + num_row + '">' +
+            '</th>' +
+            '<th class="text-center" style="border-color: #9d9d9d">' +
+            '<select id="new_bodega_' + num_row + '" style="width: 100%; height: 34px;">' +
+            '<option value="E">Exportacion</option>' +
+            '<option value="N">Nacional</option>' +
+            '</select>' +
             '</th>' +
             '<th class="text-center" style="border-color: #9d9d9d">' +
             '<button type="button" class="btn btn-xs btn-yura_danger" onclick="quitar_row(' + num_row + ')">' +
@@ -139,6 +157,7 @@
                 longitud = parseInt($('#new_longitud_' + i).val());
                 tallos_x_ramo = parseInt($('#new_tallos_x_ramo_' + i).val());
                 ramos = $('#new_ramos_' + i).val();
+                bodega = $('#new_bodega_' + i).val();
                 if (variedad != '' && tallos_x_ramo > 0 && ramos >= 0) {
                     data.push({
                         fecha: fecha,
@@ -146,6 +165,7 @@
                         longitud: longitud,
                         tallos_x_ramo: tallos_x_ramo,
                         ramos: ramos,
+                        bodega: bodega,
                     });
                 }
             }

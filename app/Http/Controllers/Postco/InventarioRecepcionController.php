@@ -116,6 +116,7 @@ class InventarioRecepcionController extends Controller
                     ->where('tallos_x_ramo', $data->tallos_x_ramo)
                     ->where('longitud', $data->longitud)
                     ->where('id_empresa', $finca)
+                    ->where('bodega', $data->bodega)
                     ->first();
                 if ($model_inventario == '') {
                     $model_inventario = new InventarioRecepcion();
@@ -123,6 +124,7 @@ class InventarioRecepcionController extends Controller
                     $model_inventario->fecha = $data->fecha;
                     $model_inventario->tallos_x_ramo = $data->tallos_x_ramo;
                     $model_inventario->ramos = $data->ramos;
+                    $model_inventario->bodega = $data->bodega;
                     $model_inventario->longitud = $data->longitud;
                     $model_inventario->disponibles = $data->ramos * $data->tallos_x_ramo;
                     $model_inventario->id_empresa = $finca;
