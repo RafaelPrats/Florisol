@@ -10,7 +10,7 @@
                     $total_inventario = 0;
                 @endphp
                 @foreach ($fechas as $f)
-                    <th class="text-center th_yura_green th_fechas" data-fecha="{{ $f }}" style="width: 130px;">
+                    <th class="text-center th_yura_green th_fechas" data-fecha="{{ $f }}" style="width: 160px;">
                         {{ getDias(TP_ABREVIADO, FR_ARREGLO)[transformDiaPhp(date('w', strtotime($f)))] }}
                         <br>
                         <small>{{ convertDateToText($f) }}</small>
