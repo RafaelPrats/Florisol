@@ -130,7 +130,7 @@
                                 <th style="border-color: #9d9d9d">
                                     <input type="number" style="width: 100%" class="text-center"
                                         id="ramos_ingresados_{{ $var->id_inventario_recepcion }}"
-                                        value="{{ $var->ramos }}">
+                                        value="{{ $var->ramos }}" readonly>
                                 </th>
                                 <th style="border-color: #9d9d9d">
                                     <input type="number" style="width: 100%" class="text-center"
