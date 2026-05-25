@@ -180,22 +180,22 @@
                                             {{ $detApi->documento }}
                                         </td>
                                         <th class="text-center text-sm" style="border-color: #9d9d9d">
-                                            Exportacion
+                                            Ventas
                                         </th>
                                         <th style="border-color: #9d9d9d">
                                             <input type="number" style="width: 100%; background-color: #b0ffff"
                                                 class="text-center"
-                                                id="detApi_ramos_pendiente_exportacion_{{ $detApi->id_detalle_api_store_cajas }}"
+                                                id="detApi_ramos_pendiente_ventas_{{ $detApi->id_detalle_api_store_cajas }}"
                                                 value="{{ $detApi->ramos }}"
                                                 onchange="$('#check_detApi_{{ $detApi->id_detalle_api_store_cajas }}').prop('checked', true)">
                                         </th>
                                         <th class="text-center text-sm" style="border-color: #9d9d9d">
-                                            Nacional
+                                            Producción
                                         </th>
                                         <th style="border-color: #9d9d9d">
                                             <input type="number" style="width: 100%; background-color: #b0ffff"
                                                 class="text-center"
-                                                id="detApi_ramos_pendiente_nacional_{{ $detApi->id_detalle_api_store_cajas }}"
+                                                id="detApi_ramos_pendiente_produccion_{{ $detApi->id_detalle_api_store_cajas }}"
                                                 value="0"
                                                 onchange="$('#check_detApi_{{ $detApi->id_detalle_api_store_cajas }}').prop('checked', true)">
                                         </th>
@@ -297,8 +297,8 @@
                     data.push({
                         id_inv: id_inv,
                         id_detApi: id_detApi,
-                        ramos_exportacion: $('#detApi_ramos_pendiente_exportacion_' + id_detApi).val(),
-                        ramos_nacional: $('#detApi_ramos_pendiente_nacional_' + id_detApi).val(),
+                        ramos_ventas: $('#detApi_ramos_pendiente_ventas_' + id_detApi).val(),
+                        ramos_produccion: $('#detApi_ramos_pendiente_produccion_' + id_detApi).val(),
                     });
                 }
             }

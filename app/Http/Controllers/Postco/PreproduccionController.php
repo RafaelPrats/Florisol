@@ -31,6 +31,7 @@ use yura\Modelos\InventarioRecepcion;
 use yura\Modelos\OaPostco;
 use yura\Modelos\OrdenTrabajo;
 use yura\Modelos\SalidasRecepcion;
+use yura\Modelos\Segmento;
 
 class PreproduccionController extends Controller
 {
@@ -170,6 +171,7 @@ class PreproduccionController extends Controller
                 'detalle_caja_proyecto.armados',
                 'p.fecha',
                 'c.nombre as cliente_nombre',
+                'p.segmento',
                 DB::raw('cp.cantidad * detalle_caja_proyecto.ramos_x_caja as ramos')
             )->distinct()
             ->where('detalle_caja_proyecto.id_variedad', $request->variedad)
@@ -261,10 +263,12 @@ class PreproduccionController extends Controller
             // --------- DESPACHAR FLOR de la OT --------- //
             $caja = $detalle->caja_proyecto;
             $proyecto = $caja->proyecto;
+            $segmento = Segmento::where('nombre', $proyecto->segmento)->first();
+            $bodega = $segmento != '' ? $segmento->bodega : '';
             // --------- VALIDAR DISPONIBLES --------- //
             $valida = true;
             foreach ($ot->detalles as $det) {
-                $inventario = getInventarioDisponibleByVariedadFecha($det->variedad, $proyecto->fecha);
+                $inventario = getInventarioDisponibleByVariedadFechaSegmento($det->variedad, $proyecto->fecha, $proyecto->segmento);
                 if ($inventario < $det->unidades * $ot->ramos) {
                     $valida = false;
                 }
@@ -284,6 +288,7 @@ class PreproduccionController extends Controller
                         ->where('i.disponibles', '>', 0)
                         ->where('i.id_variedad', $variedad->id_variedad)
                         ->where('i.id_empresa', $finca)
+                        ->where('i.bodega', $bodega)
                         ->get();
                     $inventarios = [];
                     foreach ($query as $q) {
@@ -1019,6 +1024,7 @@ class PreproduccionController extends Controller
                 'p.fecha',
                 'p.packing',
                 'c.nombre as cliente_nombre',
+                'p.segmento',
                 DB::raw('cp.cantidad * detalle_caja_proyecto.ramos_x_caja as ramos'),
                 DB::raw('cp.cantidad * detalle_caja_proyecto.ramos_x_caja * detalle_caja_proyecto.tallos_x_ramo as tallos')
             )->distinct()
@@ -1042,27 +1048,54 @@ class PreproduccionController extends Controller
             DB::beginTransaction();
             $finca = getFincaActiva();
             $det_caja = DetalleCajaProyecto::find($request->id);
+            $caja = $det_caja->caja_proyecto;
+            $proyecto = $caja->proyecto;
+            $segmento = Segmento::where('nombre', $proyecto->segmento)->first();
+            $bodega = $segmento != '' ? $segmento->bodega : '';
 
-            $inventarios = InventarioRecepcion::where('id_empresa', $finca)
-                ->where('disponibles', '>', 0)
-                ->where('id_variedad', $det_caja->id_variedad)
-                ->orderBy('fecha', 'asc')
+            $variedad = $det_caja->variedad;
+            $query = DB::table('inventario_recepcion as i')
+                ->select('i.*')->distinct()
+                ->where('i.disponibles', '>', 0)
+                ->where('i.id_variedad', $variedad->id_variedad)
+                ->where('i.id_empresa', $finca)
+                ->where('i.bodega', $bodega)
                 ->get();
+            $inventarios = [];
+            foreach ($query as $q) {
+                $fecha_desde = $q->fecha;
+                $fecha_hasta = opDiasFecha('+', $variedad->dias_rotacion_recepcion, $q->fecha);
+                if ($proyecto->fecha >= $fecha_desde && $proyecto->fecha <= $fecha_hasta) {
+                    $inventarios[] = InventarioRecepcion::find($q->id_inventario_recepcion);
+                }
+            }
 
             $sacar = $request->armar * $det_caja->tallos_x_ramo;
             foreach ($inventarios as $model) {
                 if ($sacar >= 0) {
+                    $usados = 0;
                     $disponible = $model->disponibles;
                     if ($sacar >= $disponible) {
                         $sacar = $sacar - $disponible;
+                        $usados = $disponible;
                         $disponible = 0;
                     } else {
                         $disponible = $disponible - $sacar;
+                        $usados = $sacar;
                         $sacar = 0;
                     }
 
                     $model->disponibles = $disponible;
                     $model->save();
+
+                    $new_salida = new SalidasRecepcion();
+                    $new_salida->id_inventario_recepcion = $model->id_inventario_recepcion;
+                    $new_salida->id_detalle_caja_proyecto = $det_caja->id_detalle_caja_proyecto;
+                    $new_salida->id_variedad = $det_caja->id_variedad;
+                    $new_salida->fecha = $proyecto->fecha;
+                    $new_salida->cantidad = $usados;
+                    $new_salida->basura = 0;
+                    $new_salida->save();
                 }
             }
 
@@ -1071,7 +1104,6 @@ class PreproduccionController extends Controller
 
             $success = true;
             $msg = 'Se han <strong>ARMADO</strong> los ramos correctamente';
-            bitacora('POSTCO', $model->id_postco, 'U', 'BLOQUEO/DESBLOQUEO de RECETA');
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();

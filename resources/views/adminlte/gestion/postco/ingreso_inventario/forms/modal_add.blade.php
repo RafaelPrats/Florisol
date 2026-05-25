@@ -57,8 +57,8 @@
         </th>
         <th class="text-center" style="border-color: #9d9d9d">
             <select id="new_bodega_1" style="width: 100%; height: 34px;">
-                <option value="E">Exportacion</option>
-                <option value="N">Nacional</option>
+                <option value="V">Ventas</option>
+                <option value="P">Producción</option>
             </select>
         </th>
         <th class="text-center" style="border-color: #9d9d9d">
@@ -126,8 +126,8 @@
             '</th>' +
             '<th class="text-center" style="border-color: #9d9d9d">' +
             '<select id="new_bodega_' + num_row + '" style="width: 100%; height: 34px;">' +
-            '<option value="E">Exportacion</option>' +
-            '<option value="N">Nacional</option>' +
+            '<option value="V">Ventas</option>' +
+            '<option value="P">Producción</option>' +
             '</select>' +
             '</th>' +
             '<th class="text-center" style="border-color: #9d9d9d">' +

@@ -33,7 +33,11 @@
     @endphp
     @foreach ($listado as $item)
         @php
-            $inventarioDisponible = getInventarioDisponibleByVariedadFecha($variedad, $item->fecha);
+            $inventarioDisponible = getInventarioDisponibleByVariedadFechaSegmento(
+                $variedad,
+                $item->fecha,
+                $item->segmento,
+            );
             $por_armar = $item->ramos - $item->armados;
             $disponibles = 0;
             if ($por_armar > 0) {
@@ -53,7 +57,7 @@
             <th class="text-center" style="border-color: #9d9d9d">
                 {{ convertDateToText($item->fecha) }}
                 <br>
-                <em>{{ $item->cliente_nombre }}</em>
+                <em><small>{{ $item->segmento }}:</small></em> {{ $item->cliente_nombre }}
                 @if ($item->packing != '')
                     <br>
                     #{{ $item->packing }}

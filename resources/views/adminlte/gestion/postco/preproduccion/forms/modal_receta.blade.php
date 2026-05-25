@@ -65,7 +65,11 @@
                 $variedad = $dist->variedad;
                 $tallos_x_ramo += $dist->unidades;
                 $inventario = getTotalInventarioByVariedad($dist->id_variedad);
-                $inventarioDisponible = getInventarioDisponibleByVariedadFecha($variedad, $detalle->fecha);
+                $inventarioDisponible = getInventarioDisponibleByVariedadFechaSegmento(
+                    $variedad,
+                    $detalle->fecha,
+                    $detalle->segmento,
+                );
                 $tallos_variedad = $dist->unidades * $detalle->ramos;
                 $posibles = intval($inventarioDisponible / $dist->unidades);
                 if ($posibles < $disponibles) {

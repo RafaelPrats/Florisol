@@ -9,6 +9,7 @@ use yura\Modelos\DetalleApiStoreCajas;
 use yura\Modelos\InventarioRecepcion;
 use yura\Modelos\Planta;
 use yura\Modelos\SalidasRecepcion;
+use yura\Modelos\Segmento;
 use yura\Modelos\Submenu;
 
 class InventarioRecepcionController extends Controller
@@ -164,60 +165,60 @@ class InventarioRecepcionController extends Controller
 
             foreach (json_decode($request->data) as $data) {
                 $model = InventarioRecepcion::find($data->id_inv);
-                if ($data->ramos_exportacion > 0) {
+                if ($data->ramos_ventas > 0) {
                     $model_inventario = InventarioRecepcion::where('id_variedad', $model->id_variedad)
                         ->where('fecha', $model->fecha)
                         ->where('tallos_x_ramo', $model->tallos_x_ramo)
                         ->where('longitud', $model->longitud)
                         ->where('id_empresa', $model->id_empresa)
-                        ->where('bodega', 'E')
+                        ->where('bodega', 'V')
                         ->first();
                     if ($model_inventario == '') {
                         $model_inventario = new InventarioRecepcion();
                         $model_inventario->id_variedad = $model->id_variedad;
                         $model_inventario->fecha = $model->fecha;
                         $model_inventario->tallos_x_ramo = $model->tallos_x_ramo;
-                        $model_inventario->ramos = $data->ramos_exportacion;
-                        $model_inventario->bodega = 'E';
+                        $model_inventario->ramos = $data->ramos_ventas;
+                        $model_inventario->bodega = 'V';
                         $model_inventario->longitud = $model->longitud;
-                        $model_inventario->disponibles = $data->ramos_exportacion * $model->tallos_x_ramo;
+                        $model_inventario->disponibles = $data->ramos_ventas * $model->tallos_x_ramo;
                         $model_inventario->id_empresa = $model->id_empresa;
                         $model_inventario->save();
                     } else {
-                        $model_inventario->ramos += $data->ramos_exportacion;
-                        $model_inventario->disponibles += $data->ramos_exportacion * $model->tallos_x_ramo;
+                        $model_inventario->ramos += $data->ramos_ventas;
+                        $model_inventario->disponibles += $data->ramos_ventas * $model->tallos_x_ramo;
                         $model_inventario->save();
                     }
                 }
 
-                if ($data->ramos_nacional > 0) {
+                if ($data->ramos_produccion > 0) {
                     $model_inventario = InventarioRecepcion::where('id_variedad', $model->id_variedad)
                         ->where('fecha', $model->fecha)
                         ->where('tallos_x_ramo', $model->tallos_x_ramo)
                         ->where('longitud', $model->longitud)
                         ->where('id_empresa', $model->id_empresa)
-                        ->where('bodega', 'N')
+                        ->where('bodega', 'P')
                         ->first();
                     if ($model_inventario == '') {
                         $model_inventario = new InventarioRecepcion();
                         $model_inventario->id_variedad = $model->id_variedad;
                         $model_inventario->fecha = $model->fecha;
                         $model_inventario->tallos_x_ramo = $model->tallos_x_ramo;
-                        $model_inventario->ramos = $data->ramos_nacional;
-                        $model_inventario->bodega = 'N';
+                        $model_inventario->ramos = $data->ramos_produccion;
+                        $model_inventario->bodega = 'P';
                         $model_inventario->longitud = $model->longitud;
-                        $model_inventario->disponibles = $data->ramos_nacional * $model->tallos_x_ramo;
+                        $model_inventario->disponibles = $data->ramos_produccion * $model->tallos_x_ramo;
                         $model_inventario->id_empresa = $model->id_empresa;
                         $model_inventario->save();
                     } else {
-                        $model_inventario->ramos += $data->ramos_nacional;
-                        $model_inventario->disponibles += $data->ramos_nacional * $model->tallos_x_ramo;
+                        $model_inventario->ramos += $data->ramos_produccion;
+                        $model_inventario->disponibles += $data->ramos_produccion * $model->tallos_x_ramo;
                         $model_inventario->save();
                     }
                 }
 
                 $detApi = DetalleApiStoreCajas::find($data->id_detApi);
-                $detApi->recibido += $data->ramos_exportacion + $data->ramos_nacional;
+                $detApi->recibido += $data->ramos_ventas + $data->ramos_produccion;
                 $detApi->estado = 'R';
                 $detApi->save();
             }
@@ -384,6 +385,41 @@ class InventarioRecepcionController extends Controller
                 $model_inventario->disponibles += $request->mover_disponibles;
                 $model_inventario->save();
             }
+
+            $success = true;
+            $msg = 'Se ha <strong>GRABADO</strong> la informacion correctamente';
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $success = false;
+            $msg = '<div class="alert alert-danger text-center">' .
+                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
+                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
+                . '</div>';
+        }
+
+        return [
+            'success' => $success,
+            'mensaje' => $msg,
+        ];
+    }
+
+    public function admin_bodegas(Request $request)
+    {
+        $segmentos = Segmento::orderBy('nombre')->get();
+        return view('adminlte.gestion.postco.ingreso_inventario.forms.admin_bodegas', [
+            'segmentos' => $segmentos
+        ]);
+    }
+
+    public function update_bodega(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $segmento = Segmento::find($request->id_segmento);
+            $segmento->bodega = $request->bodega;
+            $segmento->save();
 
             $success = true;
             $msg = 'Se ha <strong>GRABADO</strong> la informacion correctamente';

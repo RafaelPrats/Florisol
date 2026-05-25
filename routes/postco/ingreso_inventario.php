@@ -11,3 +11,5 @@ Route::post('ingreso_inventario/delete_inventario', 'Postco\InventarioRecepcionC
 Route::post('ingreso_inventario/botar_inventario', 'Postco\InventarioRecepcionController@botar_inventario');
 Route::get('ingreso_inventario/mover_inventario', 'Postco\InventarioRecepcionController@mover_inventario');
 Route::post('ingreso_inventario/store_movimiento', 'Postco\InventarioRecepcionController@store_movimiento');
+Route::get('ingreso_inventario/admin_bodegas', 'Postco\InventarioRecepcionController@admin_bodegas');
+Route::post('ingreso_inventario/update_bodega', 'Postco\InventarioRecepcionController@update_bodega');

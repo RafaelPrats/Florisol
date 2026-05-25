@@ -175,7 +175,8 @@ class ProyectoController extends Controller
             ->select(DB::raw('sum(unidades) as cantidad'))
             ->where('id_variedad', $request->receta)
             ->get()[0]->cantidad;
-        $inventario = getTotalInventarioByVariedad($request->receta);
+        $cliente = Cliente::find($request->cliente);
+        $inventario = getTotalInventarioByVariedadSegmento($request->receta, $cliente->detalle()->segmento);
         return [
             'especificacion' => $especificacion,
             'tallos_x_ramo' => $tallos_x_ramo,
@@ -418,6 +419,19 @@ class ProyectoController extends Controller
                         $detalle->precio = $det_caj->precio;
                         $detalle->longitud_ramo = $det_caj->longitud_ramo;
                         $detalle->save();
+                        $detalle->id_detalle_caja_proyecto = DB::table('detalle_caja_proyecto')
+                            ->select(DB::raw('max(id_detalle_caja_proyecto) as id'))
+                            ->get()[0]->id;
+
+                        $getDetallesReceta = Variedad::find($det_caj->id_variedad)->getDetallesReceta();
+                        foreach ($getDetallesReceta as $det_receta) {
+                            $dist_receta = new DistribucionReceta();
+                            $dist_receta->id_detalle_caja_proyecto = $detalle->id_detalle_caja_proyecto;
+                            $dist_receta->id_variedad = $det_receta->id_item;
+                            $dist_receta->unidades = $det_receta->unidades;
+                            $dist_receta->longitud = $detalle->longitud_ramo;
+                            $dist_receta->save();
+                        }
                     }
                     foreach ($det_ped->marcaciones as $marcacion) {
                         // NUEVA CAJA PROYECTO MARCACION

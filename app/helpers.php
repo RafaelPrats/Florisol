@@ -72,6 +72,7 @@ use yura\Modelos\Job;
 use yura\Modelos\AplicacionCampo;
 use yura\Modelos\DetalleReceta;
 use yura\Modelos\Postco;
+use yura\Modelos\Segmento;
 
 /*
  * -------- BITÁCORA DE LAS ACCIONES ECHAS POR EL USUARIO ------
@@ -1348,6 +1349,21 @@ function getTotalInventarioByVariedad($variedad)
     return $disponibles;
 }
 
+function getTotalInventarioByVariedadSegmento($variedad, $segmento = null)
+{
+    $segmento = Segmento::where('nombre', $segmento)->first();
+    $bodega = $segmento != '' ? $segmento->bodega : '';
+    $finca = getFincaActiva();
+    $disponibles = DB::table('inventario_recepcion as i')
+        ->select(DB::raw('sum(i.disponibles) as cantidad'))
+        ->where('i.disponibles', '>', 0)
+        ->where('i.id_variedad', $variedad)
+        ->where('i.id_empresa', $finca)
+        ->where('i.bodega', $bodega)
+        ->get()[0]->cantidad;
+    return $disponibles;
+}
+
 function getInventarioDisponibleByVariedadFecha($variedad, $fecha)
 {
     $finca = getFincaActiva();
@@ -1357,6 +1373,29 @@ function getInventarioDisponibleByVariedadFecha($variedad, $fecha)
         ->where('i.disponibles', '>', 0)
         ->where('i.id_variedad', $variedad->id_variedad)
         ->where('i.id_empresa', $finca)
+        ->get();
+    foreach ($query as $q) {
+        $fecha_desde = $q->fecha;
+        $fecha_hasta = opDiasFecha('+', $variedad->dias_rotacion_recepcion, $q->fecha);
+        if ($fecha >= $fecha_desde && $fecha <= $fecha_hasta) {
+            $disponibles += $q->disponibles;
+        }
+    }
+    return $disponibles;
+}
+
+function getInventarioDisponibleByVariedadFechaSegmento($variedad, $fecha, $segmento = null)
+{
+    $segmento = Segmento::where('nombre', $segmento)->first();
+    $bodega = $segmento != '' ? $segmento->bodega : '';
+    $finca = getFincaActiva();
+    $disponibles = 0;
+    $query = DB::table('inventario_recepcion as i')
+        ->select('i.*')->distinct()
+        ->where('i.disponibles', '>', 0)
+        ->where('i.id_variedad', $variedad->id_variedad)
+        ->where('i.id_empresa', $finca)
+        ->where('i.bodega', $bodega)
         ->get();
     foreach ($query as $q) {
         $fecha_desde = $q->fecha;

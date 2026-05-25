@@ -77,8 +77,8 @@
                             Bodega
                         </div>
                         <select name="bodega_filtro" id="bodega_filtro" class="form-control" style="width: 100%">
-                            <option value="E">Exportacion</option>
-                            <option value="N">Nacional</option>
+                            <option value="V">Ventas</option>
+                            <option value="P">Producción</option>
                         </select>
                     </div>
                 </td>
@@ -91,7 +91,10 @@
                             value="{{ hoy() }}" max="{{ hoy() }}">
                         <div class="input-group-btn">
                             <button type="button" class="btn btn-yura_primary" onclick="listar_reporte()">
-                                <i class="fa fa-fw fa-search"></i> Buscar
+                                <i class="fa fa-fw fa-search"></i>
+                            </button>
+                            <button type="button" class="btn btn-yura_dark" onclick="admin_bodegas()">
+                                <i class="fa fa-fw fa-cogs"></i>
                             </button>
                         </div>
                     </div>

@@ -17,11 +17,11 @@
         });
     }
 
-    function modal_motivos() {
+    function admin_bodegas() {
         datos = {}
-        get_jquery('{{ url('ingreso_flor_nacional/modal_motivos') }}', datos, function(retorno) {
-            modal_view('modal_modal_motivos', retorno,
-                '<i class="fa fa-fw fa-plus"></i> Motivos de Flor Nacional',
+        get_jquery('{{ url('ingreso_inventario/admin_bodegas') }}', datos, function(retorno) {
+            modal_view('modal_admin_bodegas', retorno,
+                '<i class="fa fa-fw fa-plus"></i> Administrar Bodegas',
                 true, false, '{{ isPC() ? '50%' : '' }}',
                 function() {});
         })
