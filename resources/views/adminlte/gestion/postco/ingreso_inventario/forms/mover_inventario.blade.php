@@ -95,8 +95,8 @@
         <th class="text-center" style="border-color: #9d9d9d">
             <select id="mover_bodega" class="padding_lateral_5"
                 style="width: 100%; height: 26px; background-color: #dddddd">
-                <option value="V" {{ $model->bodega == 'V' ? 'selected' : '' }}>Ventas</option>
-                <option value="P" {{ $model->bodega == 'P' ? 'selected' : '' }}>Producción</option>
+                <option value="V" {{ $model->bodega == 'P' ? 'selected' : '' }}>Ventas</option>
+                <option value="P" {{ $model->bodega == 'V' ? 'selected' : '' }}>Producción</option>
             </select>
         </th>
     </tr>
