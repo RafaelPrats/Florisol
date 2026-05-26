@@ -43,10 +43,17 @@ class PreproduccionController extends Controller
             ->where('id_empresa', $finca)
             ->orderBy('nombre')
             ->get();
+        $clientes = DB::table('proyecto as p')
+            ->join('detalle_cliente as dc', 'dc.id_cliente', '=', 'p.id_cliente')
+            ->select('dc.id_cliente', 'dc.nombre')->distinct()
+            ->where('dc.estado', 1)
+            ->orderBy('dc.nombre')
+            ->get();
         return view('adminlte.gestion.postco.preproduccion.inicio', [
             'url' => $request->getRequestUri(),
             'submenu' => Submenu::Where('url', '=', substr($request->getRequestUri(), 1))->get()[0],
             'variedades' => $variedades,
+            'clientes' => $clientes,
         ]);
     }
 
@@ -64,6 +71,8 @@ class PreproduccionController extends Controller
                 ->where('p.fecha', '<=', $request->hasta);
             if ($request->variedad != 'T')
                 $fechas = $fechas->where('dc.id_variedad', $request->variedad);
+            if ($request->cliente != 'T')
+                $fechas = $fechas->where('p.id_cliente', $request->cliente);
             $fechas = $fechas->orderBy('p.fecha')->get()->pluck('fecha')->toArray();
 
             $recetas = DB::table('proyecto as p')
@@ -76,6 +85,8 @@ class PreproduccionController extends Controller
                 ->where('p.fecha', '<=', $request->hasta);
             if ($request->variedad != 'T')
                 $recetas = $recetas->where('dc.id_variedad', $request->variedad);
+            if ($request->cliente != 'T')
+                $recetas = $recetas->where('p.id_cliente', $request->cliente);
             $recetas = $recetas->orderBy('v.nombre')
                 ->get();
 
@@ -91,8 +102,10 @@ class PreproduccionController extends Controller
                         'p.fecha'
                     )
                     ->where('dc.id_variedad', $receta->id_variedad)
-                    ->where('dc.longitud_ramo', $receta->longitud_ramo)
-                    ->whereIn('p.fecha', $fechas)
+                    ->where('dc.longitud_ramo', $receta->longitud_ramo);
+                if ($request->cliente != 'T')
+                    $valores = $valores->where('p.id_cliente', $request->cliente);
+                $valores = $valores->whereIn('p.fecha', $fechas)
                     ->orderBy('p.fecha')
                     ->groupBy('p.fecha')
                     ->get();
@@ -113,6 +126,8 @@ class PreproduccionController extends Controller
                 ->where('p.fecha', '<=', $request->hasta);
             if ($request->variedad != 'T')
                 $fechas = $fechas->where('dc.id_variedad', $request->variedad);
+            if ($request->cliente != 'T')
+                $fechas = $fechas->where('p.id_cliente', $request->cliente);
             $fechas = $fechas->orderBy('p.fecha')->get()->pluck('fecha')->toArray();
 
             $flores = DB::table('proyecto as p')
@@ -128,6 +143,8 @@ class PreproduccionController extends Controller
                 ->where('p.fecha', '<=', $request->hasta);
             if ($request->variedad != 'T')
                 $flores = $flores->where('dc.id_variedad', $request->variedad);
+            if ($request->cliente != 'T')
+                $flores = $flores->where('p.id_cliente', $request->cliente);
             $flores = $flores->orderBy('v.nombre')
                 ->get();
 
@@ -143,8 +160,10 @@ class PreproduccionController extends Controller
                         'p.fecha'
                     )
                     ->where('dc.id_variedad', $flor->id_variedad)
-                    ->whereIn('p.fecha', $fechas)
-                    ->orderBy('p.fecha')
+                    ->whereIn('p.fecha', $fechas);
+                if ($request->cliente != 'T')
+                    $valores = $valores->where('p.id_cliente', $request->cliente);
+                $valores = $valores->orderBy('p.fecha')
                     ->groupBy('p.fecha')
                     ->get();
                 $listado[] = [
@@ -177,8 +196,10 @@ class PreproduccionController extends Controller
             ->where('detalle_caja_proyecto.id_variedad', $request->variedad)
             ->where('detalle_caja_proyecto.longitud_ramo', $request->longitud)
             ->where('c.estado', 1)
-            ->whereIn('p.fecha', json_decode($request->fechas))
-            ->orderBy('p.fecha')
+            ->whereIn('p.fecha', json_decode($request->fechas));
+        if ($request->cliente != 'T')
+            $listado = $listado->where('p.id_cliente', $request->cliente);
+        $listado = $listado->orderBy('p.fecha')
             ->get();
         return view('adminlte.gestion.postco.preproduccion.forms.modal_receta', [
             'listado' => $listado,
@@ -1030,8 +1051,10 @@ class PreproduccionController extends Controller
             )->distinct()
             ->where('detalle_caja_proyecto.id_variedad', $request->variedad)
             ->where('c.estado', 1)
-            ->whereIn('p.fecha', json_decode($request->fechas))
-            ->orderBy('p.fecha')
+            ->whereIn('p.fecha', json_decode($request->fechas));
+        if ($request->cliente != 'T')
+            $listado = $listado->where('p.id_cliente', $request->cliente);
+        $listado = $listado->orderBy('p.fecha')
             ->get();
         $inventario = getTotalInventarioByVariedad($request->variedad);
         return view('adminlte.gestion.postco.preproduccion.forms.modal_flor', [
