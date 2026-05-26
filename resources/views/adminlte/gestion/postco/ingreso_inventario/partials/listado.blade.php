@@ -21,7 +21,7 @@
                     Ramos
                 </th>
                 <th class="padding_lateral_5 bg-yura_dark" style="width: 90px">
-                    Tallos
+                    Tallos Disponibles
                 </th>
                 <th class="text-center bg-yura_dark" style="width: 130px">
                     <button type="button" class="btn btn-xs btn-yura_default" onclick="modal_add()">
