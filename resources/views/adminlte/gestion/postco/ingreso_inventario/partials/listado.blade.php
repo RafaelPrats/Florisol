@@ -8,6 +8,9 @@
                 <th class="padding_lateral_5 th_yura_green">
                     Variedad
                 </th>
+                <th class="padding_lateral_5" style="width: 90px; background-color: #dddddd">
+                    Ramos Ingresados
+                </th>
                 <th class="padding_lateral_5 bg-yura_dark" style="width: 90px">
                     TxR
                 </th>
@@ -16,9 +19,6 @@
                 </th>
                 <th class="padding_lateral_5" style="width: 90px; background-color: cyan">
                     Pendiente
-                </th>
-                <th class="padding_lateral_5 bg-yura_dark" style="width: 90px">
-                    Ramos
                 </th>
                 <th class="padding_lateral_5 bg-yura_dark" style="width: 90px">
                     Tallos Disponibles
@@ -63,7 +63,7 @@
                 @if ($existe_pta || $documento == '')
                     <tr style="background-color: #dddddd" class="mouse-hand"
                         onclick="$('.tr_planta_{{ $item['planta']->id_planta }}').toggleClass('hidden'); $('.tr_all_detApi_{{ $item['planta']->id_planta }}').addClass('hidden')">
-                        <th class="padding_lateral_5" style="border-color: #9d9d9d" colspan="4">
+                        <th class="padding_lateral_5" style="border-color: #9d9d9d" colspan="5">
                             {{ $item['planta']->nombre }} <i class="fa fa-fw fa-caret-down"></i>
                         </th>
                         <th class="text-center"
@@ -113,6 +113,11 @@
                                         <i class="fa fa-fw fa-caret-down"></i>
                                     @endif
                                 </th>
+                                <th style="border-color: #9d9d9d">
+                                    <input type="number" style="width: 100%" class="text-center"
+                                        id="ramos_ingresados_{{ $var->id_inventario_recepcion }}"
+                                        value="{{ $var->ramos }}" readonly>
+                                </th>
                                 <th class="padding_lateral_5" style="border-color: #9d9d9d">
                                     {{ $var->tallos_x_ramo }}
                                 </th>
@@ -126,11 +131,6 @@
                                             id="ramos_pendiente_{{ $var->id_inventario_recepcion }}"
                                             value="{{ $ramos_pendientes }}">
                                     @endif
-                                </th>
-                                <th style="border-color: #9d9d9d">
-                                    <input type="number" style="width: 100%" class="text-center"
-                                        id="ramos_ingresados_{{ $var->id_inventario_recepcion }}"
-                                        value="{{ $var->ramos }}">
                                 </th>
                                 <th style="border-color: #9d9d9d">
                                     <input type="number" style="width: 100%" class="text-center"
@@ -171,7 +171,7 @@
                                     <tr
                                         class="tr_detApi_{{ $var->id_variedad }}_{{ $pos_v }} tr_all_detApi_{{ $item['planta']->id_planta }} hidden">
                                         <td class="text-right padding_lateral_5"
-                                            style="border-color: #9d9d9d; background-color: #eeeeee" colspan="4">
+                                            style="border-color: #9d9d9d; background-color: #eeeeee" colspan="5">
                                             <input type="checkbox"
                                                 id="check_detApi_{{ $detApi->id_detalle_api_store_cajas }}"
                                                 data-id_inventario_recepcion="{{ $var->id_inventario_recepcion }}"
