@@ -34,6 +34,7 @@ use Storage as Almacenamiento;
 use \PhpOffice\PhpSpreadsheet\IOFactory as IOFactory;
 use yura\Modelos\Especificaciones;
 use yura\Modelos\Planta;
+use yura\Modelos\Segmento;
 use yura\Modelos\Variedad;
 
 class ClienteController extends Controller
@@ -245,11 +246,13 @@ class ClienteController extends Controller
         isset($dataCliente->codigo_porcentaje_impuesto)
             ? $tipoImpuesto = TipoImpuesto::where('codigo_impuesto', $dataCliente->codigo_porcentaje_impuesto)->get()
             : $tipoImpuesto = [];
+        $segmentos = Segmento::get();
 
         return view('adminlte.gestion.postcocecha.clientes.forms.add_cliente', [
             'dataPais' => Pais::orderBy('nombre', 'asc')->get(),
             'dataCliente' => $dataCliente,
             'tipoImpuestos' => $tipoImpuesto,
+            'segmentos' => $segmentos,
             'dataTipoIdentificacion' => TipoIdentificacion::where('estado', 1)->get(),
             'impuestos' => Impuesto::all(),
             'marcas' => Marca::all()

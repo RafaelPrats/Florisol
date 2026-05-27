@@ -149,9 +149,14 @@
         </div>
         <div class="col-md-3">
             <div class="form-group">
-                <label for="marca">Segmento</label>
-                <input type="text" id="segmento" name="segmento" class="form-control"
-                    value="{!! !empty($dataCliente) ? $dataCliente->segmento : '' !!}">
+                <label for="segmento">Segmento</label>
+                <select id="segmento" name="segmento" class="form-control" style="width: 100%">
+                    @foreach ($segmentos as $segmento)
+                        <option value="{{ $segmento->nombre }}" {!! !empty($dataCliente) ? ($dataCliente->segmento === $segmento->nombre ? 'selected' : '') : '' !!}>
+                            {{ $segmento->nombre }}
+                        </option>
+                    @endforeach
+                </select>
             </div>
         </div>
     </div>

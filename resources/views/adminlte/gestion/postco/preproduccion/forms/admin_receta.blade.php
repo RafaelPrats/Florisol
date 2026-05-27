@@ -133,6 +133,7 @@
             ramos_pedido: $('#ramos_pedido').val(),
             longitud_pedido: $('#longitud_pedido').val(),
             postco_fecha: $('#postco_fecha').val(),
+            segmento: $('#segmento_selected').val(),
         };
         get_jquery('{{ url('preproduccion/buscar_variedades') }}', datos, function(retorno) {
             $('#div_listado_variedades').html(retorno);

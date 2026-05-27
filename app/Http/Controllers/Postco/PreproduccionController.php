@@ -403,6 +403,7 @@ class PreproduccionController extends Controller
             'ramos_pedido' => $request->ramos_pedido,
             'longitud_pedido' => $request->longitud_pedido,
             'postco_fecha' => $request->postco_fecha,
+            'segmento' => $request->segmento,
         ]);
     }
 

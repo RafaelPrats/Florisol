@@ -283,6 +283,8 @@
     </div>
 </div>
 
+<input type="hidden" id="segmento_selected" value="{{ $detalle->segmento }}">
+
 <script type="text/javascript">
     function armar_ramos(id) {
         texto =

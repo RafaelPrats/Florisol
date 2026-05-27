@@ -63,17 +63,19 @@
                 @if ($existe_pta || $documento == '')
                     <tr style="background-color: #dddddd" class="mouse-hand"
                         onclick="$('.tr_planta_{{ $item['planta']->id_planta }}').toggleClass('hidden'); $('.tr_all_detApi_{{ $item['planta']->id_planta }}').addClass('hidden')">
-                        <th class="padding_lateral_5" style="border-color: #9d9d9d" colspan="5">
+                        <th class="padding_lateral_5" style="border-color: #9d9d9d" colspan="2">
                             {{ $item['planta']->nombre }} <i class="fa fa-fw fa-caret-down"></i>
+                        </th>
+                        <th class="text-center" style="border-color: #9d9d9d">
+                            {{ number_format($ramos_pta) }}
+                        </th>
+                        <th class="text-center" style="border-color: #9d9d9d" colspan="2">
                         </th>
                         <th class="text-center"
                             style="border-color: #9d9d9d; background-color: {{ $pendiente_pta > 0 ? '#b0ffff' : '' }}">
                             @if ($pendiente_pta > 0)
                                 {{ number_format($pendiente_pta) }}
                             @endif
-                        </th>
-                        <th class="text-center" style="border-color: #9d9d9d">
-                            {{ number_format($ramos_pta) }}
                         </th>
                         <th class="text-center" style="border-color: #9d9d9d">
                             {{ number_format($tallos_pta) }}

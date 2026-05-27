@@ -43,7 +43,7 @@
                     </th>
                     <th class="text-center" style="border-color: #9d9d9d; background-color: #dddddd"
                         id="td_inventario_busqueda_{{ $item->id_variedad }}">
-                        {{ getInventarioDisponibleByVariedadFecha($item, $postco_fecha) }}
+                        {{ getInventarioDisponibleByVariedadFechaSegmento($item, $postco_fecha, $segmento) }}
                     </th>
                     <td class="text-center" style="border-color: #9d9d9d"
                         id="td_venta_busqueda_{{ $item->id_variedad }}">
