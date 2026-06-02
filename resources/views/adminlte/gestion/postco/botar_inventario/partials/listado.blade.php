@@ -125,10 +125,11 @@
                 motivo: $('#motivo_botar_' + id).val(),
                 fecha: $('#fecha_filtro').val(),
             }
-            post_jquery_m('{{ url('botar_inventario/botar_inventario') }}', datos, function() {
-                cerrar_modals();
-                listar_reporte();
-            });
+            if (datos['botar'] > 0 && datos['motivo'] != '')
+                post_jquery_m('{{ url('botar_inventario/botar_inventario') }}', datos, function() {
+                    cerrar_modals();
+                    listar_reporte();
+                });
         })
     }
 </script>
