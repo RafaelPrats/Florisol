@@ -16,10 +16,16 @@ class SalidasRecepcion extends Model
         'cantidad',
         'basura',
         'fecha',
+        'id_motivo_baja',
     ];
 
     public function variedad()
     {
         return $this->belongsTo('\yura\Modelos\Variedad', 'id_variedad');
+    }
+
+    public function motivo_baja()
+    {
+        return $this->belongsTo('\yura\Modelos\MotivoBaja', 'id_motivo_baja');
     }
 }

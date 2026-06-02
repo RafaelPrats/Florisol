@@ -28,9 +28,6 @@
                         <i class="fa fa-fw fa-plus"></i> Agregar
                     </button>
                 </th>
-                <th class="text-center bg-yura_warning" style="width: 90px">
-                    Botar
-                </th>
             </tr>
         </thead>
         <tbody>
@@ -157,15 +154,7 @@
                                             onclick="delete_inventario('{{ $var->id_inventario_recepcion }}')">
                                             <i class="fa fa-fw fa-times"></i>
                                         </button>
-                                        <button type="button" class="btn btn-xs btn-yura_warning" title="Botar flor"
-                                            onclick="botar_inventario('{{ $var->id_inventario_recepcion }}')">
-                                            <i class="fa fa-fw fa-trash"></i> <i class="fa fa-fw fa-caret-right"></i>
-                                        </button>
                                     </div>
-                                </th>
-                                <th style="border-color: #9d9d9d">
-                                    <input type="number" style="width: 100%" class="text-center"
-                                        id="tallos_botar_{{ $var->id_inventario_recepcion }}" value="0">
                                 </th>
                             </tr>
                             @foreach ($getDetalleApiStoreCajasByVariedad as $detApi)
@@ -173,7 +162,7 @@
                                     <tr
                                         class="tr_detApi_{{ $var->id_variedad }}_{{ $pos_v }} tr_all_detApi_{{ $item['planta']->id_planta }} hidden">
                                         <td class="text-right padding_lateral_5"
-                                            style="border-color: #9d9d9d; background-color: #eeeeee" colspan="5">
+                                            style="border-color: #9d9d9d; background-color: #eeeeee" colspan="4">
                                             <input type="checkbox"
                                                 id="check_detApi_{{ $detApi->id_detalle_api_store_cajas }}"
                                                 data-id_inventario_recepcion="{{ $var->id_inventario_recepcion }}"
@@ -201,8 +190,6 @@
                                                 value="0"
                                                 onchange="$('#check_detApi_{{ $detApi->id_detalle_api_store_cajas }}').prop('checked', true)">
                                         </th>
-                                        <th style="border-color: #9d9d9d">
-                                        </th>
                                     </tr>
                                 @endif
                             @endforeach
@@ -225,7 +212,7 @@
                     <i class="fa fa-fw fa-check"></i> Recibir todo
                 </button>
             </th>
-            <th class="th_yura_green" colspan="4"></th>
+            <th class="th_yura_green" colspan="3"></th>
         </tr>
     </table>
 </div>
