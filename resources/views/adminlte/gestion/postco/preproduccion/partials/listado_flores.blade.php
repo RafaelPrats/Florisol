@@ -3,14 +3,16 @@
         <thead>
             <tr class="tr_fija_top_0">
                 <th class="padding_lateral_5 th_yura_green">
-                    FLOR
+                    <div style="width: 230px">
+                        FLOR
+                    </div>
                 </th>
                 @php
                     $totales = [];
                     $total_inventario = 0;
                 @endphp
                 @foreach ($fechas as $f)
-                    <th class="text-center th_yura_green th_fechas" data-fecha="{{ $f }}" style="width: 160px;">
+                    <th class="text-center th_yura_green th_fechas" data-fecha="{{ $f }}" style="width: 250px;">
                         {{ getDias(TP_ABREVIADO, FR_ARREGLO)[transformDiaPhp(date('w', strtotime($f)))] }}
                         <br>
                         <small>{{ convertDateToText($f) }}</small>
