@@ -1143,4 +1143,71 @@ class PreproduccionController extends Controller
             'mensaje' => $msg,
         ];
     }
+
+    public function export_armados(Request $request)
+    {
+        $spread = new Spreadsheet();
+        $this->excel_armados($spread, $request);
+        $fileName = "ARMADO.xlsx";
+        $writer = new Xlsx($spread);
+
+        //--------------------------- GUARDAR EL EXCEL -----------------------
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . urlencode($fileName) . '"');
+        $writer->save('php://output');
+
+        //$writer->save('/var/www/html/Dasalflor/storage/storage/excel/excel_prueba.xlsx');
+    }
+
+    public function excel_armados($spread, $request)
+    {
+        $model = DetalleCajaProyecto::find($request->id);
+
+        $columnas = getColumnasExcel();
+        $sheet = $spread->getActiveSheet();
+        $sheet->setTitle('ARMADO');
+
+        $row = 1;
+        $col = 0;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'FECHA');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'CLIENTE');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'VARIEDAD');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'TxR');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'LONGITUD');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'RAMOS');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'RESPONSABLE');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'OBSERVACION');
+
+        setBgToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, '00b388');
+        setColorTextToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, 'ffffff');
+
+        $row++;
+        $col = 0;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $model->caja_proyecto->proyecto->fecha);
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $model->caja_proyecto->proyecto->cliente->detalle()->nombre);
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $model->variedad->nombre);
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $model->tallos_x_ramo);
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $model->longitud_ramo);
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $request->armar);
+        $col += 2;
+
+        setTextCenterToCeldaExcel($sheet, 'A1:' . $columnas[$col] . $row);
+        setBorderToCeldaExcel($sheet, 'A1:' . $columnas[$col] . $row);
+
+        for ($i = 0; $i <= $col; $i++)
+            $sheet->getColumnDimension($columnas[$i])->setAutoSize(true);
+    }
 }

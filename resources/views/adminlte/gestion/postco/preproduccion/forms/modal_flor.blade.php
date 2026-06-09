@@ -73,7 +73,14 @@
                 {{ number_format($inventarioDisponible) }}
             </th>
             <th class="text-center" style="border-color: #9d9d9d">
-                {{ $item->armados }}
+                @if ($item->armados > 0)
+                    {{ $item->armados }}
+                    <br>
+                    <button type="button" class="btn btn-xs btn-yura_default" title="Exportar"
+                        onclick="export_armados('{{ $item->id_detalle_caja_proyecto }}', '{{ $item->armados }}')">
+                        <i class="fa fa-fw fa-file-excel-o"></i>
+                    </button>
+                @endif
             </th>
             <th class="text-center" style="border-color: #9d9d9d">
                 <button class="btn btn-xs btn-yura_info" title="Disponibles">
@@ -133,6 +140,7 @@
                 post_jquery_m('{{ url('preproduccion/store_armar_flor') }}', datos, function() {
                     cerrar_modals();
                     listar_reporte();
+                    export_armados(id, armar);
                     modal_flor($('#variedad_selected').val(), $('#fechas_selected').val());
                 });
             })
@@ -141,5 +149,11 @@
                 '<div class="alert alert-warning text-center">No hay flor disponible en el inventario para armar los ramos indicados</div>'
             );
         }
+    }
+
+    function export_armados(id, armar) {
+        $.LoadingOverlay('show');
+        window.open('{{ url('preproduccion/export_armados') }}?id=' + id + '&armar=' + armar, '_blank');
+        $.LoadingOverlay('hide');
     }
 </script>
