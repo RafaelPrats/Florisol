@@ -46,7 +46,7 @@ class ListadoOtController extends Controller
             ->where('p.fecha', '>=', $request->desde)
             ->where('p.fecha', '<=', $request->hasta);
         if ($request->variedad != 'T')
-            $listado = $listado->where('p.id_variedad', $request->variedad);
+            $listado = $listado->where('dc.id_variedad', $request->variedad);
         $listado = $listado->orderBy('orden_trabajo.id_orden_trabajo')
             ->get();
         $despachadores = Despachador::where('estado', 1)
