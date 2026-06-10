@@ -165,6 +165,8 @@ class InventarioRecepcionController extends Controller
 
             foreach (json_decode($request->data) as $data) {
                 $model = InventarioRecepcion::find($data->id_inv);
+                $data->ramos_ventas = $data->ramos_ventas >= 0 ? $data->ramos_ventas : 0;
+                $data->ramos_produccion = $data->ramos_produccion >= 0 ? $data->ramos_produccion : 0;
                 if ($data->ramos_ventas > 0) {
                     $model_inventario = InventarioRecepcion::where('id_variedad', $model->id_variedad)
                         ->where('fecha', $model->fecha)
