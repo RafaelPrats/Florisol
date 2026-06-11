@@ -1012,8 +1012,13 @@ class PlantaController extends Controller
                 $numero_receta = mb_strtoupper($request->new_nombre_receta);
                 DB::select('delete from detalle_receta where id_variedad = ' . $request->id_var . ' and numero_receta = "' . $numero_receta . '"');
             } else {
-                $numero_receta = 'DEFAULT';
-                DB::select('delete from detalle_receta where id_variedad = ' . $request->id_var . ' and numero_receta is null');
+                if ($request->filtro_numero_receta == '') {
+                    $numero_receta = 'DEFAULT';
+                    DB::select('delete from detalle_receta where id_variedad = ' . $request->id_var . ' and numero_receta is null');
+                } else {
+                    $numero_receta = $request->filtro_numero_receta;
+                    DB::select('delete from detalle_receta where id_variedad = ' . $request->id_var . ' and numero_receta = "' . $numero_receta . '"');
+                }
             }
 
             foreach (json_decode($request->data) as $d) {
