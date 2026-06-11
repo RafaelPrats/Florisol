@@ -89,6 +89,8 @@
 </div>
 
 <script>
+    estructura_tabla('table_listado');
+
     function mover_inventario(id) {
         datos = {
             id: id,

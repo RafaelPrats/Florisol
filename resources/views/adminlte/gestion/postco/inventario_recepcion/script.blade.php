@@ -14,4 +14,12 @@
             $('#div_listado').html(retorno);
         });
     }
+
+    function exportar_reporte() {
+        $.LoadingOverlay('show');
+        window.open('{{ url('inventario_recepcion/exportar_reporte') }}?planta=' + $("#planta_filtro").val() +
+            '&variedad=' + $("#variedad_filtro").val() +
+            '&bodega=' + $("#bodega_filtro").val(), '_blank');
+        $.LoadingOverlay('hide');
+    }
 </script>
