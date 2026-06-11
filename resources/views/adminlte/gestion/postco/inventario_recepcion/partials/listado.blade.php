@@ -2,16 +2,24 @@
     <table class="table-bordered" style="width: 100%; border: 1px solid #9d9d9d" id="table_listado">
         <thead>
             <tr class="tr_fija_top_0">
-                <th class="padding_lateral_5 th_yura_green">
+                <th class="padding_lateral_5 th_yura_green" rowspan="2">
                     <div style="width: 120px">
                         Planta
                     </div>
                 </th>
-                <th class="padding_lateral_5 th_yura_green">
+                <th class="padding_lateral_5 th_yura_green" rowspan="2">
                     <div style="width: 120px">
                         Variedad
                     </div>
                 </th>
+                <th class="text-center th_yura_green" colspan="10">
+                    Dias
+                </th>
+                <th class="text-center th_yura_green" style="width: 90px" rowspan="2">
+                    Total
+                </th>
+            </tr>
+            <tr>
                 @php
                     $total_fechas = [];
                     $total_tallos = 0;
@@ -25,9 +33,6 @@
                         $total_fechas[] = 0;
                     @endphp
                 @endfor
-                <th class="text-center th_yura_green" style="width: 90px">
-                    Total
-                </th>
             </tr>
         </thead>
         <tbody>
