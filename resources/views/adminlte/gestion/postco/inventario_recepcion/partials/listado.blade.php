@@ -19,7 +19,7 @@
                     Total
                 </th>
             </tr>
-            <tr>
+            <tr class="tr_fija_top_1">
                 @php
                     $total_fechas = [];
                     $total_tallos = 0;
