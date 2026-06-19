@@ -20,10 +20,10 @@
                 BASURA
             </th>
             <th class="text-center bg-yura_dark">
-                OT
+                OT (RECETA)
             </th>
             <th class="text-center bg-yura_dark">
-                SUELTA
+                FLOR SOLIDA
             </th>
         </tr>
         @foreach ($listado as $pos => $item)
