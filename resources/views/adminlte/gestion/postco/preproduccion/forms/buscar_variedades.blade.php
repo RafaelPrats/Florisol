@@ -5,6 +5,9 @@
                 <th class="text-center th_yura_green" style="width: 60%">
                     VARIEDAD
                 </th>
+                <th class="text-center th_yura_green" style="width: 60%">
+                    COLOR
+                </th>
                 <th class="text-center th_yura_green padding_lateral_5">
                     LONGITUD
                 </th>
@@ -22,13 +25,16 @@
         <tbody>
             @foreach ($listado as $pos => $item)
                 <tr id="tr_variedad_{{ $item->id_variedad }}" class="{{ $item->estado == 0 ? 'error' : '' }}">
-                    <th class="text-center" style="border-color: #9d9d9d">
+                    <th class="text-center text-sm" style="border-color: #9d9d9d">
                         <input type="hidden" class="variedades_listados" value="{{ $item->id_variedad }}">
                         <input type="hidden" id="nombre_planta_{{ $item->id_variedad }}"
                             value="{{ $item->planta->nombre }}">
-                        <input type="text" readonly id="nombre_variedad_{{ $item->id_variedad }}" style="width: 100%"
+                        <input type="hidden" readonly id="nombre_variedad_{{ $item->id_variedad }}" style="width: 100%"
                             class="text-center" value="{{ $item->nombre }}">
-                        <span class="hidden">{{ $item->nombre }}</span>
+                        {{ $item->nombre }}
+                    </th>
+                    <th class="text-center text-sm" style="border-color: #9d9d9d">
+                        {{ $item->color }}
                     </th>
                     <th class="text-center" style="border-color: #9d9d9d">
                         <input type="number" style="width: 100%" class="text-center" required min="0"
