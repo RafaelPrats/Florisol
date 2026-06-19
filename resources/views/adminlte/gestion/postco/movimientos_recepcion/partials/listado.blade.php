@@ -27,56 +27,67 @@
             </th>
         </tr>
         @foreach ($listado as $pos => $item)
-            <tr onmouseover="$(this).css('background-color', 'cyan')"
-                onmouseleave="$(this).css('background-color', '')">
-                <th class="text-center" style="border-color: #9d9d9d">
-                    @if ($item->tipo == 'INGRESO')
-                        <span class="badge bg-yura_primary" title="Ingreso">
-                            <i class="fa fa-fw fa-download"></i>
-                        </span>
-                    @else
-                        <span class="badge btn-yura_danger" title="Salida">
-                            <i class="fa fa-fw fa-upload"></i>
-                        </span>
-                    @endif
-                </th>
-                <th class="padding_lateral_5" style="border-color: #9d9d9d">
-                    {{ $item->fecha }}
-                </th>
-                <th class="padding_lateral_5" style="border-color: #9d9d9d">
-                    {{ $item->pta_nombre }}
-                </th>
-                <th class="padding_lateral_5" style="border-color: #9d9d9d">
-                    {{ $item->var_nombre }}
-                </th>
-                <th class="padding_lateral_5" style="border-color: #9d9d9d">
-                    @if ($item->tipo == 'INGRESO')
-                        {{ $item->data->tallos_ingresados }}
-                    @else
-                        {{ $item->data->cantidad }}
-                    @endif
-                </th>
-                <th class="padding_lateral_5" style="border-color: #9d9d9d">
-                    @if ($item->tipo == 'SALIDA')
-                        {{ $item->data->basura }}
-                    @endif
-                </th>
-                <th class="text-center text-sm" style="border-color: #9d9d9d">
-                    @if ($item->tipo == 'SALIDA' && $item->data->id_orden_trabajo != '')
-                        #{{ $item->data->id_orden_trabajo }}
-                        {{ $item->data->cli_nombre_ot }}
-                        <br>
-                        <small>{{ $item->data->segmento_ot }}</small>
-                    @endif
-                </th>
-                <th class="text-center text-sm" style="border-color: #9d9d9d">
-                    @if ($item->tipo == 'SALIDA')
-                        {{ $item->data->cli_nombre_proy }}
-                        <br>
-                        <small>{{ $item->data->segmento_proy }}</small>
-                    @endif
-                </th>
-            </tr>
+            @php
+                $mostrar = true;
+                if ($item->tipo == 'SALIDA') {
+                    if ($item->data->cantidad + $item->data->basura <= 0) {
+                        $mostrar = false;
+                    }
+                }
+            @endphp
+
+            @if ($mostrar)
+                <tr onmouseover="$(this).css('background-color', 'cyan')"
+                    onmouseleave="$(this).css('background-color', '')">
+                    <th class="text-center" style="border-color: #9d9d9d">
+                        @if ($item->tipo == 'INGRESO')
+                            <span class="badge bg-yura_primary" title="Ingreso">
+                                <i class="fa fa-fw fa-download"></i>
+                            </span>
+                        @else
+                            <span class="badge btn-yura_danger" title="Salida">
+                                <i class="fa fa-fw fa-upload"></i>
+                            </span>
+                        @endif
+                    </th>
+                    <th class="padding_lateral_5" style="border-color: #9d9d9d">
+                        {{ $item->fecha }}
+                    </th>
+                    <th class="padding_lateral_5" style="border-color: #9d9d9d">
+                        {{ $item->pta_nombre }}
+                    </th>
+                    <th class="padding_lateral_5" style="border-color: #9d9d9d">
+                        {{ $item->var_nombre }}
+                    </th>
+                    <th class="padding_lateral_5" style="border-color: #9d9d9d">
+                        @if ($item->tipo == 'INGRESO')
+                            {{ $item->data->tallos_ingresados }}
+                        @else
+                            {{ $item->data->cantidad }}
+                        @endif
+                    </th>
+                    <th class="padding_lateral_5" style="border-color: #9d9d9d">
+                        @if ($item->tipo == 'SALIDA')
+                            {{ $item->data->basura }}
+                        @endif
+                    </th>
+                    <th class="text-center text-sm" style="border-color: #9d9d9d">
+                        @if ($item->tipo == 'SALIDA' && $item->data->id_orden_trabajo != '')
+                            #{{ $item->data->id_orden_trabajo }}
+                            {{ $item->data->cli_nombre_ot }}
+                            <br>
+                            <small>{{ $item->data->segmento_ot }}</small>
+                        @endif
+                    </th>
+                    <th class="text-center text-sm" style="border-color: #9d9d9d">
+                        @if ($item->tipo == 'SALIDA')
+                            {{ $item->data->cli_nombre_proy }}
+                            <br>
+                            <small>{{ $item->data->segmento_proy }}</small>
+                        @endif
+                    </th>
+                </tr>
+            @endif
         @endforeach
     </table>
 </div>
