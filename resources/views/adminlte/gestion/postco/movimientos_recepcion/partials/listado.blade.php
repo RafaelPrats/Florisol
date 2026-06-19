@@ -23,7 +23,7 @@
                 OT (RECETA)
             </th>
             <th class="text-center bg-yura_dark">
-                FLOR SOLIDA
+                RAMOS SOLIDOS
             </th>
         </tr>
         @foreach ($listado as $pos => $item)
