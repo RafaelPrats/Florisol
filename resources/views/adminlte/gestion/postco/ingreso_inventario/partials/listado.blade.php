@@ -98,7 +98,7 @@
                                 }
                             }
                         @endphp
-                        @if ($existe_var || $documento == '')
+                        @if ($existe_var || ($documento == '' && $var->disponibles > 0))
                             <tr onmouseover="$(this).css('background-color', 'cyan')"
                                 onmouseleave="$(this).css('background-color', '')"
                                 class="tr_planta_{{ $item['planta']->id_planta }} hidden">
