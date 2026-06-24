@@ -89,7 +89,7 @@
             </th>
             <th class="text-center" style="border-color: #9d9d9d">
                 <input type="number" max="{{ $disponibles }}" min="0" style="width: 100%" class="text-center"
-                    id="ramos_armar_{{ $item->id_detalle_caja_proyecto }}">
+                    id="ramos_armar_{{ $item->id_detalle_caja_proyecto }}" onkeyup="verificar_disponibles($(this))">
                 <button type="button" class="btn btn-xs btn-block btn-yura_dark"
                     onclick="store_armar_flor('{{ $item->id_detalle_caja_proyecto }}')">
                     Armar
@@ -155,5 +155,11 @@
         $.LoadingOverlay('show');
         window.open('{{ url('preproduccion/export_armados') }}?id=' + id + '&armar=' + armar, '_blank');
         $.LoadingOverlay('hide');
+    }
+
+    function verificar_disponibles(input) {
+        maximo = parseInt(input.prop('max'));
+        if (parseInt(input.val()) > maximo || parseInt(input.val()) < 0)
+            input.val('');
     }
 </script>
