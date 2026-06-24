@@ -9,7 +9,8 @@
                 </th>
                 @php
                     $totales = [];
-                    $total_inventario = 0;
+                    $total_inventario_ventas = 0;
+                    $total_inventario_produccion = 0;
                 @endphp
                 @foreach ($fechas as $f)
                     <th class="text-center th_yura_green th_fechas" data-fecha="{{ $f }}" style="width: 250px;">
@@ -27,7 +28,10 @@
                     @endphp
                 @endforeach
                 <th class="text-center bg-yura_dark" style="width: 60px">
-                    INV.
+                    INV. VENTAS
+                </th>
+                <th class="text-center bg-yura_dark" style="width: 60px">
+                    INV. PROD.
                 </th>
                 <th class="text-center bg-yura_dark" style="width: 70px">
                     ARMADOS
@@ -37,8 +41,21 @@
         <tbody>
             @foreach ($listado as $item)
                 @php
-                    $total_inventario_flor = getTotalInventarioByVariedad($item['flor']->id_variedad);
-                    $total_inventario += $total_inventario_flor;
+                    $getTotalInventarioByVariedadBodega = getTotalInventarioByVariedadBodega(
+                        $item['flor']->id_variedad,
+                    );
+                    $inventario_ventas = 0;
+                    $inventario_produccion = 0;
+                    foreach ($getTotalInventarioByVariedadBodega as $v) {
+                        if ($v->bodega == 'V') {
+                            $inventario_ventas += $v->cantidad;
+                        } else {
+                            $inventario_produccion = $v->cantidad;
+                        }
+                    }
+                    $total_inventario_flor = $inventario_ventas + $inventario_produccion;
+                    $total_inventario_ventas += $inventario_ventas;
+                    $total_inventario_produccion += $inventario_produccion;
                     $total_armados_flor = 0;
                 @endphp
                 <tr onmouseover="$(this).addClass('bg-yura_dark')" onmouseleave="$(this).removeClass('bg-yura_dark')">
@@ -102,7 +119,10 @@
                         </td>
                     @endforeach
                     <th class="text-center" style="border-color: #9d9d9d;">
-                        {{ $total_inventario_flor > 0 ? $total_inventario_flor : 0 }}
+                        {{ $inventario_ventas > 0 ? $inventario_ventas : 0 }}
+                    </th>
+                    <th class="text-center" style="border-color: #9d9d9d;">
+                        {{ $inventario_produccion > 0 ? $inventario_produccion : 0 }}
                     </th>
                     <th class="text-center" style="border-color: #9d9d9d;">
                         {{ $total_armados_flor }}
@@ -144,7 +164,10 @@
                 </th>
             @endforeach
             <th class="text-center th_yura_green">
-                {{ $total_inventario }}
+                {{ $total_inventario_ventas }}
+            </th>
+            <th class="text-center th_yura_green">
+                {{ $total_inventario_produccion }}
             </th>
             <th class="text-center th_yura_green">
                 {{ $total_armados }}

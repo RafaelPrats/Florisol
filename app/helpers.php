@@ -1349,6 +1349,22 @@ function getTotalInventarioByVariedad($variedad)
     return $disponibles;
 }
 
+function getTotalInventarioByVariedadBodega($variedad)
+{
+    $finca = getFincaActiva();
+    $disponibles = DB::table('inventario_recepcion as i')
+        ->select(
+            'i.bodega',
+            DB::raw('sum(i.disponibles) as cantidad')
+        )
+        ->where('i.disponibles', '>', 0)
+        ->where('i.id_variedad', $variedad)
+        ->where('i.id_empresa', $finca)
+        ->groupBy('i.bodega')
+        ->get();
+    return $disponibles;
+}
+
 function getTotalInventarioByVariedadSegmento($variedad, $segmento = null)
 {
     $segmento = Segmento::where('nombre', $segmento)->first();
