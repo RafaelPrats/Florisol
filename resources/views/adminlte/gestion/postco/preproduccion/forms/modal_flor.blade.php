@@ -158,8 +158,8 @@
     }
 
     function verificar_disponibles(input) {
-        maximo = parseInt(input.prop('max'));
+        /*maximo = parseInt(input.prop('max'));
         if (parseInt(input.val()) > maximo || parseInt(input.val()) < 0)
-            input.val('');
+            input.val('');*/
     }
 </script>
