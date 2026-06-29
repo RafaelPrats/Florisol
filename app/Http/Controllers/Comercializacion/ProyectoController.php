@@ -174,6 +174,7 @@ class ProyectoController extends Controller
         $tallos_x_ramo = DB::table('detalle_receta')
             ->select(DB::raw('sum(unidades) as cantidad'))
             ->where('id_variedad', $request->receta)
+            ->where('defecto', 1)
             ->get()[0]->cantidad;
         $cliente = Cliente::find($request->cliente);
         $inventario = getTotalInventarioByVariedadSegmento($request->receta, $cliente->detalle()->segmento);
