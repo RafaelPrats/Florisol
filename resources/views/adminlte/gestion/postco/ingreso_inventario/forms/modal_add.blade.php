@@ -4,6 +4,9 @@
             Fecha
         </th>
         <th class="padding_lateral_5 bg-yura_dark">
+            Proveedor
+        </th>
+        <th class="padding_lateral_5 bg-yura_dark">
             Planta
         </th>
         <th class="padding_lateral_5 bg-yura_dark">
@@ -33,12 +36,17 @@
                 value="{{ hoy() }}" max="{{ hoy() }}">
         </th>
         <th class="text-center" style="border-color: #9d9d9d">
-            <select id="new_planta_1" style="width: 100%; height: 26px;"
-                onchange="select_planta_global($(this).val(), 'new_variedad_1', 'new_variedad_1', '<option value=>Seleccione</option>')">
-                <option value="">Seleccione</option>
-                @foreach ($plantas as $p)
-                    <option value="{{ $p->id_planta }}">{{ $p->nombre }}</option>
+            <select id="new_proveedor_1" style="width: 100%; height: 34px;" onchange="seleccionar_proveedor(1)">
+                @foreach ($proveedores as $prov)
+                    <option value="{{ $prov->id_configuracion_empresa }}">
+                        {{ $prov->nombre }}
+                    </option>
                 @endforeach
+            </select>
+        </th>
+        <th class="text-center" style="border-color: #9d9d9d">
+            <select id="new_planta_1" style="width: 100%; height: 26px;" onchange="seleccionar_planta(1)">
+                <option value="">Seleccione</option>
             </select>
         </th>
         <th class="text-center" style="border-color: #9d9d9d">
@@ -80,16 +88,17 @@
         $('.select2-container').css('width', '100%');
         $('.select2-selection').css('height', '34px');
     }, 500);
+    seleccionar_proveedor(1);
 
     num_row = 1;
 
     function add_inventario() {
         num_row++;
         parametros = [
-            "'new_variedad_" + num_row + "'",
+            "'new_proveedor_" + num_row + "'",
             "'<option value = selected>Seleccione</option>'",
         ];
-        select_planta = $('#new_planta_1').html();
+        select_proveedor = $('#new_proveedor_1').html();
         fecha = $('#new_fecha_1').val();
         max_fecha = $('#new_fecha_1').prop('max');
         $('#table_add_inventario').append('<tr id="new_tr_' + num_row + '">' +
@@ -99,10 +108,15 @@
             'value="' + fecha + '" max="' + max_fecha + '">' +
             '</th>' +
             '<th class="text-center" style="border-color: #9d9d9d">' +
+            '<select id="new_proveedor_' + num_row + '" style="width: 100%; height: 34px;" ' +
+            'onchange="seleccionar_proveedor(' + num_row + ')">' +
+            select_proveedor +
+            '</select>' +
+            '</th>' +
+            '<th class="text-center" style="border-color: #9d9d9d">' +
             '<select id="new_planta_' + num_row + '" style="width: 100%; height: 26px;" ' +
-            'onchange="select_planta_global($(this).val(), ' + parametros[0] + ', ' +
-            parametros[0] + ', ' + parametros[1] + ')">' +
-            select_planta +
+            'onchange="seleccionar_planta(' + num_row + ')">' +
+            '<option value="">Seleccione</option>' +
             '</select>' +
             '</th>' +
             '<th class="text-center" style="border-color: #9d9d9d">' +
@@ -153,14 +167,16 @@
         for (i = 1; i <= num_row; i++) {
             if ($('#new_tr_' + i).length) {
                 fecha = $('#new_fecha_' + i).val();
+                proveedor = $('#new_proveedor_' + i).val();
                 variedad = $('#new_variedad_' + i).val();
                 longitud = $('#new_longitud_' + i).val();
                 tallos_x_ramo = parseInt($('#new_tallos_x_ramo_' + i).val());
                 ramos = $('#new_ramos_' + i).val();
                 bodega = $('#new_bodega_' + i).val();
-                if (variedad != '' && tallos_x_ramo > 0 && ramos >= 0) {
+                if (proveedor != '' && variedad != '' && tallos_x_ramo > 0 && ramos >= 0) {
                     data.push({
                         fecha: fecha,
+                        proveedor: proveedor,
                         variedad: variedad,
                         longitud: longitud,
                         tallos_x_ramo: tallos_x_ramo,
@@ -180,5 +196,33 @@
                 listar_reporte();
             })
         }
+    }
+
+    function seleccionar_proveedor(row) {
+        datos = {
+            _token: '{{ csrf_token() }}',
+            id_proveedor: $('#new_proveedor_' + row).val(),
+        }
+        $.post('{{ url('ingreso_inventario/seleccionar_proveedor') }}', datos, function(retorno) {
+            $('#new_planta_' + row).html(retorno.plantas);
+            $('#new_variedad_' + row).html('<option value="">Seleccione</option>');
+        }, 'json').fail(function(retorno) {
+            console.log(retorno);
+            alerta_errores(retorno.responseText);
+        });
+    }
+
+    function seleccionar_planta(row) {
+        datos = {
+            _token: '{{ csrf_token() }}',
+            id_proveedor: $('#new_proveedor_' + row).val(),
+            id_planta: $('#new_planta_' + row).val(),
+        }
+        $.post('{{ url('ingreso_inventario/seleccionar_planta') }}', datos, function(retorno) {
+            $('#new_variedad_' + row).html(retorno.variedades);
+        }, 'json').fail(function(retorno) {
+            console.log(retorno);
+            alerta_errores(retorno.responseText);
+        });
     }
 </script>

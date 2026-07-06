@@ -5,7 +5,9 @@ namespace yura\Http\Controllers\Postco;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use yura\Http\Controllers\Controller;
+use yura\Modelos\ConfiguracionEmpresa;
 use yura\Modelos\DetalleApiStoreCajas;
+use yura\Modelos\IngresoRecepcion;
 use yura\Modelos\InventarioRecepcion;
 use yura\Modelos\Planta;
 use yura\Modelos\SalidasRecepcion;
@@ -98,14 +100,70 @@ class InventarioRecepcionController extends Controller
 
     public function modal_add(Request $request)
     {
-        $finca = getFincaActiva();
-        $plantas = Planta::where('estado', 1)
-            ->where('id_empresa', $finca)
+        $proveedores = ConfiguracionEmpresa::where('proveedor', 1)
+            ->orderBy('id_configuracion_empresa')
             ->orderBy('nombre')
             ->get();
         return view('adminlte.gestion.postco.ingreso_inventario.forms.modal_add', [
-            'plantas' => $plantas
+            'proveedores' => $proveedores
         ]);
+    }
+
+    public function seleccionar_proveedor(Request $request)
+    {
+        $finca = getFincaActiva();
+        if ($request->id_proveedor > -1) {
+            $plantas = DB::table('planta as p')
+                ->join('variedad as v', 'v.id_planta', '=', 'p.id_planta')
+                ->join('variedad_proveedor as vp', 'vp.id_variedad', '=', 'v.id_variedad')
+                ->select('p.*')->distinct()
+                ->where('p.id_empresa', $finca)
+                ->where('vp.id_proveedor', $request->id_proveedor)
+                ->orderBy('p.nombre')
+                ->get();
+        } else {
+            $plantas = DB::table('planta as p')
+                ->select('p.*')->distinct()
+                ->where('p.id_empresa', $finca)
+                ->orderBy('p.nombre')
+                ->get();
+        }
+        $option_plantas = '<option value="">Seleccione</option>';
+        foreach ($plantas as $p) {
+            $option_plantas .= '<option value="' . $p->id_planta . '">' . $p->nombre . '</option>';
+        }
+        return [
+            'plantas' => $option_plantas
+        ];
+    }
+
+    public function seleccionar_planta(Request $request)
+    {
+        $finca = getFincaActiva();
+        if ($request->id_proveedor > -1) {
+            $variedades = DB::table('variedad as v')
+                ->join('variedad_proveedor as vp', 'vp.id_variedad', '=', 'v.id_variedad')
+                ->select('v.*')->distinct()
+                ->where('v.id_empresa', $finca)
+                ->where('v.id_planta', $request->id_planta)
+                ->where('vp.id_proveedor', $request->id_proveedor)
+                ->orderBy('v.nombre')
+                ->get();
+        } else {
+            $variedades = DB::table('variedad as v')
+                ->select('v.*')->distinct()
+                ->where('v.id_planta', $request->id_planta)
+                ->where('v.id_empresa', $finca)
+                ->orderBy('v.nombre')
+                ->get();
+        }
+        $option_variedades = '<option value="">Seleccione</option>';
+        foreach ($variedades as $p) {
+            $option_variedades .= '<option value="' . $p->id_variedad . '">' . $p->nombre . '</option>';
+        }
+        return [
+            'variedades' => $option_variedades
+        ];
     }
 
     public function store_inventario(Request $request)
@@ -137,6 +195,18 @@ class InventarioRecepcionController extends Controller
                     $model_inventario->disponibles += $data->ramos * $data->tallos_x_ramo;
                     $model_inventario->save();
                 }
+
+                $ingreso = new IngresoRecepcion();
+                $ingreso->id_variedad = $data->variedad;
+                $ingreso->id_proveedor = $data->proveedor;
+                $ingreso->fecha_registro = date('Y-m-d H:i:s');
+                $ingreso->fecha = $data->fecha;
+                $ingreso->tallos_x_ramo = $data->tallos_x_ramo;
+                $ingreso->ramos = $data->ramos;
+                $ingreso->bodega = $data->bodega;
+                $ingreso->longitud = $data->longitud;
+                $ingreso->id_empresa = $finca;
+                $ingreso->save();
             }
 
             $success = true;
@@ -167,6 +237,7 @@ class InventarioRecepcionController extends Controller
                 $model = InventarioRecepcion::find($data->id_inv);
                 $data->ramos_ventas = $data->ramos_ventas >= 0 ? $data->ramos_ventas : 0;
                 $data->ramos_produccion = $data->ramos_produccion >= 0 ? $data->ramos_produccion : 0;
+                $detApi = DetalleApiStoreCajas::find($data->id_detApi);
                 if ($data->ramos_ventas > 0) {
                     $model_inventario = InventarioRecepcion::where('id_variedad', $model->id_variedad)
                         ->where('fecha', $model->fecha)
@@ -191,6 +262,18 @@ class InventarioRecepcionController extends Controller
                         $model_inventario->disponibles += $data->ramos_ventas * $model->tallos_x_ramo;
                         $model_inventario->save();
                     }
+
+                    $ingreso = new IngresoRecepcion();
+                    $ingreso->id_variedad = $model_inventario->id_variedad;
+                    $ingreso->id_api_store_cajas = $detApi->id_api_store_cajas;
+                    $ingreso->fecha_registro = date('Y-m-d H:i:s');
+                    $ingreso->fecha = $model_inventario->fecha;
+                    $ingreso->tallos_x_ramo = $model_inventario->tallos_x_ramo;
+                    $ingreso->ramos = $data->ramos_ventas;
+                    $ingreso->bodega = 'V';
+                    $ingreso->longitud = $model_inventario->longitud;
+                    $ingreso->id_empresa = $model_inventario->id_empresa;
+                    $ingreso->save();
                 }
 
                 if ($data->ramos_produccion > 0) {
@@ -217,9 +300,20 @@ class InventarioRecepcionController extends Controller
                         $model_inventario->disponibles += $data->ramos_produccion * $model->tallos_x_ramo;
                         $model_inventario->save();
                     }
+
+                    $ingreso = new IngresoRecepcion();
+                    $ingreso->id_variedad = $model_inventario->id_variedad;
+                    $ingreso->id_api_store_cajas = $detApi->id_api_store_cajas;
+                    $ingreso->fecha_registro = date('Y-m-d H:i:s');
+                    $ingreso->fecha = $model_inventario->fecha;
+                    $ingreso->tallos_x_ramo = $model_inventario->tallos_x_ramo;
+                    $ingreso->ramos = $data->ramos_produccion;
+                    $ingreso->bodega = 'P';
+                    $ingreso->longitud = $model_inventario->longitud;
+                    $ingreso->id_empresa = $model_inventario->id_empresa;
+                    $ingreso->save();
                 }
 
-                $detApi = DetalleApiStoreCajas::find($data->id_detApi);
                 $detApi->recibido += $data->ramos_ventas + $data->ramos_produccion;
                 $detApi->estado = 'R';
                 $detApi->save();
