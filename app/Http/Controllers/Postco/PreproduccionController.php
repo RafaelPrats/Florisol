@@ -39,7 +39,6 @@ class PreproduccionController extends Controller
     {
         $finca = getFincaActiva();
         $variedades = Variedad::where('estado', 1)
-            ->where('receta', 1)
             ->where('id_empresa', $finca)
             ->orderBy('nombre')
             ->get();
