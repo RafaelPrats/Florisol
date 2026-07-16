@@ -847,6 +847,7 @@ class ClienteController extends Controller
             $model->ramos_x_caja = $request->ramos_x_caja;
             $model->tallos_x_ramo = $request->tallos_x_ramo;
             $model->longitud = $request->longitud;
+            $model->precio = $request->precio;
             $model->save();
 
             $success = true;
@@ -877,6 +878,7 @@ class ClienteController extends Controller
             $model->ramos_x_caja = $request->ramos_x_caja;
             $model->tallos_x_ramo = $request->tallos_x_ramo;
             $model->longitud = $request->longitud;
+            $model->precio = $request->precio;
             $model->save();
 
             $success = true;

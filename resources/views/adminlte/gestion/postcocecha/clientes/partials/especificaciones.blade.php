@@ -20,6 +20,9 @@
                 Longitud
             </th>
             <th class="text-center th_yura_green">
+                Precio
+            </th>
+            <th class="text-center th_yura_green">
             </th>
         </tr>
         <tr id="tr_new">
@@ -56,6 +59,10 @@
             <th class="" style="border-color: #9d9d9d; width: 90px">
                 <input type="text" class="padding_lateral_5"
                     style="width: 100%; height: 34px; background-color: #eeeeee" id="new_longitud">
+            </th>
+            <th class="" style="border-color: #9d9d9d; width: 70px">
+                <input type="number" class="text-center" style="width: 100%; height: 34px; background-color: #eeeeee"
+                    id="new_precio">
             </th>
             <th class="text-center" style="border-color: #9d9d9d; width: 90px">
                 <button type="button" class="btn btn-yura_primary" onclick="store_especificaciones()">
@@ -108,6 +115,10 @@
                     <input type="text" class="padding_lateral_5" style="width: 100%; height: 24px;"
                         id="edit_longitud_{{ $item->id_especificaciones }}" value="{{ $item->longitud }}">
                 </td>
+                <td class="text-center" style="border-color: #9d9d9d">
+                    <input type="number" class="text-center" style="width: 100%; height: 24px;"
+                        id="edit_precio_{{ $item->id_especificaciones }}" value="{{ $item->precio }}">
+                </td>
                 <td class="text-center" style="border-color: #9d9d9d; width: 90px">
                     <div class="btn-group">
                         <button type="button" class="btn btn-xs btn-yura_warning"
@@ -143,9 +154,10 @@
             ramos_x_caja: $('#new_ramos_x_caja').val(),
             tallos_x_ramo: $('#new_tallos_x_ramo').val(),
             longitud: $('#new_longitud').val(),
+            precio: $('#new_precio').val(),
         }
         if (datos['variedad'] == '' || datos['ramos_x_caja'] == '' || datos['tallos_x_ramo'] == '' || datos[
-                'longitud'] == '') {
+                'longitud'] == '' || datos['precio'] == '') {
             alerta('<div class="alert alert-warning text-center">Complete los campos para continuar</div>');
             return false;
         }
@@ -163,14 +175,14 @@
             ramos_x_caja: $('#edit_ramos_x_caja_' + id).val(),
             tallos_x_ramo: $('#edit_tallos_x_ramo_' + id).val(),
             longitud: $('#edit_longitud_' + id).val(),
+            precio: $('#edit_precio_' + id).val(),
         }
         if (datos['variedad'] == '' || datos['ramos_x_caja'] == '' || datos['tallos_x_ramo'] == '' || datos[
-                'longitud'] == '') {
+                'longitud'] == '' || datos['precio'] == '') {
             alerta('<div class="alert alert-warning text-center">Complete los campos para continuar</div>');
             return false;
         }
-        post_jquery_m('{{ url('clientes/update_especificaciones') }}', datos, function() {
-        });
+        post_jquery_m('{{ url('clientes/update_especificaciones') }}', datos, function() {});
     }
 
     function delete_especificaciones(id) {

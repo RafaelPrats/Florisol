@@ -151,13 +151,21 @@
         if (datos['receta'] != '') {
             $.LoadingOverlay('show');
             $.post('{{ url('proyectos/form_combos_seleccionar_receta') }}', datos, function(retorno) {
+                $('#form_combos_tallos_x_ramos_' + num_combo).prop('readonly', false);
                 if (retorno.especificacion != null) {
                     $('#form_combos_tipo_caja').val(retorno.especificacion.tipo_caja);
                     $('#form_combos_ramos_x_caja_' + num_combo).val(retorno.especificacion.ramos_x_caja);
                     $('#form_combos_tallos_x_ramos_' + num_combo).val(retorno.especificacion.tallos_x_ramo);
                     $('#form_combos_longitud_' + num_combo).val(retorno.especificacion.longitud);
+                    $('#form_combos_precio_' + num_combo).val(retorno.especificacion.precio);
+                    if (retorno.especificacion.tallos_x_ramo != '') {
+                        $('#form_combos_tallos_x_ramos_' + num_combo).prop('readonly', true);
+                    }
                 } else {
                     $('#form_combos_tallos_x_ramos_' + num_combo).val(retorno.tallos_x_ramo);
+                    if (retorno.tallos_x_ramo != null) {
+                        $('#form_combos_tallos_x_ramos_' + num_combo).prop('readonly', true);
+                    }
                 }
                 $('#form_combos_inventario_' + num_combo).val(retorno.inventario);
                 calcular_totales_form_combos();
