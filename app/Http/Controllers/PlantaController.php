@@ -22,6 +22,7 @@ use yura\Modelos\VariedadProveedor;
 use Storage as Almacenamiento;
 use \PhpOffice\PhpSpreadsheet\IOFactory as IOFactory;
 use yura\Jobs\jobImportarRecetas;
+use yura\Modelos\Pais;
 
 class PlantaController extends Controller
 {
@@ -347,8 +348,10 @@ class PlantaController extends Controller
         if ($request->has('id_proveedor')) {
             $p = ConfiguracionEmpresa::find($request->id_proveedor);
             if ($p != '') {
+                $paises = Pais::orderBy('nombre')->get();
                 return view('adminlte.gestion.plantas_variedades.forms.edit_proveedor', [
-                    'proveedor' => $p
+                    'proveedor' => $p,
+                    'paises' => $paises,
                 ]);
             } else {
                 return '<div class="alert alert-warning text-center">No se ha encontrado el proveedor en el sistema</div>';
@@ -371,6 +374,12 @@ class PlantaController extends Controller
                 ->where('id_configuracion_empresa', '!=', $request->id_proveedor)) == 0) {
                 $model = ConfiguracionEmpresa::find($request->id_proveedor);
                 $model->nombre = str_limit(espacios($request->nombre), 250);
+                $model->ruc = str_limit(espacios($request->ruc), 13);
+                $model->codigo_pais = $request->codigo_pais;
+                $model->provincia = str_limit(espacios($request->provincia), 25);
+                $model->direccion_matriz = str_limit(espacios($request->direccion_matriz), 500);
+                $model->correo = str_limit(espacios($request->correo), 100);
+                $model->telefono = str_limit(espacios($request->telefono), 20);
 
                 if ($model->save()) {
                     $success = true;

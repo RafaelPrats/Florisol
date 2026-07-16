@@ -161,6 +161,12 @@
             datos = {
                 _token: '{{ csrf_token() }}',
                 nombre: $('#nombre').val(),
+                ruc: $('#ruc').val(),
+                codigo_pais: $('#codigo_pais').val(),
+                provincia: $('#provincia').val(),
+                direccion_matriz: $('#direccion_matriz').val(),
+                correo: $('#correo').val(),
+                telefono: $('#telefono').val(),
                 id_proveedor: $('#id_proveedor').val(),
             };
             post_jquery_m('{{ url('plantas_variedades/update_proveedor') }}', datos, function() {

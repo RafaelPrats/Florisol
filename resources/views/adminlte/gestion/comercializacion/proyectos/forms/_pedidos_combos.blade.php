@@ -159,7 +159,7 @@
                     $('#form_combos_longitud_' + num_combo).val(retorno.especificacion.longitud);
                     $('#form_combos_precio_' + num_combo).val(retorno.especificacion.precio);
                     if (retorno.especificacion.tallos_x_ramo != '') {
-                        $('#form_combos_tallos_x_ramos_' + num_combo).prop('readonly', true);
+                        //$('#form_combos_tallos_x_ramos_' + num_combo).prop('readonly', true);
                     }
                 } else {
                     $('#form_combos_tallos_x_ramos_' + num_combo).val(retorno.tallos_x_ramo);
