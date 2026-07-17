@@ -167,10 +167,25 @@ class ProyectoController extends Controller
 
     public function form_combos_seleccionar_receta(Request $request)
     {
-        $especificacion = DB::table('especificaciones')
+        $especificaciones = DB::table('especificaciones')
             ->where('id_cliente', $request->cliente)
             ->where('id_variedad', $request->receta)
-            ->first();
+            ->get();
+        $options_tipo_caja = '';
+        $options_ramos_x_caja = '';
+        $options_tallos_x_ramo = '';
+        $options_longitud = '';
+        $options_precio = '';
+        $tipo_caja = '';
+        foreach ($especificaciones as $pos => $esp) {
+            $options_tipo_caja .= '<option value="' . $esp->tipo_caja . '">' . $esp->tipo_caja . '</option>';
+            $options_ramos_x_caja .= '<option value="' . $esp->ramos_x_caja . '">' . $esp->ramos_x_caja . '</option>';
+            $options_tallos_x_ramo .= '<option value="' . $esp->tallos_x_ramo . '">' . $esp->tallos_x_ramo . '</option>';
+            $options_longitud .= '<option value="' . $esp->longitud . '">' . $esp->longitud . '</option>';
+            $options_precio .= '<option value="' . $esp->precio . '">' . $esp->precio . '</option>';
+            if ($pos == 0)
+                $tipo_caja = $esp->tipo_caja;
+        }
         $tallos_x_ramo = DB::table('detalle_receta')
             ->select(DB::raw('sum(unidades) as cantidad'))
             ->where('id_variedad', $request->receta)
@@ -179,7 +194,13 @@ class ProyectoController extends Controller
         $cliente = Cliente::find($request->cliente);
         $inventario = getTotalInventarioByVariedadSegmento($request->receta, $cliente->detalle()->segmento);
         return [
-            'especificacion' => $especificacion,
+            'especificaciones' => $especificaciones,
+            'tipo_caja' => $tipo_caja,
+            'options_tipo_caja' => $options_tipo_caja,
+            'options_ramos_x_caja' => $options_ramos_x_caja,
+            'options_tallos_x_ramo' => $options_tallos_x_ramo,
+            'options_longitud' => $options_longitud,
+            'options_precio' => $options_precio,
             'tallos_x_ramo' => $tallos_x_ramo,
             'inventario' => $inventario,
         ];

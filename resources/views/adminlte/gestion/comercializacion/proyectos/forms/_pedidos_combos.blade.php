@@ -73,7 +73,7 @@
                         <option value="EB">EB</option>
                     </select>
                 </td>
-                <td class="text-center" style="border-color: #9d9d9d">
+                <td class="text-center" style="border-color: #9d9d9d" id="td_ramos_x_caja_1">
                     <input type="number" style="width: 100%; height: 34px;" class="text-center"
                         id="form_combos_ramos_x_caja_1" onchange="calcular_totales_form_combos()"
                         onkeyup="calcular_totales_form_combos()" value="1">
@@ -82,7 +82,7 @@
                     <input type="number" style="width: 100%; height: 34px;" class="text-center"
                         id="form_combos_total_ramos" readonly="" disabled="">
                 </td>
-                <td class="text-center" style="border-color: #9d9d9d">
+                <td class="text-center" style="border-color: #9d9d9d" id="td_tallos_x_ramos_1">
                     <input type="number" style="width: 100%; height: 34px;" class="text-center"
                         id="form_combos_tallos_x_ramos_1" onchange="calcular_totales_form_combos()"
                         onkeyup="calcular_totales_form_combos()">
@@ -91,11 +91,11 @@
                     <input type="number" style="width: 100%; height: 34px;" class="text-center"
                         id="form_combos_total_tallos" readonly="" disabled="">
                 </td>
-                <td class="text-center" style="border-color: #9d9d9d">
+                <td class="text-center" style="border-color: #9d9d9d" id="td_longitud_1">
                     <input type="number" style="width: 100%; height: 34px;" class="text-center"
                         id="form_combos_longitud_1">
                 </td>
-                <td class="text-center" style="border-color: #9d9d9d">
+                <td class="text-center" style="border-color: #9d9d9d" id="td_precio_1">
                     <input type="number" style="width: 100%; height: 34px;" class="text-center form_combos_precio"
                         id="form_combos_precio_1">
                 </td>
@@ -152,17 +152,55 @@
             $.LoadingOverlay('show');
             $.post('{{ url('proyectos/form_combos_seleccionar_receta') }}', datos, function(retorno) {
                 $('#form_combos_tallos_x_ramos_' + num_combo).prop('readonly', false);
-                if (retorno.especificacion != null) {
-                    $('#form_combos_tipo_caja').val(retorno.especificacion.tipo_caja);
-                    $('#form_combos_ramos_x_caja_' + num_combo).val(retorno.especificacion.ramos_x_caja);
-                    $('#form_combos_tallos_x_ramos_' + num_combo).val(retorno.especificacion.tallos_x_ramo);
-                    $('#form_combos_longitud_' + num_combo).val(retorno.especificacion.longitud);
-                    $('#form_combos_precio_' + num_combo).val(retorno.especificacion.precio);
-                    if (retorno.especificacion.tallos_x_ramo != '') {
-                        //$('#form_combos_tallos_x_ramos_' + num_combo).prop('readonly', true);
-                    }
+                if (retorno.especificaciones.length > 0) {
+                    $('#form_combos_tipo_caja').val(retorno.tipo_caja);
+                    $('#td_ramos_x_caja_' + num_combo).html(
+                        '<select style="width: 100%; height: 34px;" ' +
+                        'id="form_combos_ramos_x_caja_' + num_combo +
+                        '" onchange="calcular_totales_form_combos()" ' +
+                        'onkeyup="calcular_totales_form_combos()">' +
+                        retorno.options_ramos_x_caja +
+                        '</select>');
+                    $('#td_tallos_x_ramos_' + num_combo).html(
+                        '<select style="width: 100%; height: 34px;" ' +
+                        'id="form_combos_tallos_x_ramos_' + num_combo +
+                        '" onchange="calcular_totales_form_combos()" ' +
+                        'onkeyup="calcular_totales_form_combos()">' +
+                        retorno.options_tallos_x_ramo +
+                        '</select>');
+                    $('#td_longitud_' + num_combo).html(
+                        '<select style="width: 100%; height: 34px;" ' +
+                        'id="form_combos_longitud_' + num_combo +
+                        '" onchange="calcular_totales_form_combos()" ' +
+                        'onkeyup="calcular_totales_form_combos()">' +
+                        retorno.options_longitud +
+                        '</select>');
+                    $('#td_precio_' + num_combo).html(
+                        '<select style="width: 100%; height: 34px;" ' +
+                        'id="form_combos_precio_' + num_combo +
+                        '" onchange="calcular_totales_form_combos()" ' +
+                        'onkeyup="calcular_totales_form_combos()">' +
+                        retorno.options_precio +
+                        '</select>');
+                    /*$('#form_combos_precio_' + num_combo).val(retorno.especificacion.precio);*/
                 } else {
-                    $('#form_combos_tallos_x_ramos_' + num_combo).val(retorno.tallos_x_ramo);
+                    $('#td_ramos_x_caja_' + num_combo).html(
+                        '<input type="number" style="width: 100%; height: 34px;" class="text-center" ' +
+                        'id="form_combos_ramos_x_caja_' + num_combo +
+                        '" onchange="calcular_totales_form_combos()" ' +
+                        'onkeyup="calcular_totales_form_combos()" value="1">');
+                    $('#td_tallos_x_ramos_' + num_combo).html(
+                        '<input type="number" style="width: 100%; height: 34px;" class="text-center" ' +
+                        'id="form_combos_tallos_x_ramos_' + num_combo +
+                        '" onchange="calcular_totales_form_combos()" ' +
+                        'onkeyup="calcular_totales_form_combos()">');
+                    $('#td_longitud_' + num_combo).html(
+                        '<input type="number" style="width: 100%; height: 34px;" class="text-center" ' +
+                        'id="form_combos_longitud_' + num_combo + '">');
+                    $('#td_precio_' + num_combo).html(
+                        '<input type="number" style="width: 100%; height: 34px;" class="text-center" ' +
+                        'id="form_combos_precio_' + num_combo + '">');
+
                     if (retorno.tallos_x_ramo != null) {
                         $('#form_combos_tallos_x_ramos_' + num_combo).prop('readonly', true);
                     }
@@ -194,21 +232,25 @@
             '</select>' +
             '<input type="hidden" class="form_num_detalle_combos" value="' + form_combos_cant_detalles + '">' +
             '</td>' +
-            '<td class="text-center" style="border-color: #9d9d9d">' +
+            '<td class="text-center" style="border-color: #9d9d9d" id="td_ramos_x_caja_' +
+            form_combos_cant_detalles + '">' +
             '<input type="number" style="width: 100%; height: 34px;" class="text-center" id="form_combos_ramos_x_caja_' +
             form_combos_cant_detalles +
             '" onchange="calcular_totales_form_combos()" onkeyup="calcular_totales_form_combos()" value="1">' +
             '</td>' +
-            '<td class="text-center" style="border-color: #9d9d9d">' +
+            '<td class="text-center" style="border-color: #9d9d9d" id="td_tallos_x_ramos_' +
+            form_combos_cant_detalles + '">' +
             '<input type="number" style="width: 100%; height: 34px;" class="text-center" id="form_combos_tallos_x_ramos_' +
             form_combos_cant_detalles +
             '" onchange="calcular_totales_form_combos()" onkeyup="calcular_totales_form_combos()">' +
             '</td>' +
-            '<td class="text-center" style="border-color: #9d9d9d">' +
+            '<td class="text-center" style="border-color: #9d9d9d" id="td_longitud_' + form_combos_cant_detalles +
+            '">' +
             '<input type="number" style="width: 100%; height: 34px;" class="text-center" id="form_combos_longitud_' +
             form_combos_cant_detalles + '">' +
             '</td>' +
-            '<td class="text-center" style="border-color: #9d9d9d">' +
+            '<td class="text-center" style="border-color: #9d9d9d" id="td_precio_' + form_combos_cant_detalles +
+            '">' +
             '<input type="number" style="width: 100%; height: 34px;" class="text-center form_combos_precio"' +
             'id="form_combos_precio_' + form_combos_cant_detalles + '">' +
             '</td>' +
