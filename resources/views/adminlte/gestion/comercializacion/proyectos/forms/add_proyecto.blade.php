@@ -119,12 +119,15 @@
             <tr>
                 <td rowspan="4" style="text-align: right; padding-right: 20px; min-width: 320px">
                     <div class="btn-group">
-                        <button type="button" class="btn btn-yura_primary" onclick="store_proyecto()">
+                        <button type="button" class="btn btn-yura_primary" onclick="store_proyecto(0)">
                             <i class="fa fa-fw fa-save"></i> Grabar Pedido
                         </button>
                         <button type="button" class="btn btn-yura_default" onclick="cerrar_modals(); add_proyecto()">
                             <span class="badge bg-yura_dark" id="span_total_monto_pedido">$0</span>
                             <i class="fa fa-fw fa-refresh"></i> Reiniciar Formulario
+                        </button>
+                        <button type="button" class="btn btn-yura_warning" onclick="store_proyecto(1)">
+                            <i class="fa fa-fw fa-gift"></i> GRABAR Y DESPACHAR
                         </button>
                     </div>
                 </td>
@@ -302,7 +305,7 @@
         $('#th_total_monto_pedido').html('$' + total_monto_pedido);
     }
 
-    function store_proyecto() {
+    function store_proyecto(liquidar) {
         tipo = $('#form_tipo_pedido').val();
         fallos = false;
         // FECHA
@@ -454,9 +457,13 @@
 
         if (detalles_pedido.length > 0)
             if (!fallos) {
+                texto = liquidar ? '<b>GRABAR Y DESPACHAR la flor solida</b> del ' : '<b>GRABAR</b> el ';
+                clase = liquidar ? 'warning' : 'info';
                 mensaje = {
                     title: '<i class="fa fa-fw fa-save"></i> Mensaje de confirmacion',
-                    mensaje: '<div class="alert alert-info text-center" style="font-size: 1.3em" id="div_mensaje_confirmacion"><i class="fa fa-fw fa-exclamation-triangle"></i> ¿Está seguro de <b>GRABAR</b> el pedido?</div>',
+                    mensaje: '<div class="alert alert-' + clase +
+                        ' text-center" style="font-size: 1.3em" id="div_mensaje_confirmacion"><h3><i class="fa fa-fw fa-exclamation-triangle"></i> ¿Está seguro de ' +
+                        texto + ' pedido?</h3></div>',
                 };
                 BootstrapDialog.show({
                     title: mensaje['title'],
@@ -491,6 +498,7 @@
                                 '<i class="fa fa-fw fa-search"></i> <b>VALIDANDO</b> el pedido')
                             datos = {
                                 _token: '{{ csrf_token() }}',
+                                liquidar: liquidar,
                                 tipo: tipo,
                                 fecha: fecha,
                                 cliente: cliente,

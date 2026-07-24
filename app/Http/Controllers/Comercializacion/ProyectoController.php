@@ -5,6 +5,7 @@ namespace yura\Http\Controllers\Comercializacion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use yura\Http\Controllers\Controller;
+use yura\Jobs\jobGrabarOrdenFija;
 use yura\Jobs\jobStoreProyecto;
 use yura\Modelos\CajaProyecto;
 use yura\Modelos\CajaProyectoMarcacion;
@@ -12,7 +13,11 @@ use yura\Modelos\Cliente;
 use yura\Modelos\DatosExportacion;
 use yura\Modelos\DetalleCajaProyecto;
 use yura\Modelos\DistribucionReceta;
+use yura\Modelos\InventarioRecepcion;
 use yura\Modelos\Proyecto;
+use yura\Modelos\RenovarOrdenFija;
+use yura\Modelos\SalidasRecepcion;
+use yura\Modelos\Segmento;
 use yura\Modelos\Submenu;
 use yura\Modelos\Variedad;
 
@@ -229,20 +234,231 @@ class ProyectoController extends Controller
 
     public function store_proyecto(Request $request)
     {
-        $finca = getFincaActiva();
-        jobStoreProyecto::dispatch(
+        try {
+            DB::beginTransaction();
+            $finca = getFincaActiva();
+            $renovacion = '';
+            if ($request->tipo == 'SO') {
+                $fechas = [];
+                if ($request->fecha['opcion_pedido_fijo'] == 1 || $request->fecha['opcion_pedido_fijo'] == 2) {
+                    $f = $request->fecha['desde'];
+                    while ($f <= $request->fecha['hasta']) {
+                        if ($request->fecha['opcion_pedido_fijo'] == 1 && date('N', strtotime($f)) == $request->fecha['dia_semana'])
+                            $fechas[] = $f;
+
+                        if ($request->fecha['opcion_pedido_fijo'] == 2 && substr($f, 8, 2) == $request->fecha['dia_mes'])
+                            $fechas[] = $f;
+                        $f = opDiasFecha('+', 1, $f);
+                    }
+                    if ($request->fecha['intervalo'] == 2) {
+                        foreach ($fechas as $pos => $f) {
+                            if ($pos % 2 == 1)
+                                unset($fechas[$pos]);
+                        }
+                    }
+                    $renovacion = [
+                        'renovar' => $request->fecha['renovar'],
+                        'intervalo' => $request->fecha['intervalo'] == 1 ? 7 : 14
+                    ];
+                } else {
+                    $fechas = $request->fecha['fechas'];
+                }
+                $fecha = $fechas[0];
+            } else {
+                $fecha = $request->fecha;
+            }
+
+            // NUEVO PROYECTO
+            $proyecto = new Proyecto();
+            $proyecto->id_cliente = $request->cliente;
+            if ($request->tipo == 'SO') {
+                $numeroOrdenFija = DB::table('proyecto')
+                    ->select(DB::raw('max(orden_fija) as cantidad'))
+                    ->get()[0]->cantidad;
+                $numeroOrdenFija = $numeroOrdenFija != '' ? ($numeroOrdenFija + 1) : 1;
+                $proyecto->orden_fija = $numeroOrdenFija;
+            }
+            $proyecto->id_empresa = $finca;
+            $proyecto->fecha = $fecha;
+            $proyecto->tipo = $request->tipo;
+            $proyecto->segmento = $request->segmento;
+            $proyecto->id_consignatario = $request->consignatario;
+            $proyecto->id_agencia_carga = $request->agencia;
+            $proyecto->save();
+            $proyecto->id_proyecto = DB::table('proyecto')
+                ->select(DB::raw('max(id_proyecto) as id'))
+                ->get()[0]->id;
+
+            foreach (json_decode($request->detalles_pedido) as $det_ped) {
+                // NUEVA CAJA PROYECTO
+                $caja = new CajaProyecto();
+                $caja->id_proyecto = $proyecto->id_proyecto;
+                $caja->cantidad = $det_ped->piezas;
+                $caja->tipo_caja = $det_ped->caja;
+                $caja->save();
+                $caja->id_caja_proyecto = DB::table('caja_proyecto')
+                    ->select(DB::raw('max(id_caja_proyecto) as id'))
+                    ->get()[0]->id;
+                foreach ($det_ped->detalles_combo as $det_caj) {
+                    // NUEVO DETALLE CAJA PROYECTO
+                    $detalle = new DetalleCajaProyecto();
+                    $detalle->id_caja_proyecto = $caja->id_caja_proyecto;
+                    $detalle->id_variedad = $det_caj->receta;
+                    $detalle->ramos_x_caja = $det_caj->ramos_x_caja;
+                    $detalle->tallos_x_ramo = $det_caj->tallos_x_ramos;
+                    $detalle->precio = $det_caj->precio_ped;
+                    $detalle->longitud_ramo = $det_caj->longitud;
+                    $detalle->save();
+                    $detalle->id_detalle_caja_proyecto = DB::table('detalle_caja_proyecto')
+                        ->select(DB::raw('max(id_detalle_caja_proyecto) as id'))
+                        ->get()[0]->id;
+
+                    $variedad = $detalle->variedad;
+                    if ($request->liquidar && !$variedad->receta) {
+                        // DESPACHAR SOLIDOS
+                        $return = $this->despachar_ramos_solidos($detalle, $variedad, $proyecto);
+                        if ($return['success'] == false) {
+                            DB::rollBack();
+
+                            return [
+                                'success' => false,
+                                'mensaje' => $return['mensaje'],
+                            ];
+                        }
+                    }
+
+                    $getDetallesReceta = Variedad::find($det_caj->receta)->getDetallesReceta();
+                    foreach ($getDetallesReceta as $det_receta) {
+                        $dist_receta = new DistribucionReceta();
+                        $dist_receta->id_detalle_caja_proyecto = $detalle->id_detalle_caja_proyecto;
+                        $dist_receta->id_variedad = $det_receta->id_item;
+                        $dist_receta->unidades = $det_receta->unidades;
+                        $dist_receta->longitud = $detalle->longitud_ramo;
+                        $dist_receta->save();
+                    }
+                }
+                foreach ($det_ped->valores_marcaciones as $marcacion) {
+                    // NUEVA CAJA PROYECTO MARCACION
+                    if ($marcacion->valor_marcacion != '') {
+                        $caja_marcacion = new CajaProyectoMarcacion();
+                        $caja_marcacion->id_caja_proyecto = $caja->id_caja_proyecto;
+                        $caja_marcacion->id_dato_exportacion = $marcacion->id_marcacion;
+                        $caja_marcacion->valor = $marcacion->valor_marcacion;
+                        $caja_marcacion->save();
+                    }
+                }
+            }
+
+            $msg = 'Se ha <b>GRABADO</b> el pedido correctamente';
+            /* CREAR EL RESTO DE LA ORDEN FIJA */
+            if ($request->tipo == 'SO') {
+                dump('* CREAR EL RESTO DE LA ORDEN FIJA *');
+                $msg = 'Se esta <b>CREANDO</b> la orden fija en un segundo plano';
+                foreach ($fechas as $pos => $f) {
+                    if ($pos > 0) {
+                        jobGrabarOrdenFija::dispatch($proyecto->id_proyecto, $f)->onQueue('grabar_orden_fija')->onConnection('database');
+                    }
+                }
+
+                /* CREAR RENOVACION */
+                if ($renovacion['renovar'] == true) {
+                    $model_renovar = new RenovarOrdenFija();
+                    $model_renovar->orden_fija = $numeroOrdenFija;
+                    $model_renovar->renovacion = $renovacion['intervalo'];
+                    $model_renovar->save();
+                }
+            }
+            /*jobStoreProyecto::dispatch(
             $request->all(),
             session('id_usuario'),
             \Request::ip(),
             $finca
-        )->onQueue('store_proyecto')->onConnection('database');
+        )->onQueue('store_proyecto')->onConnection('database');*/
 
-        $msg = 'Se esta <b>CREANDO</b> el pedido en un segundo plano';
-        $success = true;
+            $success = true;
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $success = false;
+            $msg = '<div class="alert alert-danger text-center">' .
+                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
+                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
+                . '</div>';
+        }
+
         return [
             'success' => $success,
             'mensaje' => $msg,
         ];
+    }
+
+    private function despachar_ramos_solidos($det_caja, $variedad, $proyecto)
+    {
+        $finca = getFincaActiva();
+        $segmento = Segmento::where('nombre', $proyecto->segmento)->first();
+        $bodega = $segmento != '' ? $segmento->bodega : '';
+        $caja_proyecto = $det_caja->caja_proyecto;
+        $query = DB::table('inventario_recepcion as i')
+            ->select('i.*')->distinct()
+            ->where('i.disponibles', '>', 0)
+            ->where('i.id_variedad', $variedad->id_variedad)
+            ->where('i.id_empresa', $finca)
+            ->where('i.bodega', $bodega)
+            ->get();
+        $inventarios = [];
+        $total_inventario = 0;
+        foreach ($query as $q) {
+            $fecha_desde = $q->fecha;
+            $fecha_hasta = opDiasFecha('+', $variedad->dias_rotacion_recepcion, $q->fecha);
+            if ($proyecto->fecha >= $fecha_desde && $proyecto->fecha <= $fecha_hasta) {
+                $inventarios[] = InventarioRecepcion::find($q->id_inventario_recepcion);
+                $total_inventario += $q->disponibles;
+            }
+        }
+
+        $sacar = $caja_proyecto->cantidad * $det_caja->ramos_x_caja * $det_caja->tallos_x_ramo;
+        if ($sacar <= $total_inventario) {
+            foreach ($inventarios as $inv) {
+                if ($sacar >= 0) {
+                    $usados = 0;
+                    $disponible = $inv->disponibles;
+                    if ($sacar >= $disponible) {
+                        $sacar = $sacar - $disponible;
+                        $usados = $disponible;
+                        $disponible = 0;
+                    } else {
+                        $disponible = $disponible - $sacar;
+                        $usados = $sacar;
+                        $sacar = 0;
+                    }
+
+                    $inv->disponibles = $disponible;
+                    $inv->save();
+
+                    $new_salida = new SalidasRecepcion();
+                    $new_salida->id_inventario_recepcion = $inv->id_inventario_recepcion;
+                    $new_salida->id_detalle_caja_proyecto = $det_caja->id_detalle_caja_proyecto;
+                    $new_salida->id_variedad = $det_caja->id_variedad;
+                    $new_salida->fecha = $proyecto->fecha;
+                    $new_salida->cantidad = $usados;
+                    $new_salida->basura = 0;
+                    $new_salida->save();
+                }
+            }
+
+            $det_caja->armados += $det_caja->ramos_x_caja * $caja_proyecto->cantidad;
+            $det_caja->save();
+
+            return [
+                'success' => true,
+                'mensaje' => 'OK'
+            ];
+        } else {
+            return [
+                'success' => false,
+                'mensaje' => 'No hay flor disponible en el inventario'
+            ];
+        }
     }
 
     public function editar_proyecto(Request $request)
