@@ -70,6 +70,7 @@ class ReporteIngresosController extends Controller
             ->values();
 
         $listado_compras = DB::table('ingreso_recepcion as i')
+            ->leftJoin('configuracion_empresa as prov', 'prov.id_configuracion_empresa', '=', 'i.id_proveedor')
             ->join('variedad as v', 'v.id_variedad', '=', 'i.id_variedad')
             ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
             ->select(
@@ -84,7 +85,8 @@ class ReporteIngresosController extends Controller
                 'i.packing',
                 'i.bodega',
                 'i.fecha',
-                'i.id_ingreso_recepcion'
+                'i.id_ingreso_recepcion',
+                'prov.nombre as proveedor_nombre',
             )->distinct()
             ->whereNotNull('i.packing')
             ->where('i.id_empresa', $finca)
@@ -107,6 +109,7 @@ class ReporteIngresosController extends Controller
                     'packing' => $packing,
                     'fecha' => $items->first()->fecha,
                     'factura' => $items->first()->factura,
+                    'proveedor_nombre' => $items->first()->proveedor_nombre,
                     'detalles' => $items->values(),
                 ];
             })

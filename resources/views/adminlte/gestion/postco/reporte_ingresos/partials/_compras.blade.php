@@ -10,6 +10,9 @@
             Factura
         </th>
         <th class="padding_lateral_5 bg-yura_dark">
+            Proveedor
+        </th>
+        <th class="padding_lateral_5 bg-yura_dark">
             Bodega
         </th>
         <th class="padding_lateral_5 bg-yura_dark">
@@ -45,6 +48,10 @@
                     <th class="padding_lateral_5" style="border-color: #9d9d9d"
                         rowspan="{{ count($compra['detalles']) }}">
                         {{ $compra['factura'] }}
+                    </th>
+                    <th class="padding_lateral_5" style="border-color: #9d9d9d"
+                        rowspan="{{ count($compra['detalles']) }}">
+                        {{ $compra['proveedor_nombre'] }}
                     </th>
                 @endif
                 <th class="padding_lateral_5" style="border-color: #9d9d9d">

@@ -205,7 +205,7 @@ class InventarioRecepcionController extends Controller
 
                 $ingreso = new IngresoRecepcion();
                 $ingreso->id_variedad = $data->variedad;
-                $ingreso->id_proveedor = $request->proveedor;
+                $ingreso->id_proveedor = $request->id_proveedor;
                 $ingreso->factura = $request->factura;
                 $ingreso->packing = $request->packing;
                 $ingreso->fecha_registro = date('Y-m-d H:i:s');
