@@ -1181,6 +1181,8 @@ class PreproduccionController extends Controller
         $col++;
         setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'RAMOS');
         $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'TALLOS');
+        $col++;
         setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'RESPONSABLE');
         $col++;
         setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'OBSERVACION');
@@ -1201,6 +1203,8 @@ class PreproduccionController extends Controller
         setValueToCeldaExcel($sheet, $columnas[$col] . $row, $model->longitud_ramo);
         $col++;
         setValueToCeldaExcel($sheet, $columnas[$col] . $row, $request->armar);
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $request->armar * $model->tallos_x_ramo);
         $col += 2;
 
         setTextCenterToCeldaExcel($sheet, 'A1:' . $columnas[$col] . $row);

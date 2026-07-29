@@ -104,8 +104,15 @@ class InventarioRecepcionController extends Controller
             ->orderBy('id_configuracion_empresa')
             ->orderBy('nombre')
             ->get();
+        $last_invoices = DB::table('ingreso_recepcion')
+            ->select(
+                DB::raw('max(factura) as factura'),
+                DB::raw('max(packing) as packing')
+            )
+            ->get()[0];
         return view('adminlte.gestion.postco.ingreso_inventario.forms.modal_add', [
-            'proveedores' => $proveedores
+            'proveedores' => $proveedores,
+            'last_invoices' => $last_invoices,
         ]);
     }
 
@@ -198,7 +205,9 @@ class InventarioRecepcionController extends Controller
 
                 $ingreso = new IngresoRecepcion();
                 $ingreso->id_variedad = $data->variedad;
-                $ingreso->id_proveedor = $data->proveedor;
+                $ingreso->id_proveedor = $request->proveedor;
+                $ingreso->factura = $request->factura;
+                $ingreso->packing = $request->packing;
                 $ingreso->fecha_registro = date('Y-m-d H:i:s');
                 $ingreso->fecha = $data->fecha;
                 $ingreso->tallos_x_ramo = $data->tallos_x_ramo;

@@ -1,10 +1,32 @@
-<table class="table-bordered" style="width: 100%; border: 1px solid #9d9d9d" id="table_add_inventario">
+<div class="text-center">
+    <div class="input-group">
+        <div class="input-group-addon bg-yura_dark span-input-group-yura-fixed">
+            Proveedor
+        </div>
+        <select name="new_proveedor" id="new_proveedor" class="form-control input-yura_default"
+            onchange="seleccionar_proveedor()">
+            @foreach ($proveedores as $prov)
+                <option value="{{ $prov->id_configuracion_empresa }}">
+                    {{ $prov->nombre }}
+                </option>
+            @endforeach
+        </select>
+        <div class="input-group-addon bg-yura_dark">
+            Factura
+        </div>
+        <input type="text" name="new_factura" id="new_factura" class="form-control input-yura_default">
+        <div class="input-group-addon bg-yura_dark">
+            Packing
+        </div>
+        <input type="text" name="new_packing" id="new_packing" class="form-control input-yura_default"
+            value="{{ $last_invoices->factura + 1 }}">
+    </div>
+</div>
+
+<table class="table-bordered" style="width: 100%; border: 1px solid #9d9d9d; margin-top: 5px" id="table_add_inventario">
     <tr>
         <th class="padding_lateral_5 bg-yura_dark">
             Fecha
-        </th>
-        <th class="padding_lateral_5 bg-yura_dark">
-            Proveedor
         </th>
         <th class="padding_lateral_5 bg-yura_dark">
             Planta
@@ -36,21 +58,13 @@
                 value="{{ hoy() }}" max="{{ hoy() }}">
         </th>
         <th class="text-center" style="border-color: #9d9d9d">
-            <select id="new_proveedor_1" style="width: 100%; height: 34px;" onchange="seleccionar_proveedor(1)">
-                @foreach ($proveedores as $prov)
-                    <option value="{{ $prov->id_configuracion_empresa }}">
-                        {{ $prov->nombre }}
-                    </option>
-                @endforeach
-            </select>
-        </th>
-        <th class="text-center" style="border-color: #9d9d9d">
-            <select id="new_planta_1" style="width: 100%; height: 26px;" onchange="seleccionar_planta(1)">
+            <select id="new_planta_1" style="width: 100%; height: 26px;" onchange="seleccionar_planta(1)"
+                class="new_planta">
                 <option value="">Seleccione</option>
             </select>
         </th>
         <th class="text-center" style="border-color: #9d9d9d">
-            <select id="new_variedad_1" style="width: 100%; height: 26px;">
+            <select id="new_variedad_1" style="width: 100%; height: 26px;" class="new_variedad">
                 <option value="">Seleccione</option>
             </select>
         </th>
@@ -88,17 +102,12 @@
         $('.select2-container').css('width', '100%');
         $('.select2-selection').css('height', '34px');
     }, 500);
-    seleccionar_proveedor(1);
+    seleccionar_proveedor();
 
     num_row = 1;
 
     function add_inventario() {
         num_row++;
-        parametros = [
-            "'new_proveedor_" + num_row + "'",
-            "'<option value = selected>Seleccione</option>'",
-        ];
-        select_proveedor = $('#new_proveedor_1').html();
         fecha = $('#new_fecha_1').val();
         max_fecha = $('#new_fecha_1').prop('max');
         $('#table_add_inventario').append('<tr id="new_tr_' + num_row + '">' +
@@ -108,19 +117,13 @@
             'value="' + fecha + '" max="' + max_fecha + '">' +
             '</th>' +
             '<th class="text-center" style="border-color: #9d9d9d">' +
-            '<select id="new_proveedor_' + num_row + '" style="width: 100%; height: 34px;" ' +
-            'onchange="seleccionar_proveedor(' + num_row + ')">' +
-            select_proveedor +
-            '</select>' +
-            '</th>' +
-            '<th class="text-center" style="border-color: #9d9d9d">' +
             '<select id="new_planta_' + num_row + '" style="width: 100%; height: 26px;" ' +
-            'onchange="seleccionar_planta(' + num_row + ')">' +
+            'onchange="seleccionar_planta(' + num_row + ')" class="new_planta">' +
             '<option value="">Seleccione</option>' +
             '</select>' +
             '</th>' +
             '<th class="text-center" style="border-color: #9d9d9d">' +
-            '<select id="new_variedad_' + num_row + '" style="width: 100%; height: 26px;">' +
+            '<select id="new_variedad_' + num_row + '" style="width: 100%; height: 26px;" class="new_variedad">' +
             '<option value="">Seleccione</option>' +
             '</select>' +
             '</th>' +
@@ -156,6 +159,7 @@
         });
         $('.select2-container').css('width', '100%');
         $('.select2-selection').css('height', '34px');
+        seleccionar_proveedor();
     }
 
     function quitar_row(row) {
@@ -167,7 +171,6 @@
         for (i = 1; i <= num_row; i++) {
             if ($('#new_tr_' + i).length) {
                 fecha = $('#new_fecha_' + i).val();
-                proveedor = $('#new_proveedor_' + i).val();
                 variedad = $('#new_variedad_' + i).val();
                 longitud = $('#new_longitud_' + i).val();
                 tallos_x_ramo = parseInt($('#new_tallos_x_ramo_' + i).val());
@@ -176,7 +179,6 @@
                 if (proveedor != '' && variedad != '' && tallos_x_ramo > 0 && ramos >= 0) {
                     data.push({
                         fecha: fecha,
-                        proveedor: proveedor,
                         variedad: variedad,
                         longitud: longitud,
                         tallos_x_ramo: tallos_x_ramo,
@@ -189,6 +191,9 @@
         if (data.length > 0) {
             datos = {
                 _token: '{{ csrf_token() }}',
+                id_proveedor: $('#new_proveedor').val(),
+                factura: $('#new_factura').val(),
+                packing: $('#new_packing').val(),
                 data: JSON.stringify(data),
             }
             post_jquery_m('{{ url('ingreso_inventario/store_inventario') }}', datos, function() {
@@ -198,14 +203,14 @@
         }
     }
 
-    function seleccionar_proveedor(row) {
+    function seleccionar_proveedor() {
         datos = {
             _token: '{{ csrf_token() }}',
-            id_proveedor: $('#new_proveedor_' + row).val(),
+            id_proveedor: $('#new_proveedor').val(),
         }
         $.post('{{ url('ingreso_inventario/seleccionar_proveedor') }}', datos, function(retorno) {
-            $('#new_planta_' + row).html(retorno.plantas);
-            $('#new_variedad_' + row).html('<option value="">Seleccione</option>');
+            $('.new_planta').html(retorno.plantas);
+            $('.new_variedad').html('<option value="">Seleccione</option>');
         }, 'json').fail(function(retorno) {
             console.log(retorno);
             alerta_errores(retorno.responseText);
