@@ -169,7 +169,6 @@
                 bodega = $('#new_bodega_' + i).val();
                 if (longitud != '' && variedad != '' && tallos_x_ramo > 0 && ramos >= 0) {
                     data.push({
-                        fecha: fecha,
                         variedad: variedad,
                         longitud: longitud,
                         tallos_x_ramo: tallos_x_ramo,
