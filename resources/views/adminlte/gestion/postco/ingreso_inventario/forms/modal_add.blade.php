@@ -106,11 +106,12 @@
 
     function add_inventario() {
         num_row++;
+        select_planta = $('#new_planta_1').html();
         $('#table_add_inventario').append('<tr id="new_tr_' + num_row + '">' +
             '<th class="text-center" style="border-color: #9d9d9d">' +
             '<select id="new_planta_' + num_row + '" style="width: 100%; height: 26px;" ' +
             'onchange="seleccionar_planta(' + num_row + ')" class="new_planta">' +
-            '<option value="">Seleccione</option>' +
+            select_planta +
             '</select>' +
             '</th>' +
             '<th class="text-center" style="border-color: #9d9d9d">' +
@@ -150,7 +151,7 @@
         });
         $('.select2-container').css('width', '100%');
         $('.select2-selection').css('height', '34px');
-        seleccionar_proveedor();
+        //seleccionar_proveedor();
     }
 
     function quitar_row(row) {
