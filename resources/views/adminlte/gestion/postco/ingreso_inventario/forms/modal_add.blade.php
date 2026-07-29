@@ -167,7 +167,7 @@
                 tallos_x_ramo = parseInt($('#new_tallos_x_ramo_' + i).val());
                 ramos = $('#new_ramos_' + i).val();
                 bodega = $('#new_bodega_' + i).val();
-                if (proveedor != '' && variedad != '' && tallos_x_ramo > 0 && ramos >= 0) {
+                if (longitud != '' && variedad != '' && tallos_x_ramo > 0 && ramos >= 0) {
                     data.push({
                         fecha: fecha,
                         variedad: variedad,
