@@ -1,6 +1,11 @@
 <div class="text-center">
     <div class="input-group">
         <div class="input-group-addon bg-yura_dark span-input-group-yura-fixed">
+            Fecha
+        </div>
+        <input type="date" name="new_fecha" id="new_fecha" class="form-control input-yura_default"
+            value="{{ hoy() }}">
+        <div class="input-group-addon bg-yura_dark">
             Proveedor
         </div>
         <select name="new_proveedor" id="new_proveedor" class="form-control input-yura_default"
@@ -19,15 +24,12 @@
             Packing
         </div>
         <input type="text" name="new_packing" id="new_packing" class="form-control input-yura_default"
-            value="{{ $last_invoices->factura + 1 }}">
+            value="{{ $last_invoices->packing + 1 }}">
     </div>
 </div>
 
 <table class="table-bordered" style="width: 100%; border: 1px solid #9d9d9d; margin-top: 5px" id="table_add_inventario">
     <tr>
-        <th class="padding_lateral_5 bg-yura_dark">
-            Fecha
-        </th>
         <th class="padding_lateral_5 bg-yura_dark">
             Planta
         </th>
@@ -53,10 +55,6 @@
         </th>
     </tr>
     <tr id="new_tr_1">
-        <th class="text-center" style="border-color: #9d9d9d">
-            <input type="date" style="width: 100%; height: 34px;" class="padding_lateral_5" id="new_fecha_1"
-                value="{{ hoy() }}" max="{{ hoy() }}">
-        </th>
         <th class="text-center" style="border-color: #9d9d9d">
             <select id="new_planta_1" style="width: 100%; height: 26px;" onchange="seleccionar_planta(1)"
                 class="new_planta">
@@ -108,14 +106,7 @@
 
     function add_inventario() {
         num_row++;
-        fecha = $('#new_fecha_1').val();
-        max_fecha = $('#new_fecha_1').prop('max');
         $('#table_add_inventario').append('<tr id="new_tr_' + num_row + '">' +
-            '<th class="text-center" style="border-color: #9d9d9d">' +
-            '<input type="date" style="width: 100%; height: 34px;" class="padding_lateral_5" id="new_fecha_' +
-            num_row + '" ' +
-            'value="' + fecha + '" max="' + max_fecha + '">' +
-            '</th>' +
             '<th class="text-center" style="border-color: #9d9d9d">' +
             '<select id="new_planta_' + num_row + '" style="width: 100%; height: 26px;" ' +
             'onchange="seleccionar_planta(' + num_row + ')" class="new_planta">' +
@@ -170,7 +161,6 @@
         data = [];
         for (i = 1; i <= num_row; i++) {
             if ($('#new_tr_' + i).length) {
-                fecha = $('#new_fecha_' + i).val();
                 variedad = $('#new_variedad_' + i).val();
                 longitud = $('#new_longitud_' + i).val();
                 tallos_x_ramo = parseInt($('#new_tallos_x_ramo_' + i).val());
@@ -192,6 +182,7 @@
             datos = {
                 _token: '{{ csrf_token() }}',
                 id_proveedor: $('#new_proveedor').val(),
+                fecha: $('#new_fecha').val(),
                 factura: $('#new_factura').val(),
                 packing: $('#new_packing').val(),
                 data: JSON.stringify(data),

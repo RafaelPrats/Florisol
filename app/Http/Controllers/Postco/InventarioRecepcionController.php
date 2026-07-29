@@ -180,7 +180,7 @@ class InventarioRecepcionController extends Controller
             $finca = getFincaActiva();
             foreach (json_decode($request->data) as $data) {
                 $model_inventario = InventarioRecepcion::where('id_variedad', $data->variedad)
-                    ->where('fecha', $data->fecha)
+                    ->where('fecha', $request->fecha)
                     ->where('tallos_x_ramo', $data->tallos_x_ramo)
                     ->where('longitud', $data->longitud)
                     ->where('id_empresa', $finca)
@@ -189,7 +189,7 @@ class InventarioRecepcionController extends Controller
                 if ($model_inventario == '') {
                     $model_inventario = new InventarioRecepcion();
                     $model_inventario->id_variedad = $data->variedad;
-                    $model_inventario->fecha = $data->fecha;
+                    $model_inventario->fecha = $request->fecha;
                     $model_inventario->tallos_x_ramo = $data->tallos_x_ramo;
                     $model_inventario->ramos = $data->ramos;
                     $model_inventario->bodega = $data->bodega;
@@ -209,7 +209,7 @@ class InventarioRecepcionController extends Controller
                 $ingreso->factura = $request->factura;
                 $ingreso->packing = $request->packing;
                 $ingreso->fecha_registro = date('Y-m-d H:i:s');
-                $ingreso->fecha = $data->fecha;
+                $ingreso->fecha = $request->fecha;
                 $ingreso->tallos_x_ramo = $data->tallos_x_ramo;
                 $ingreso->ramos = $data->ramos;
                 $ingreso->bodega = $data->bodega;
