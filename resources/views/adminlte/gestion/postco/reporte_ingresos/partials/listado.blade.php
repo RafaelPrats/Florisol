@@ -7,7 +7,12 @@
         </li>
         <li class="">
             <a href="#documentos" data-toggle="tab" aria-expanded="true">
-                Documentos
+                Internos
+            </a>
+        </li>
+        <li class="">
+            <a href="#movimientos" data-toggle="tab" aria-expanded="true">
+                Movimientos
             </a>
         </li>
     </ul>
@@ -20,6 +25,11 @@
         <div class="tab-pane" id="documentos" style="position: relative">
             <div style="overflow-y: scroll; overflow-x: scroll; max-height: 700px;">
                 @include('adminlte/gestion/postco/reporte_ingresos/partials/_documentos')
+            </div>
+        </div>
+        <div class="tab-pane" id="movimientos" style="position: relative">
+            <div style="overflow-y: scroll; overflow-x: scroll; max-height: 700px;">
+                @include('adminlte/gestion/postco/reporte_ingresos/partials/_movimientos')
             </div>
         </div>
     </div>

@@ -215,6 +215,7 @@ class InventarioRecepcionController extends Controller
                 $ingreso->bodega = $data->bodega;
                 $ingreso->longitud = $data->longitud;
                 $ingreso->id_empresa = $finca;
+                $ingreso->tallos = $data->tallos_x_ramo * $data->ramos;
                 $ingreso->save();
             }
 
@@ -282,6 +283,7 @@ class InventarioRecepcionController extends Controller
                     $ingreso->bodega = 'V';
                     $ingreso->longitud = $model_inventario->longitud;
                     $ingreso->id_empresa = $model_inventario->id_empresa;
+                    $ingreso->tallos = $model_inventario->tallos_x_ramo * $data->ramos_ventas;
                     $ingreso->save();
                 }
 
@@ -320,6 +322,7 @@ class InventarioRecepcionController extends Controller
                     $ingreso->bodega = 'P';
                     $ingreso->longitud = $model_inventario->longitud;
                     $ingreso->id_empresa = $model_inventario->id_empresa;
+                    $ingreso->tallos = $model_inventario->tallos_x_ramo * $data->ramos_produccion;
                     $ingreso->save();
                 }
 
@@ -462,10 +465,20 @@ class InventarioRecepcionController extends Controller
             $invOriginal = InventarioRecepcion::find($request->id_inventario);
             $invOriginal->longitud = $request->original_longitud;
             $invOriginal->tallos_x_ramo = $request->original_tallos_x_ramo;
+            $diferencia_tallos = $invOriginal->disponibles - $request->original_disponibles;
             $invOriginal->ramos = $request->original_ramos;
             $invOriginal->disponibles = $request->original_disponibles;
             $invOriginal->bodega = $request->original_bodega;
             $invOriginal->save();
+
+            $salidas = new SalidasRecepcion();
+            $salidas->id_inventario_recepcion = $invOriginal->id_inventario_recepcion;
+            $salidas->id_variedad = $invOriginal->id_variedad;
+            $salidas->cambio_bodega = $request->mover_bodega;
+            $salidas->cantidad = $diferencia_tallos;
+            $salidas->basura = 0;
+            $salidas->fecha = hoy();
+            $salidas->save();
 
             $model_inventario = InventarioRecepcion::where('id_variedad', $invOriginal->id_variedad)
                 ->where('fecha', $invOriginal->fecha)
@@ -490,6 +503,19 @@ class InventarioRecepcionController extends Controller
                 $model_inventario->disponibles += $request->mover_disponibles;
                 $model_inventario->save();
             }
+
+            $ingreso = new IngresoRecepcion();
+            $ingreso->id_variedad = $model_inventario->id_variedad;
+            $ingreso->fecha_registro = date('Y-m-d H:i:s');
+            $ingreso->fecha = hoy();
+            $ingreso->tallos_x_ramo = $request->mover_tallos_x_ramo;
+            $ingreso->ramos = $request->mover_ramos;
+            $ingreso->bodega = $model_inventario->bodega;
+            $ingreso->longitud = $model_inventario->longitud;
+            $ingreso->id_empresa = $model_inventario->id_empresa;
+            $ingreso->tallos = $request->mover_disponibles;
+            $ingreso->cambio_bodega = $request->original_bodega;
+            $ingreso->save();
 
             $success = true;
             $msg = 'Se ha <strong>GRABADO</strong> la informacion correctamente';

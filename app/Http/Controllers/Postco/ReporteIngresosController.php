@@ -40,6 +40,7 @@ class ReporteIngresosController extends Controller
                 'api.fecha',
                 'i.tallos_x_ramo',
                 'i.ramos',
+                'i.tallos',
                 'i.longitud',
                 'i.bodega',
                 'i.id_ingreso_recepcion'
@@ -79,8 +80,8 @@ class ReporteIngresosController extends Controller
                 'p.nombre as pta_nombre',
                 'i.tallos_x_ramo',
                 'i.ramos',
+                'i.tallos',
                 'i.longitud',
-                'i.bodega',
                 'i.factura',
                 'i.packing',
                 'i.bodega',
@@ -115,9 +116,41 @@ class ReporteIngresosController extends Controller
             })
             ->values();
 
+        $listado_movimientos = DB::table('ingreso_recepcion as i')
+            ->join('variedad as v', 'v.id_variedad', '=', 'i.id_variedad')
+            ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
+            ->select(
+                'i.id_variedad',
+                'v.nombre as var_nombre',
+                'p.nombre as pta_nombre',
+                'i.tallos_x_ramo',
+                'i.ramos',
+                'i.tallos',
+                'i.longitud',
+                'i.bodega',
+                'i.cambio_bodega',
+                'i.fecha',
+                'i.id_ingreso_recepcion',
+            )->distinct()
+            ->whereNotNull('i.cambio_bodega')
+            ->where('i.id_empresa', $finca)
+            ->where('i.fecha', '>=', $request->desde)
+            ->where('i.fecha', '<=', $request->hasta);
+        if ($request->bodega != 'T')
+            $listado_movimientos = $listado_movimientos->where('i.bodega', $request->bodega);
+        if ($request->planta != '')
+            $listado_movimientos = $listado_movimientos->where('v.id_planta', $request->planta);
+        if ($request->variedad != '')
+            $listado_movimientos = $listado_movimientos->where('i.id_variedad', $request->variedad);
+        $listado_movimientos = $listado_movimientos->orderBy('i.fecha')
+            ->orderBy('p.nombre')
+            ->orderBy('v.nombre')
+            ->get();
+
         return view('adminlte.gestion.postco.reporte_ingresos.partials.listado', [
             'listado_documentos' => $listado_documentos,
             'listado_compras' => $listado_compras,
+            'listado_movimientos' => $listado_movimientos,
         ]);
     }
 }

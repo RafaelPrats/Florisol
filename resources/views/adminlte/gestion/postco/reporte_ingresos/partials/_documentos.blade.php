@@ -24,6 +24,9 @@
         <th class="padding_lateral_5 bg-yura_dark">
             Ramos
         </th>
+        <th class="padding_lateral_5 bg-yura_dark">
+            Tallos
+        </th>
     </tr>
     @foreach ($listado_documentos as $documento)
         @foreach ($documento['detalles'] as $pos_i => $item)
@@ -57,6 +60,9 @@
                 </th>
                 <th class="padding_lateral_5" style="border-color: #9d9d9d">
                     {{ $item->ramos }}
+                </th>
+                <th class="padding_lateral_5" style="border-color: #9d9d9d">
+                    {{ $item->tallos }}
                 </th>
             </tr>
         @endforeach
