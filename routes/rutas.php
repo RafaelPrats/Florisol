@@ -74,6 +74,7 @@ Route::group(['middleware' => 'autenticacion'], function () {
             include "postco/inventario_recepcion.php";
             include "postco/movimientos_recepcion.php";
             include "postco/reporte_ingresos.php";
+            include "postco/reporte_salidas.php";
 
             /* ========================== POSTCOSECHA ========================*/
             include "postcosecha/clasificaciones.php";

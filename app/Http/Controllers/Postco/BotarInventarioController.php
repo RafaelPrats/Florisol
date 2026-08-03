@@ -346,7 +346,7 @@ class BotarInventarioController extends Controller
                 $query = SalidasRecepcion::where('orden_basura', $request->orden)->where('estado_orden_basura', 0)->get();
                 foreach ($query as $q) {
                     $inventario = $q->inventario_recepcion;
-                    if ($inventario->disponibles > $q->basura) {
+                    if ($inventario->disponibles >= $q->basura) {
                         $inventario->disponibles -= $q->basura;
                         $inventario->save();
 
