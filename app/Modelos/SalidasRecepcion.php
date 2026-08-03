@@ -28,4 +28,9 @@ class SalidasRecepcion extends Model
     {
         return $this->belongsTo('\yura\Modelos\MotivoBaja', 'id_motivo_baja');
     }
+
+    public function inventario_recepcion()
+    {
+        return $this->belongsTo('\yura\Modelos\InventarioRecepcion', 'id_inventario_recepcion');
+    }
 }

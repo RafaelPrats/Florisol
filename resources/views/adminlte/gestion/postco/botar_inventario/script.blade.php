@@ -16,6 +16,18 @@
         });
     }
 
+    function listar_ordenes() {
+        datos = {
+            planta: $('#planta_filtro').val(),
+            variedad: $('#variedad_filtro').val(),
+            fecha: $('#fecha_filtro').val(),
+            bodega: $('#bodega_filtro').val(),
+        };
+        get_jquery('{{ url('botar_inventario/listar_ordenes') }}', datos, function(retorno) {
+            $('#div_listado').html(retorno);
+        });
+    }
+
     function admin_motivos() {
         datos = {}
         get_jquery('{{ url('botar_inventario/admin_motivos') }}', datos, function(retorno) {

@@ -100,6 +100,7 @@ class InventarioRecepcionController extends Controller
 
     public function modal_add(Request $request)
     {
+        $finca = getFincaActiva();
         $proveedores = ConfiguracionEmpresa::where('proveedor', 1)
             ->orderBy('id_configuracion_empresa')
             ->orderBy('nombre')
@@ -109,6 +110,7 @@ class InventarioRecepcionController extends Controller
                 DB::raw('max(factura) as factura'),
                 DB::raw('max(packing) as packing')
             )
+            ->where('id_empresa', $finca)
             ->get()[0];
         return view('adminlte.gestion.postco.ingreso_inventario.forms.modal_add', [
             'proveedores' => $proveedores,

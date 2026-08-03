@@ -80,6 +80,9 @@
                             <button type="button" class="btn btn-yura_primary" onclick="listar_reporte()">
                                 <i class="fa fa-fw fa-search"></i>
                             </button>
+                            <button type="button" class="btn btn-yura_dark" onclick="listar_ordenes()">
+                                <i class="fa fa-fw fa-list"></i> Ordenes
+                            </button>
                         </div>
                     </div>
                 </td>
