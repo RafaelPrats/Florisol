@@ -1,14 +1,14 @@
 @extends('layouts.adminlte.master')
 
 @section('titulo')
-    Botar Inventario
+    Flor de Baja
 @endsection
 
 @section('contenido')
     <!-- Content Header (Page header) -->
     <section class="content-header">
         <h1>
-            Botar Inventario
+            Flor de Baja
             <small class="text-color_yura">módulo de postcosecha</small>
         </h1>
 
