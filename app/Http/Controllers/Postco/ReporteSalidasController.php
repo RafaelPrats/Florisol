@@ -32,9 +32,12 @@ class ReporteSalidasController extends Controller
             ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
             ->join('inventario_recepcion as i', 'i.id_inventario_recepcion', '=', 's.id_inventario_recepcion')
             ->join('orden_trabajo as ot', 'ot.id_orden_trabajo', '=', 's.id_orden_trabajo')
+            ->join('detalle_caja_proyecto as dc', 'dc.id_detalle_caja_proyecto', '=', 'ot.id_detalle_caja_proyecto')
+            ->join('variedad as bqt', 'bqt.id_variedad', '=', 'dc.id_variedad')
             ->join('detalle_cliente as cli', 'cli.id_cliente', '=', 'ot.id_cliente')
             ->select(
                 's.*',
+                'bqt.nombre as bqt_nombre',
                 'v.nombre as var_nombre',
                 'p.nombre as pta_nombre',
                 'ot.ramos',
@@ -64,6 +67,7 @@ class ReporteSalidasController extends Controller
                 return [
                     'ot' => $ot,
                     'fecha' => $items->first()->fecha,
+                    'bqt_nombre' => $items->first()->bqt_nombre,
                     'cli_nombre' => $items->first()->cli_nombre,
                     'ramos' => $items->first()->ramos,
                     'detalles' => $items->values(),

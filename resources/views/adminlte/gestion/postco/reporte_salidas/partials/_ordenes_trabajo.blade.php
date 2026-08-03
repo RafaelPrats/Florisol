@@ -4,7 +4,7 @@
             OT
         </th>
         <th class="padding_lateral_5 bg-yura_dark">
-            Fecha
+            Fecha Salida
         </th>
         <th class="padding_lateral_5 bg-yura_dark">
             Cliente
@@ -48,6 +48,8 @@
                     </th>
                     <th class="padding_lateral_5" style="border-color: #9d9d9d" rowspan="{{ count($ot['detalles']) }}">
                         {{ $ot['cli_nombre'] }}
+                        <br>
+                        <small><em>{{ $ot['bqt_nombre'] }}</em></small>
                     </th>
                     <th class="padding_lateral_5" style="border-color: #9d9d9d" rowspan="{{ count($ot['detalles']) }}">
                         {{ $ot['ramos'] }}
