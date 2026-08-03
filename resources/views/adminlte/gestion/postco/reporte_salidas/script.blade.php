@@ -1,5 +1,5 @@
 <script>
-    $('#vista_actual').val('reporte_ingresos');
+    $('#vista_actual').val('reporte_salidas');
     $('#planta_filtro').select2();
     $('#variedad_filtro').select2();
     listar_reporte();
@@ -10,10 +10,9 @@
             variedad: $('#variedad_filtro').val(),
             desde: $('#desde_filtro').val(),
             hasta: $('#hasta_filtro').val(),
-            documento: $('#documento_filtro').val(),
             bodega: $('#bodega_filtro').val(),
         };
-        get_jquery('{{ url('reporte_ingresos/listar_reporte') }}', datos, function(retorno) {
+        get_jquery('{{ url('reporte_salidas/listar_reporte') }}', datos, function(retorno) {
             $('#div_listado').html(retorno);
         });
     }

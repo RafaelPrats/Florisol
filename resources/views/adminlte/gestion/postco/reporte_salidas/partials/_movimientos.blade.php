@@ -10,6 +10,9 @@
             A
         </th>
         <th class="padding_lateral_5 bg-yura_dark">
+            Fecha Inventario
+        </th>
+        <th class="padding_lateral_5 bg-yura_dark">
             Planta
         </th>
         <th class="padding_lateral_5 bg-yura_dark">
@@ -22,9 +25,6 @@
             TxR
         </th>
         <th class="padding_lateral_5 bg-yura_dark">
-            Ramos
-        </th>
-        <th class="padding_lateral_5 bg-yura_dark">
             Tallos
         </th>
     </tr>
@@ -34,10 +34,13 @@
                 {{ $item->fecha }}
             </th>
             <th class="padding_lateral_5" style="border-color: #9d9d9d">
+                {{ $item->bodega == 'V' ? 'Ventas' : 'Produccion' }}
+            </th>
+            <th class="padding_lateral_5" style="border-color: #9d9d9d">
                 {{ $item->cambio_bodega == 'V' ? 'Ventas' : 'Produccion' }}
             </th>
             <th class="padding_lateral_5" style="border-color: #9d9d9d">
-                {{ $item->bodega == 'V' ? 'Ventas' : 'Produccion' }}
+                {{ $item->fecha_inventario }}
             </th>
             <th class="padding_lateral_5" style="border-color: #9d9d9d">
                 {{ $item->pta_nombre }}
@@ -52,10 +55,7 @@
                 {{ $item->tallos_x_ramo }}
             </th>
             <th class="padding_lateral_5" style="border-color: #9d9d9d">
-                {{ $item->ramos }}
-            </th>
-            <th class="padding_lateral_5" style="border-color: #9d9d9d">
-                {{ $item->tallos }}
+                {{ $item->cantidad }}
             </th>
         </tr>
     @endforeach

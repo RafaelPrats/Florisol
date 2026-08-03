@@ -1,19 +1,19 @@
 <table class="table-bordered" style="width: 100%; border: 1px solid #9d9d9d; margin-top: 5px">
     <tr class="tr_fija_top_0">
         <th class="padding_lateral_5 bg-yura_dark">
-            Fecha
+            Fecha Despacho
         </th>
         <th class="padding_lateral_5 bg-yura_dark">
-            Packing
+            Cliente
         </th>
         <th class="padding_lateral_5 bg-yura_dark">
-            Factura
+            Piezas
         </th>
         <th class="padding_lateral_5 bg-yura_dark">
-            Proveedor
+            Tipo Caja
         </th>
         <th class="padding_lateral_5 bg-yura_dark">
-            Bodega
+            Ramos x Caja
         </th>
         <th class="padding_lateral_5 bg-yura_dark">
             Planta
@@ -22,49 +22,61 @@
             Variedad
         </th>
         <th class="padding_lateral_5 bg-yura_dark">
+            Fecha Inventario
+        </th>
+        <th class="padding_lateral_5 bg-yura_dark">
+            Bodega
+        </th>
+        <th class="padding_lateral_5 bg-yura_dark">
             Longitud
         </th>
         <th class="padding_lateral_5 bg-yura_dark">
             TxR
         </th>
         <th class="padding_lateral_5 bg-yura_dark">
-            Ramos
-        </th>
-        <th class="padding_lateral_5 bg-yura_dark">
             Tallos
         </th>
     </tr>
-    @foreach ($listado_compras as $compra)
-        @foreach ($compra['detalles'] as $pos_i => $item)
-            <tr class="compra_{{ $compra['packing'] }}"
-                onmouseover="$('.compra_{{ $compra['packing'] }}').css('background-color', 'cyan')"
-                onmouseleave="$('.compra_{{ $compra['packing'] }}').css('background-color', '')">
+    @foreach ($listado_solido as $det_caja)
+        @foreach ($det_caja['detalles'] as $pos_i => $item)
+            <tr class="det_caja_{{ $det_caja['det_caja'] }}"
+                onmouseover="$('.det_caja_{{ $det_caja['det_caja'] }}').css('background-color', 'cyan')"
+                onmouseleave="$('.det_caja_{{ $det_caja['det_caja'] }}').css('background-color', '')">
                 @if ($pos_i == 0)
                     <th class="padding_lateral_5" style="border-color: #9d9d9d"
-                        rowspan="{{ count($compra['detalles']) }}">
-                        {{ $compra['fecha'] }}
+                        rowspan="{{ count($det_caja['detalles']) }}">
+                        {{ $det_caja['fecha'] }}
                     </th>
                     <th class="padding_lateral_5" style="border-color: #9d9d9d"
-                        rowspan="{{ count($compra['detalles']) }}">
-                        {{ $compra['packing'] }}
+                        rowspan="{{ count($det_caja['detalles']) }}">
+                        {{ $det_caja['cli_nombre'] }}
                     </th>
                     <th class="padding_lateral_5" style="border-color: #9d9d9d"
-                        rowspan="{{ count($compra['detalles']) }}">
-                        {{ $compra['factura'] }}
+                        rowspan="{{ count($det_caja['detalles']) }}">
+                        {{ $det_caja['piezas'] }}
                     </th>
                     <th class="padding_lateral_5" style="border-color: #9d9d9d"
-                        rowspan="{{ count($compra['detalles']) }}">
-                        {{ $compra['proveedor_nombre'] }}
+                        rowspan="{{ count($det_caja['detalles']) }}">
+                        {{ $det_caja['tipo_caja'] }}
+                    </th>
+                    <th class="padding_lateral_5" style="border-color: #9d9d9d"
+                        rowspan="{{ count($det_caja['detalles']) }}">
+                        {{ $det_caja['ramos_x_caja'] }}
+                    </th>
+                    <th class="padding_lateral_5" style="border-color: #9d9d9d"
+                        rowspan="{{ count($det_caja['detalles']) }}">
+                        {{ $det_caja['pta_nombre'] }}
+                    </th>
+                    <th class="padding_lateral_5" style="border-color: #9d9d9d"
+                        rowspan="{{ count($det_caja['detalles']) }}">
+                        {{ $det_caja['var_nombre'] }}
                     </th>
                 @endif
                 <th class="padding_lateral_5" style="border-color: #9d9d9d">
+                    {{ $item->fecha_inventario }}
+                </th>
+                <th class="padding_lateral_5" style="border-color: #9d9d9d">
                     {{ $item->bodega == 'V' ? 'Ventas' : 'Produccion' }}
-                </th>
-                <th class="padding_lateral_5" style="border-color: #9d9d9d">
-                    {{ $item->pta_nombre }}
-                </th>
-                <th class="padding_lateral_5" style="border-color: #9d9d9d">
-                    {{ $item->var_nombre }}
                 </th>
                 <th class="padding_lateral_5" style="border-color: #9d9d9d">
                     {{ $item->longitud }}
@@ -73,10 +85,7 @@
                     {{ $item->tallos_x_ramo }}
                 </th>
                 <th class="padding_lateral_5" style="border-color: #9d9d9d">
-                    {{ $item->ramos }}
-                </th>
-                <th class="padding_lateral_5" style="border-color: #9d9d9d">
-                    {{ $item->tallos }}
+                    {{ $item->cantidad }}
                 </th>
             </tr>
         @endforeach

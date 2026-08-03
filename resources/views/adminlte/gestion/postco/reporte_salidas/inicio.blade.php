@@ -62,14 +62,6 @@
                     <td>
                         <div class="input-group">
                             <div class="input-group-addon bg-yura_dark">
-                                Doc.
-                            </div>
-                            <input type="text" name="documento_filtro" id="documento_filtro" class="form-control">
-                        </div>
-                    </td>
-                    <td>
-                        <div class="input-group">
-                            <div class="input-group-addon bg-yura_dark">
                                 <i class="fa fa-fw fa-gift"></i>
                             </div>
                             <select name="bodega_filtro" id="bodega_filtro" class="form-control" style="width: 100%">
@@ -135,5 +127,5 @@
 @endsection
 
 @section('script_final')
-    @include('adminlte.gestion.postco.reporte_ingresos.script')
+    @include('adminlte.gestion.postco.reporte_salidas.script')
 @endsection
