@@ -146,6 +146,10 @@
                         @if ($pos_d == 0)
                             <th class="text-center" style="border-color: #9d9d9d" rowspan="{{ count($detalles) }}">
                                 {{ $caja->cantidad }} <small>{{ $caja->tipo_caja }}</small>
+                                <br>
+                                @foreach ($caja->marcaciones as $marcacion)
+                                    <small><em>{{ $marcacion->valor }}</em></small>
+                                @endforeach
                             </th>
                         @endif
                         <th class="text-center" style="border-color: #9d9d9d">
