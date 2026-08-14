@@ -175,6 +175,12 @@
                                 Distribucion
                             </button>
                             <button type="button"
+                                class="btn btn-xs btn-block btn-yura_info btn_procesar_{{ $detalle->id_detalle_caja_proyecto }}"
+                                style="height: 21px; margin-top: 0;"
+                                onclick="modal_distribucion('{{ $detalle->id_detalle_caja_proyecto }}')">
+                                Nacional
+                            </button>
+                            <button type="button"
                                 class="btn btn-xs btn-block btn-yura_dark btn_procesar_{{ $detalle->id_detalle_caja_proyecto }}"
                                 style="height: 21px; margin-top: 0;"
                                 onclick="copiar_receta('{{ $detalle->id_detalle_caja_proyecto }}')">
@@ -407,17 +413,24 @@
     }
 
     function copiar_receta(id) {
-        datos = {
-            _token: '{{ csrf_token() }}',
-            id: id,
-            desde: $('#desde_filtro').val(),
-            hasta: $('#hasta_filtro').val(),
-        }
-        post_jquery_m('{{ url('preproduccion/copiar_receta') }}', datos, function() {
-            cerrar_modals();
-            modal_receta('{{ $receta->id_variedad }}', '{{ $longitud }}');
-            listar_reporte();
-        });
+        mensaje = {
+            title: '<i class="fa fa-fw fa-trash"></i> Copiar Receta',
+            mensaje: '<div class="alert alert-warning text-center"><h3><i class="fa fa-fw fa-exclamation-triangle"></i> ¿Está seguro de <b>COPIAR</b> esta receta?</h3></div>',
+        };
+        modal_quest('modal-quest_bloquear_postco', mensaje['mensaje'], mensaje['title'], true, false, '50%',
+            function() {
+                datos = {
+                    _token: '{{ csrf_token() }}',
+                    id: id,
+                    desde: $('#desde_filtro').val(),
+                    hasta: $('#hasta_filtro').val(),
+                }
+                post_jquery_m('{{ url('preproduccion/copiar_receta') }}', datos, function() {
+                    cerrar_modals();
+                    modal_receta('{{ $receta->id_variedad }}', '{{ $longitud }}');
+                    listar_reporte();
+                });
+            });
     }
 
     function bloquear_postco(id, bloqueado) {
@@ -440,5 +453,16 @@
                     modal_receta('{{ $receta->id_variedad }}', '{{ $longitud }}');
                 });
             });
+    }
+
+    function modal_distribucion(id) {
+        datos = {
+            id: id,
+        };
+        get_jquery('{{ url('preproduccion/modal_distribucion') }}', datos, function(retorno) {
+            modal_view('modal_modal_distribucion', retorno,
+                '<i class="fa fa-fw fa-plus"></i> Distribuciones de la receta',
+                true, false, '{{ isPC() ? '95%' : '' }}');
+        });
     }
 </script>

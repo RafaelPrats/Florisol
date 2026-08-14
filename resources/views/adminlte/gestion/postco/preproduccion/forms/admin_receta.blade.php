@@ -1,7 +1,7 @@
 <legend class="text-center" style="font-size: 1em; margin-bottom: 5px">
     <div class="input-group">
         <span class="input-group-addon bg-yura_dark span-input-group-yura-fixed">
-            Distribucion de "<b>{{ $det_caja->ramos }}</b>" ramos de "<b>{{ $det_caja->longitud_ramo }}cm</b>" en
+            Distribucion de "<b>{{ $caja->cantidad * $det_caja->ramos_x_caja }}</b>" ramos de "<b>{{ $det_caja->longitud_ramo }}cm</b>" en
             la receta
             "<b>{{ $det_caja->variedad->nombre }}</b>"
             para "<b>{{ convertDateToText($proyecto->fecha) }}</b>"
@@ -19,7 +19,7 @@
     </div>
 </legend>
 <input type="hidden" id="id_detalle_seleccionado" value="{{ $det_caja->id_detalle_caja_proyecto }}">
-<input type="hidden" id="ramos_pedido" value="{{ $caja->ramos * $det_caja->ramos_x_caja }}">
+<input type="hidden" id="ramos_pedido" value="{{ $caja->cantidad * $det_caja->ramos_x_caja }}">
 <input type="hidden" id="longitud_pedido" value="{{ $det_caja->longitud_ramo }}">
 <input type="hidden" id="postco_fecha" value="{{ $proyecto->fecha }}">
 <table style="width: 100%;">

@@ -451,14 +451,15 @@ class PreproduccionController extends Controller
 
     public function cargar_receta(Request $request)
     {
-        $postco = Postco::find($request->id_postco);
+        $det_caja = DetalleCajaProyecto::find($request->id_detalle);
 
-        $detalles_receta = DetalleReceta::where('id_variedad', $postco->id_variedad)
+        $detalles_receta = DetalleReceta::where('id_variedad', $det_caja->id_variedad)
             ->where('numero_receta', $request->numero_receta)
             ->get();
         return view('adminlte.gestion.postco.preproduccion.forms.cargar_receta', [
-            'postco' => $postco,
+            'det_caja' => $det_caja,
             'detalles_receta' => $detalles_receta,
+            'ramos_pedido' => $request->ramos_pedido,
         ]);
     }
 
@@ -1212,5 +1213,52 @@ class PreproduccionController extends Controller
 
         for ($i = 0; $i <= $col; $i++)
             $sheet->getColumnDimension($columnas[$i])->setAutoSize(true);
+    }
+
+    public function modal_distribucion(Request $request)
+    {
+        $finca = getFincaActiva();
+        $det_caja = DetalleCajaProyecto::find($request->id);
+        $caja = $det_caja->caja_proyecto;
+        $proyecto = $caja->proyecto;
+        $numeros_receta = DB::table('detalle_receta')
+            ->select('numero_receta')->distinct()
+            ->where('id_variedad', $det_caja->id_variedad)
+            ->orderBy('defecto')
+            ->get()->pluck('numero_receta')->toArray();
+        $segmento = Segmento::where('nombre', $proyecto->segmento)->first();
+        $bodega = $segmento != '' ? $segmento->bodega : '';
+        $inventarios = DB::table('inventario_recepcion as i')
+            ->join('variedad as v', 'v.id_variedad', '=', 'i.id_variedad')
+            ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
+            ->select(
+                'v.id_planta',
+                'p.nombre as pta_nombre',
+                'i.id_variedad',
+                'v.nombre as var_nombre',
+                'i.longitud',
+                DB::raw('sum(i.disponibles) as disponibles')
+            )->distinct()
+            ->where('i.disponibles', '>', 0)
+            ->where('i.id_empresa', $finca)
+            ->where('i.bodega', $bodega)
+            ->orderBy('p.nombre')
+            ->orderBy('v.nombre')
+            ->groupBy(
+                'v.id_planta',
+                'p.nombre',
+                'i.id_variedad',
+                'v.nombre',
+                'i.longitud'
+            )
+            ->get();
+        return view('adminlte.gestion.postco.preproduccion.forms.modal_distribucion', [
+            'inventarios' => $inventarios,
+            'proyecto' => $proyecto,
+            'caja' => $caja,
+            'det_caja' => $det_caja,
+            'numeros_receta' => $numeros_receta,
+            'plantas' => Planta::where('estado', '=', 1)->where('id_empresa', $finca)->orderBy('nombre')->get(),
+        ]);
     }
 }

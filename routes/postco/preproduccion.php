@@ -24,3 +24,4 @@ Route::get('preproduccion/buscar_variedades', 'Postco\PreproduccionController@bu
 Route::get('preproduccion/modal_flor', 'Postco\PreproduccionController@modal_flor');
 Route::post('preproduccion/store_armar_flor', 'Postco\PreproduccionController@store_armar_flor');
 Route::get('preproduccion/export_armados', 'Postco\PreproduccionController@export_armados');
+Route::get('preproduccion/modal_distribucion', 'Postco\PreproduccionController@modal_distribucion');
