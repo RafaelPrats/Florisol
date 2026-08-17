@@ -1273,8 +1273,12 @@ class PreproduccionController extends Controller
             $proyecto = $caja->proyecto;
             $segmento = Segmento::where('nombre', $proyecto->segmento)->first();
             $bodega = $segmento != '' ? $segmento->bodega : '';
-            $last_ot = DB::table('ot_nacional')
-                ->select(DB::raw('max(numero) as numero'))
+            $last_ot = DB::table('ot_nacional as ot')
+                ->join('detalle_caja_proyecto as dc', 'dc.id_detalle_caja_proyecto', '=', 'ot.id_detalle_caja_proyecto')
+                ->join('caja_proyecto as c', 'c.id_caja_proyecto', '=', 'dc.id_caja_proyecto')
+                ->join('proyecto as p', 'p.id_proyecto', '=', 'c.id_proyecto')
+                ->select(DB::raw('max(ot.numero) as numero'))
+                ->where('p.id_empresa', $finca)
                 ->get()[0]->numero;
             $next_numero = $last_ot + 1;
 
