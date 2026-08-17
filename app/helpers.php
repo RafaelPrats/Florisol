@@ -1423,6 +1423,30 @@ function getInventarioDisponibleByVariedadFechaSegmento($variedad, $fecha, $segm
     return $disponibles;
 }
 
+function getInventarioDisponibleByVariedadLongitudFechaSegmento($variedad, $fecha, $longitud, $segmento = null)
+{
+    $segmento = Segmento::where('nombre', $segmento)->first();
+    $bodega = $segmento != '' ? $segmento->bodega : '';
+    $finca = getFincaActiva();
+    $disponibles = 0;
+    $query = DB::table('inventario_recepcion as i')
+        ->select('i.*')->distinct()
+        ->where('i.disponibles', '>', 0)
+        ->where('i.id_variedad', $variedad->id_variedad)
+        ->where('i.id_empresa', $finca)
+        ->where('i.bodega', $bodega)
+        ->where('i.longitud', $longitud)
+        ->get();
+    foreach ($query as $q) {
+        $fecha_desde = $q->fecha;
+        $fecha_hasta = opDiasFecha('+', $variedad->dias_rotacion_recepcion, $q->fecha);
+        if ($fecha >= $fecha_desde && $fecha <= $fecha_hasta) {
+            $disponibles += $q->disponibles;
+        }
+    }
+    return $disponibles;
+}
+
 function getTotalSalidasRecepcionByVariedadFecha($variedad, $fecha)
 {
     //$finca = getFincaActiva();

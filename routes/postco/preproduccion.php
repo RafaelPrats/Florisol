@@ -25,3 +25,6 @@ Route::get('preproduccion/modal_flor', 'Postco\PreproduccionController@modal_flo
 Route::post('preproduccion/store_armar_flor', 'Postco\PreproduccionController@store_armar_flor');
 Route::get('preproduccion/export_armados', 'Postco\PreproduccionController@export_armados');
 Route::get('preproduccion/modal_distribucion', 'Postco\PreproduccionController@modal_distribucion');
+Route::post('preproduccion/store_ot_nacional', 'Postco\PreproduccionController@store_ot_nacional');
+Route::get('preproduccion/ver_ot_nacional', 'Postco\PreproduccionController@ver_ot_nacional');
+Route::get('preproduccion/exportar_ot_nacional', 'Postco\PreproduccionController@exportar_ot_nacional');

@@ -75,6 +75,60 @@ class ReporteSalidasController extends Controller
             })
             ->values();
 
+        $listado_ot_nacional = DB::table('salidas_recepcion as s')
+            ->join('ot_nacional as ot', 'ot.id_ot_nacional', '=', 's.id_ot_nacional')
+            ->join('variedad as v', 'v.id_variedad', '=', 's.id_variedad')
+            ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
+            ->join('inventario_recepcion as i', 'i.id_inventario_recepcion', '=', 's.id_inventario_recepcion')
+            ->join('detalle_caja_proyecto as dc', 'dc.id_detalle_caja_proyecto', '=', 'ot.id_detalle_caja_proyecto')
+            ->join('variedad as bqt', 'bqt.id_variedad', '=', 'dc.id_variedad')
+            ->join('caja_proyecto as caja', 'caja.id_caja_proyecto', '=', 'dc.id_caja_proyecto')
+            ->join('proyecto as proy', 'proy.id_proyecto', '=', 'caja.id_proyecto')
+            ->join('detalle_cliente as cli', 'cli.id_cliente', '=', 'proy.id_cliente')
+            ->select(
+                's.*',
+                'v.nombre as var_nombre',
+                'p.nombre as pta_nombre',
+                'ot.numero',
+                'bqt.nombre as bqt_nombre',
+                'cli.nombre as cli_nombre',
+                'i.fecha as fecha_inventario',
+                'i.tallos_x_ramo',
+                'i.longitud',
+                'i.bodega',
+                'dc.ramos_x_caja',
+                'caja.cantidad as cajas',
+            )->distinct()
+            ->whereNotNull('s.id_ot_nacional')
+            ->where('cli.estado', 1)
+            ->where('s.cantidad', '>', 0)
+            ->where('i.id_empresa', $finca)
+            ->where('s.fecha', '>=', $request->desde)
+            ->where('s.fecha', '<=', $request->hasta);
+        if ($request->bodega != 'T')
+            $listado_ot_nacional = $listado_ot_nacional->where('i.bodega', $request->bodega);
+        if ($request->planta != '')
+            $listado_ot_nacional = $listado_ot_nacional->where('v.id_planta', $request->planta);
+        if ($request->variedad != '')
+            $listado_ot_nacional = $listado_ot_nacional->where('i.id_variedad', $request->variedad);
+        $listado_ot_nacional = $listado_ot_nacional->orderBy('s.fecha')
+            ->orderBy('ot.numero')
+            ->get()
+            ->groupBy('numero')
+            ->map(function ($items, $numero) {
+                return [
+                    'numero' => $numero,
+                    'fecha' => $items->first()->fecha,
+                    'bqt_nombre' => $items->first()->bqt_nombre,
+                    'cli_nombre' => $items->first()->cli_nombre,
+                    'id_detalle_caja_proyecto' => $items->first()->id_detalle_caja_proyecto,
+                    'ramos_x_caja' => $items->first()->ramos_x_caja,
+                    'cajas' => $items->first()->cajas,
+                    'detalles' => $items->values(),
+                ];
+            })
+            ->values();
+
         $listado_solido = DB::table('salidas_recepcion as s')
             ->join('variedad as v', 'v.id_variedad', '=', 's.id_variedad')
             ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
@@ -97,6 +151,7 @@ class ReporteSalidasController extends Controller
                 'i.bodega',
             )->distinct()
             ->whereNotNull('s.id_detalle_caja_proyecto')
+            ->whereNull('s.id_ot_nacional')
             ->where('s.cantidad', '>', 0)
             ->where('cli.estado', 1)
             ->where('i.id_empresa', $finca)
@@ -202,6 +257,7 @@ class ReporteSalidasController extends Controller
             'listado_solido' => $listado_solido,
             'listado_movimientos' => $listado_movimientos,
             'listado_orden_basura' => $listado_orden_basura,
+            'listado_ot_nacional' => $listado_ot_nacional,
         ]);
     }
 }

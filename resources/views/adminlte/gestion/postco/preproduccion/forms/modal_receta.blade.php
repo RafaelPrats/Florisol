@@ -22,7 +22,7 @@
             INV. DISP.
         </th>
         <th class="text-center th_yura_green" rowspan="2" style="width: 60px">
-            OT
+            OT / Nacional
         </th>
         <th class="text-center th_yura_green" rowspan="2" style="width: 60px">
             ARMADOS
@@ -59,6 +59,7 @@
             $distribuciones = $detalle->distribuciones;
             $tallos_x_ramo = 0;
             $disponibles = $detalle->ramos;
+            $ot_nacional = $detalle->ot_nacional;
         @endphp
         @foreach ($distribuciones as $pos_d => $dist)
             @php
@@ -141,6 +142,12 @@
                                 onclick="listar_ordenes_trabajo('{{ $detalle->id_detalle_caja_proyecto }}')">
                                 {{ $getRamosOt }}
                             </button>
+                            @if (count($ot_nacional) > 0)
+                                <button type="button" class="btn btn-xs btn-yura_default" title="Ver OT Nacional"
+                                    onclick="ver_ot_nacional('{{ $detalle->id_detalle_caja_proyecto }}')">
+                                    <i class="fa fa-fw fa-eye"></i>
+                                </button>
+                            @endif
                         </div>
                     </th>
                     <th class="text-center" style="border-color: #9d9d9d;" rowspan="{{ count($distribuciones) }}">
@@ -150,7 +157,8 @@
                                 placeholder="Armar" min="1"
                                 id="armar_ramos_{{ $detalle->id_detalle_caja_proyecto }}">
                             <button type="button" class="btn btn-xs btn-block btn-yura_dark"
-                                onclick="armar_ramos('{{ $detalle->id_detalle_caja_proyecto }}')" style="height: 26px">
+                                onclick="armar_ramos('{{ $detalle->id_detalle_caja_proyecto }}')"
+                                style="height: 26px">
                                 Grabar
                             </button>
                         @endif
@@ -164,22 +172,26 @@
                             min="1" id="procesar_ramos_{{ $detalle->id_detalle_caja_proyecto }}"
                             onchange="calcular_uso('{{ $detalle->id_detalle_caja_proyecto }}')">
                         @if ($detalle->armados < $detalle->ramos)
-                            <button type="button" onclick="store_ot('{{ $detalle->id_detalle_caja_proyecto }}')"
-                                class="btn btn-block btn-yura_primary btn-xs btn_procesar_{{ $detalle->id_detalle_caja_proyecto }}">
-                                Procesar
-                            </button>
+                            @if (count($ot_nacional) == 0)
+                                <button type="button" onclick="store_ot('{{ $detalle->id_detalle_caja_proyecto }}')"
+                                    class="btn btn-block btn-yura_primary btn-xs btn_procesar_{{ $detalle->id_detalle_caja_proyecto }}">
+                                    Procesar
+                                </button>
+                            @endif
                             <button type="button"
                                 class="btn btn-xs btn-block btn-yura_default btn_procesar_{{ $detalle->id_detalle_caja_proyecto }}"
                                 style="height: 21px; margin-top: 0;"
                                 onclick="admin_receta('{{ $detalle->id_detalle_caja_proyecto }}')">
                                 Distribucion
                             </button>
-                            <button type="button"
-                                class="btn btn-xs btn-block btn-yura_info btn_procesar_{{ $detalle->id_detalle_caja_proyecto }}"
-                                style="height: 21px; margin-top: 0;"
-                                onclick="modal_distribucion('{{ $detalle->id_detalle_caja_proyecto }}')">
-                                Nacional
-                            </button>
+                            @if (count($ot_nacional) == 0 && $getRamosOt == 0)
+                                <button type="button"
+                                    class="btn btn-xs btn-block btn-yura_info btn_procesar_{{ $detalle->id_detalle_caja_proyecto }}"
+                                    style="height: 21px; margin-top: 0;"
+                                    onclick="modal_distribucion('{{ $detalle->id_detalle_caja_proyecto }}')">
+                                    Nacional
+                                </button>
+                            @endif
                             <button type="button"
                                 class="btn btn-xs btn-block btn-yura_dark btn_procesar_{{ $detalle->id_detalle_caja_proyecto }}"
                                 style="height: 21px; margin-top: 0;"
@@ -401,6 +413,17 @@
         });
     }
 
+    function ver_ot_nacional(id) {
+        datos = {
+            id: id,
+        };
+        get_jquery('{{ url('preproduccion/ver_ot_nacional') }}', datos, function(retorno) {
+            modal_view('modal_ver_ot_nacional', retorno,
+                '<i class="fa fa-fw fa-plus"></i> OT Nacional',
+                true, false, '{{ isPC() ? '95%' : '' }}');
+        });
+    }
+
     function listar_ordenes_alistamiento(postco) {
         datos = {
             postco: postco,
@@ -464,5 +487,11 @@
                 '<i class="fa fa-fw fa-plus"></i> Distribuciones de la receta',
                 true, false, '{{ isPC() ? '95%' : '' }}');
         });
+    }
+
+    function exportar_ot_nacional(id) {
+        $.LoadingOverlay('show');
+        window.open('{{ url('preproduccion/exportar_ot_nacional') }}?id=' + id, '_blank');
+        $.LoadingOverlay('hide');
     }
 </script>

@@ -198,7 +198,7 @@
                         ORDEN TRABAJO {{ $caja->cantidad * $det_caja->ramos_x_caja }} ramos
                     </th>
                 </tr>
-                <tr>
+                <tr class="text-sm">
                     <th class="padding_lateral_5 bg-yura_dark" style="width: 30px">
                         N°
                     </th>
@@ -232,9 +232,9 @@
                 </tr>
             </table>
 
-            <div class="text-center" style="margin-top: 10px">
+            <div class="text-center" style="margin-top: 5px">
                 <button type="button" class="btn btn-yura_primary" onclick="store_ot_nacional()">
-                    <i class="fa fa-fw fa-save"></i> GRABAR
+                    <i class="fa fa-fw fa-save"></i> GRABAR y DESPACHAR
                 </button>
             </div>
         </td>
@@ -407,10 +407,10 @@
                 total_tallos_ot += tallos;
             }
             //alert(total_tallos_ot + ' vs ' + total_tallos_pos + ' pos:' + pos);
-            if (total_tallos_ot > total_tallos_pos) {
+            if (total_tallos_ot != total_tallos_pos) {
                 fallos = true;
                 $('.input_tallos_' + pos).addClass('bg-yura_warning');
-                alert('Ha superado el numero de tallos totales para la flor N° ' + pos);
+                alert('El numero de tallos totales para la flor N° ' + pos + ' no coincide');
             }
         }
         return fallos;
@@ -421,8 +421,42 @@
             data = [];
             tr_ot = $('.tr_ot');
             for (i = 0; i < tr_ot.length; i++) {
+                id = tr_ot[i].id;
+                pos = $('#' + id).data('pos');
+                id_variedad = $('#' + id).data('id_variedad');
+                longitud = $('#' + id).data('longitud');
+                row_ot = $('#' + id).data('row_ot');
+                tallos = parseInt($('#input_tallos_' + row_ot).val());
+                pos_variedad = $('#id_variedad_seleccionado_' + pos).val();
+                pos_unidades = $('#cantidad_variedad_seleccionado_' + pos).val();
+                pos_total_tallos = $('#total_tallos_distribucion_' + pos).val();
+                pos_longitud = $('#longitud_variedad_seleccionado_' + pos).val();
 
+                if (tallos > 0) {
+                    data.push({
+                        pos: pos,
+                        id_variedad: id_variedad,
+                        longitud: longitud,
+                        tallos: tallos,
+                        pos_variedad: pos_variedad,
+                        pos_unidades: pos_unidades,
+                        pos_total_tallos: pos_total_tallos,
+                        pos_longitud: pos_longitud,
+                    });
+                }
             }
+            datos = {
+                _token: '{{ csrf_token() }}',
+                det_caj: $('#id_detalle_seleccionado').val(),
+                fecha: $('#fecha_filtro').val(),
+                data: JSON.stringify(data)
+            }
+            post_jquery_m('{{ url('preproduccion/store_ot_nacional') }}', datos, function() {
+                cerrar_modals();
+                modal_receta('{{ $det_caja->id_variedad }}', '{{ $det_caja->longitud_ramo }}');
+                exportar_ot_nacional('{{ $det_caja->id_detalle_caja_proyecto }}');
+                listar_reporte();
+            });
         }
     }
 </script>
