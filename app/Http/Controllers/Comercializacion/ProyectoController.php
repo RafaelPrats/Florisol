@@ -470,7 +470,7 @@ class ProyectoController extends Controller
         $proyecto = Proyecto::find($request->id);
         $datos_exportacion = DatosExportacion::where('estado', 1)->get();
 
-        $query_variedades = DB::table('especificaciones as e')
+        /*$query_variedades = DB::table('especificaciones as e')
             ->join('variedad as v', 'v.id_variedad', '=', 'e.id_variedad')
             ->select('v.nombre', 'e.id_variedad')->distinct()
             ->where('e.id_cliente', $proyecto->id_cliente)
@@ -482,7 +482,13 @@ class ProyectoController extends Controller
                 ->where('id_empresa', $finca)
                 ->orderBy('nombre')
                 ->get();
-        }
+        }*/
+
+        $query_variedades = Variedad::where('estado', 1)
+                //->where('receta', 1)
+                ->where('id_empresa', $finca)
+                ->orderBy('nombre')
+                ->get();
         $options_variedades = '<option>Seleccione...</option>';
         foreach ($query_variedades as $var) {
             $options_variedades .= '<option value="' . $var->id_variedad . '">' . $var->nombre . '</option>';
