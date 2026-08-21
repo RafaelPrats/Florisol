@@ -53,6 +53,12 @@
                     </span>
                     <select id="form_cliente" class="form-control" onchange="seleccionar_cliente()">
                     </select>
+                    <div class="input-group-btn">
+                        <button class="btn btn-yura_dark" onclick="cambiar_especificaciones()"
+                            title="Usar especificaciones" id="btn_especificaciones">
+                            <i class="fa fa-fw fa-refresh"></i> <sup>SI</sup>
+                        </button>
+                    </div>
                 </div>
             </th>
         </tr>
@@ -176,6 +182,7 @@
         $('.select2-container').css('width', '100%');
         $('.select2-selection').css('height', '34px');
     }, 500);
+    usar_especificaciones = 1;
 
     form_cant_detalles = 0;
     cargar_opciones_orden_fija(1);
@@ -224,6 +231,7 @@
         datos = {
             _token: '{{ csrf_token() }}',
             cliente: $('#form_cliente').val(),
+            usar_especificaciones: usar_especificaciones
         }
         $('#btn_add_detalle_combo').addClass('hidden');
         $.LoadingOverlay('show');
@@ -534,5 +542,16 @@
                 alerta('<div class="alert alert-warning text-center">Faltan datos por ingresar en el pedido</div>')
         else
             alerta('<div class="alert alert-warning text-center">El contenido del pedido esta vacio</div>')
+    }
+
+    function cambiar_especificaciones() {
+        if (usar_especificaciones) {
+            usar_especificaciones = 0;
+            $('#btn_especificaciones').html('<i class="fa fa-fw fa-refresh"></i> <sup>NO</sup>')
+        } else {
+            usar_especificaciones = 1;
+            $('#btn_especificaciones').html('<i class="fa fa-fw fa-refresh"></i> <sup>SI</sup>')
+        }
+        seleccionar_cliente();
     }
 </script>

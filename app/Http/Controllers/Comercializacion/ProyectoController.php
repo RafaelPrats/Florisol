@@ -113,13 +113,16 @@ class ProyectoController extends Controller
     public function seleccionar_cliente(Request $request)
     {
         $finca = getFincaActiva();
-        $variedades = DB::table('especificaciones as e')
-            ->join('variedad as v', 'v.id_variedad', '=', 'e.id_variedad')
-            ->select('v.nombre', 'e.id_variedad')->distinct()
-            ->where('e.id_cliente', $request->cliente)
-            ->orderBy('v.nombre')
-            ->get();
-        if (count($variedades) == 0) {
+        $variedades = [];
+        if ($request->usar_especificaciones) {
+            $variedades = DB::table('especificaciones as e')
+                ->join('variedad as v', 'v.id_variedad', '=', 'e.id_variedad')
+                ->select('v.nombre', 'e.id_variedad')->distinct()
+                ->where('e.id_cliente', $request->cliente)
+                ->orderBy('v.nombre')
+                ->get();
+        }
+        if (count($variedades) == 0 || !$request->usar_especificaciones) {
             $variedades = Variedad::where('estado', 1)
                 //->where('receta', 1)
                 ->where('id_empresa', $finca)
