@@ -46,6 +46,7 @@ class PreproduccionController extends Controller
         $clientes = DB::table('proyecto as p')
             ->join('detalle_cliente as dc', 'dc.id_cliente', '=', 'p.id_cliente')
             ->select('dc.id_cliente', 'dc.nombre')->distinct()
+            ->where('p.id_empresa', $finca)
             ->where('dc.estado', 1)
             ->orderBy('dc.nombre')
             ->get();
@@ -59,6 +60,7 @@ class PreproduccionController extends Controller
 
     public function listar_reporte(Request $request)
     {
+        $finca = getFincaActiva();
         if ($request->tipo == 'R') {
             $views = 'listado_recetas';
             $fechas = DB::table('proyecto as p')
@@ -66,6 +68,7 @@ class PreproduccionController extends Controller
                 ->join('detalle_caja_proyecto as dc', 'dc.id_caja_proyecto', '=', 'cp.id_caja_proyecto')
                 ->join('variedad as v', 'v.id_variedad', '=', 'dc.id_variedad')
                 ->select('p.fecha')->distinct()
+                ->where('p.id_empresa', $finca)
                 ->where('v.receta', 1)
                 ->where('p.fecha', '>=', $request->desde)
                 ->where('p.fecha', '<=', $request->hasta);
@@ -80,6 +83,7 @@ class PreproduccionController extends Controller
                 ->join('detalle_caja_proyecto as dc', 'dc.id_caja_proyecto', '=', 'cp.id_caja_proyecto')
                 ->join('variedad as v', 'v.id_variedad', '=', 'dc.id_variedad')
                 ->select('dc.id_variedad', 'v.nombre', 'dc.longitud_ramo')->distinct()
+                ->where('p.id_empresa', $finca)
                 ->where('v.receta', 1)
                 ->where('p.fecha', '>=', $request->desde)
                 ->where('p.fecha', '<=', $request->hasta);
@@ -101,6 +105,7 @@ class PreproduccionController extends Controller
                         DB::raw('sum(dc.despachados) as despachados'),
                         'p.fecha'
                     )
+                    ->where('p.id_empresa', $finca)
                     ->where('dc.id_variedad', $receta->id_variedad)
                     ->where('dc.longitud_ramo', $receta->longitud_ramo);
                 if ($request->cliente != 'T')
@@ -121,6 +126,7 @@ class PreproduccionController extends Controller
                 ->join('detalle_caja_proyecto as dc', 'dc.id_caja_proyecto', '=', 'cp.id_caja_proyecto')
                 ->join('variedad as v', 'v.id_variedad', '=', 'dc.id_variedad')
                 ->select('p.fecha')->distinct()
+                ->where('p.id_empresa', $finca)
                 ->where('v.receta', 0)
                 ->where('p.fecha', '>=', $request->desde)
                 ->where('p.fecha', '<=', $request->hasta);
@@ -138,6 +144,7 @@ class PreproduccionController extends Controller
                     'dc.id_variedad',
                     'v.nombre'
                 )->distinct()
+                ->where('p.id_empresa', $finca)
                 ->where('v.receta', 0)
                 ->where('p.fecha', '>=', $request->desde)
                 ->where('p.fecha', '<=', $request->hasta);
@@ -159,6 +166,7 @@ class PreproduccionController extends Controller
                         DB::raw('sum(dc.armados * dc.tallos_x_ramo) as armados'),
                         'p.fecha'
                     )
+                    ->where('p.id_empresa', $finca)
                     ->where('dc.id_variedad', $flor->id_variedad)
                     ->whereIn('p.fecha', $fechas);
                 if ($request->cliente != 'T')
@@ -181,6 +189,7 @@ class PreproduccionController extends Controller
 
     public function modal_receta(Request $request)
     {
+        $finca = getFincaActiva();
         $listado = DetalleCajaProyecto::join('caja_proyecto as cp', 'cp.id_caja_proyecto', '=', 'detalle_caja_proyecto.id_caja_proyecto')
             ->join('proyecto as p', 'p.id_proyecto', '=', 'cp.id_proyecto')
             ->join('detalle_cliente as c', 'c.id_cliente', '=', 'p.id_cliente')
@@ -193,6 +202,7 @@ class PreproduccionController extends Controller
                 'p.segmento',
                 DB::raw('cp.cantidad * detalle_caja_proyecto.ramos_x_caja as ramos')
             )->distinct()
+            ->where('p.id_empresa', $finca)
             ->where('detalle_caja_proyecto.id_variedad', $request->variedad)
             ->where('detalle_caja_proyecto.longitud_ramo', $request->longitud)
             ->where('c.estado', 1)
@@ -392,8 +402,10 @@ class PreproduccionController extends Controller
 
     public function buscar_variedades(Request $request)
     {
+        $finca = getFincaActiva();
         $listado = Variedad::where('id_planta', $request->planta)
             //->where('assorted', 0)
+            ->where('id_empresa', $finca)
             ->where('receta', 0)
             ->orderBy('nombre')
             ->get();
@@ -1036,6 +1048,7 @@ class PreproduccionController extends Controller
 
     public function modal_flor(Request $request)
     {
+        $finca = getFincaActiva();
         $listado = DetalleCajaProyecto::join('caja_proyecto as cp', 'cp.id_caja_proyecto', '=', 'detalle_caja_proyecto.id_caja_proyecto')
             ->join('proyecto as p', 'p.id_proyecto', '=', 'cp.id_proyecto')
             ->join('detalle_cliente as c', 'c.id_cliente', '=', 'p.id_cliente')
@@ -1051,6 +1064,7 @@ class PreproduccionController extends Controller
                 DB::raw('cp.cantidad * detalle_caja_proyecto.ramos_x_caja as ramos'),
                 DB::raw('cp.cantidad * detalle_caja_proyecto.ramos_x_caja * detalle_caja_proyecto.tallos_x_ramo as tallos')
             )->distinct()
+            ->where('p.id_empresa', $finca)
             ->where('detalle_caja_proyecto.id_variedad', $request->variedad)
             ->where('c.estado', 1)
             ->whereIn('p.fecha', json_decode($request->fechas));
