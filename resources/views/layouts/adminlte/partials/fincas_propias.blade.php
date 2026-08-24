@@ -191,6 +191,7 @@
                 'plantas_variedades',
                 'clientes',
                 'proyectos',
+                'preproduccion',
                 '/control_diario',
                 '/dashboard_personal'
             ];
