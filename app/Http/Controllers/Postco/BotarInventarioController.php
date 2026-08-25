@@ -353,16 +353,77 @@ class BotarInventarioController extends Controller
                         $q->estado_orden_basura = 1;
                         $q->save();
                     } else {
-                        DB::rollBack();
-                        $success = false;
-                        $msg = '<div class="alert alert-danger text-center">' .
-                            '<h3>No hay flor suficiente, ' . $inventario->variedad->nombre . '</h3>' .
-                            '</div>';
+                        $query_inventarios = InventarioRecepcion::where('id_variedad', $inventario->id_variedad)
+                            ->where('longitud', $inventario->longitud)
+                            ->where('bodega', $inventario->bodega)
+                            ->where('id_empresa', $inventario->id_empresa)
+                            ->where('disponibles', '>', 0)
+                            ->orderBy('fecha', 'desc')
+                            ->get();
+                        if (count($query_inventarios) > 0) {
+                            $total_inventario = 0;
+                            foreach ($query_inventarios as $inv) {
+                                $total_inventario += $inv->disponibles;
+                            }
+                            if ($total_inventario >= $q->basura) {
+                                $sacar = $q->basura;
+                                foreach ($query_inventarios as $model) {
+                                    if ($sacar >= 0) {
+                                        $usados = 0;
+                                        $disponible = $model->disponibles;
+                                        if ($sacar >= $disponible) {
+                                            $sacar = $sacar - $disponible;
+                                            $usados = $disponible;
+                                            $disponible = 0;
+                                        } else {
+                                            $disponible = $disponible - $sacar;
+                                            $usados = $sacar;
+                                            $sacar = 0;
+                                        }
 
-                        return [
-                            'success' => $success,
-                            'mensaje' => $msg,
-                        ];
+                                        $model->disponibles = $disponible;
+                                        $model->save();
+
+                                        if ($usados > 0) {
+                                            $salidas = new SalidasRecepcion();
+                                            $salidas->id_inventario_recepcion = $model->id_inventario_recepcion;
+                                            $salidas->id_variedad = $model->id_variedad;
+                                            $salidas->id_motivo_baja = $q->id_motivo_baja;
+                                            $salidas->cantidad = 0;
+                                            $salidas->basura = $usados;
+                                            $salidas->fecha = $q->fecha;
+                                            $salidas->orden_basura = $q->orden_basura;
+                                            $salidas->estado_orden_basura = 1;
+                                            $salidas->save();
+                                        }
+                                    }
+                                }
+
+                                $q->delete();
+                            } else {
+                                DB::rollBack();
+                                $success = false;
+                                $msg = '<div class="alert alert-danger text-center">' .
+                                    '<h3>No hay flor suficiente, ' . $inventario->variedad->nombre . '</h3>' .
+                                    '</div>';
+
+                                return [
+                                    'success' => $success,
+                                    'mensaje' => $msg,
+                                ];
+                            }
+                        } else {
+                            DB::rollBack();
+                            $success = false;
+                            $msg = '<div class="alert alert-danger text-center">' .
+                                '<h3>No hay flor suficiente, ' . $inventario->variedad->nombre . '</h3>' .
+                                '</div>';
+
+                            return [
+                                'success' => $success,
+                                'mensaje' => $msg,
+                            ];
+                        }
                     }
                 }
 

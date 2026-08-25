@@ -348,14 +348,16 @@ class PreproduccionController extends Controller
                             $model->disponibles = $disponible;
                             $model->save();
 
-                            $new_salida = new SalidasRecepcion();
-                            $new_salida->id_inventario_recepcion = $model->id_inventario_recepcion;
-                            $new_salida->id_orden_trabajo = $ot->id_orden_trabajo;
-                            $new_salida->id_variedad = $d->id_variedad;
-                            $new_salida->fecha = $ot->fecha;
-                            $new_salida->cantidad = $usados;
-                            $new_salida->basura = 0;
-                            $new_salida->save();
+                            if ($usados > 0) {
+                                $new_salida = new SalidasRecepcion();
+                                $new_salida->id_inventario_recepcion = $model->id_inventario_recepcion;
+                                $new_salida->id_orden_trabajo = $ot->id_orden_trabajo;
+                                $new_salida->id_variedad = $d->id_variedad;
+                                $new_salida->fecha = $ot->fecha;
+                                $new_salida->cantidad = $usados;
+                                $new_salida->basura = 0;
+                                $new_salida->save();
+                            }
                         }
                     }
                 }
