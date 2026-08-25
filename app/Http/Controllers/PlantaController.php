@@ -34,6 +34,7 @@ class PlantaController extends Controller
             'submenu' => Submenu::Where('url', '=', substr($request->getRequestUri(), 1))->get()[0],
             'plantas' => Planta::where('id_empresa', $finca)->orderBy('nombre')->get(),
             'proveedores' => ConfiguracionEmpresa::where('proveedor', 1)
+                ->where('id_empresa', $finca)
                 ->orderBy('nombre')->get()
         ]);
     }
@@ -296,6 +297,7 @@ class PlantaController extends Controller
 
     public function store_proveedor(Request $request)
     {
+        $finca = getFincaActiva();
         $valida = Validator::make($request->all(), [
             'nombre' => 'required|max:250|unique:configuracion_empresa',
         ], [
@@ -307,10 +309,13 @@ class PlantaController extends Controller
             $model = new ConfiguracionEmpresa();
             $model->nombre = str_limit(espacios($request->nombre), 250);
             $model->proveedor = 1;
+            $model->id_empresa = $finca;
             $model->fecha_registro = date('Y-m-d H:i:s');
 
             if ($model->save()) {
-                $model = ConfiguracionEmpresa::All()->last();
+                $model->id_configuracion_empresa = DB::table('configuracion_empresa')
+                    ->select(DB::raw('max(id_configuracion_empresa) as id'))
+                    ->get()[0]->id;
                 $success = true;
                 $msg = 'Se ha guardado un nuevo proveedor';
                 bitacora('configuracion_empresa', $model->id_configuracion_empresa, 'I', 'Inserción satisfactoria de un nuevo proveedor');

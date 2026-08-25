@@ -102,6 +102,11 @@ class InventarioRecepcionController extends Controller
     {
         $finca = getFincaActiva();
         $proveedores = ConfiguracionEmpresa::where('proveedor', 1)
+            ->where(function ($query) use ($finca) {
+                $query->where('id_empresa', $finca)
+                    ->orWhere('id_configuracion_empresa', -1);
+            })
+
             ->orderBy('id_configuracion_empresa')
             ->orderBy('nombre')
             ->get();
