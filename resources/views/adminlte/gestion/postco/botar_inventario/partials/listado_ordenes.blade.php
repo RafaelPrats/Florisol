@@ -70,13 +70,19 @@
                     <th class="padding_lateral_5" style="border-color: #9d9d9d">
                         {{ $det->motivo_nombre }}
                     </th>
-                    <th class="padding_lateral_5" style="border-color: #9d9d9d">
-                        {{ $det->basura }}
+                    <th class="text-center" style="border-color: #9d9d9d">
+                        <input type="text" class="padding_lateral_5 input_orden_{{ $item['orden_basura'] }}"
+                            style="width: 100%" {{ !$item['estado_orden_basura'] ? '' : 'disabled' }}
+                            data-id="{{ $det->id_salidas_recepcion }}" value="{{ $det->basura }}">
                     </th>
                     @if ($pos_d == 0)
                         <th class="text-center" style="border-color: #9d9d9d" rowspan="{{ count($item['detalles']) }}">
                             @if ($item['estado_orden_basura'] == 0)
                                 <div class="btn-group">
+                                    <button type="button" class="btn btn-xs btn-yura_primary" title="Confirmar"
+                                        onclick="update_orden('{{ $item['orden_basura'] }}')">
+                                        <i class="fa fa-fw fa-save"></i>
+                                    </button>
                                     <button type="button" class="btn btn-xs btn-yura_warning" title="Confirmar"
                                         onclick="completar_orden('{{ $item['orden_basura'] }}')">
                                         <i class="fa fa-fw fa-check"></i>
@@ -96,6 +102,32 @@
 </div>
 
 <script>
+    function update_orden(orden) {
+        texto =
+            '<div class="alert alert-warning text-center"><h3>¿Esta seguro de <b>MODIFICAR</b> la orden?</h3></div>';
+
+        modal_quest('modal_update_orden', texto, 'Modificar la orden', true, false, '40%',
+            function() {
+                input_orden = $('.input_orden_' + orden);
+                data = [];
+                for (i = 0; i < input_orden.length; i++) {
+                    data.push({
+                        id: $(input_orden[i]).data('id'),
+                        basura: $(input_orden[i]).val(),
+                    });
+                }
+                datos = {
+                    _token: '{{ csrf_token() }}',
+                    orden: orden,
+                    data: JSON.stringify(data),
+                }
+                post_jquery_m('{{ url('botar_inventario/update_orden') }}', datos, function() {
+                    cerrar_modals();
+                    listar_ordenes();
+                });
+            })
+    }
+
     function delete_orden_basura(orden) {
         texto =
             '<div class="alert alert-warning text-center"><h3>¿Esta seguro de <b>ELIMINAR</b> la orden?</h3></div>';

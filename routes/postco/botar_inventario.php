@@ -11,3 +11,4 @@ Route::get('botar_inventario/modal_baja', 'Postco\BotarInventarioController@moda
 Route::get('botar_inventario/listar_ordenes', 'Postco\BotarInventarioController@listar_ordenes');
 Route::post('botar_inventario/completar_orden', 'Postco\BotarInventarioController@completar_orden');
 Route::post('botar_inventario/delete_orden_basura', 'Postco\BotarInventarioController@delete_orden_basura');
+Route::post('botar_inventario/update_orden', 'Postco\BotarInventarioController@update_orden');

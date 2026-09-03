@@ -170,6 +170,38 @@ class BotarInventarioController extends Controller
         ];
     }
 
+    public function update_orden(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            foreach (json_decode($request->data) as $data) {
+                $model = SalidasRecepcion::find($data->id);
+                if ($data->basura > 0) {
+                    $model->basura = $data->basura;
+                    $model->save();
+                } else {
+                    $model->delete();
+                }
+            }
+
+            DB::commit();
+            $success = true;
+            $msg = 'Se ha <strong>ACTUALIZADO</strong> la orden correctamente';
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $success = false;
+            $msg = '<div class="alert alert-danger text-center">' .
+                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
+                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
+                . '</div>';
+        }
+
+        return [
+            'success' => $success,
+            'mensaje' => $msg,
+        ];
+    }
+
     public function update_motivo(Request $request)
     {
         DB::beginTransaction();

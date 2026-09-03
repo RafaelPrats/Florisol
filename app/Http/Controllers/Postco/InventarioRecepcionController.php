@@ -106,7 +106,6 @@ class InventarioRecepcionController extends Controller
                 $query->where('id_empresa', $finca)
                     ->orWhere('id_configuracion_empresa', -1);
             })
-
             ->orderBy('id_configuracion_empresa')
             ->orderBy('nombre')
             ->get();
