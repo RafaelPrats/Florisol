@@ -5,6 +5,7 @@ namespace yura\Http\Controllers\Postco;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use yura\Http\Controllers\Controller;
+use yura\Modelos\CodigoAutorizacion;
 use yura\Modelos\ConfiguracionEmpresa;
 use yura\Modelos\DetalleApiStoreCajas;
 use yura\Modelos\IngresoRecepcion;
@@ -360,15 +361,25 @@ class InventarioRecepcionController extends Controller
     {
         try {
             DB::beginTransaction();
-            $model = InventarioRecepcion::find($request->id);
-            $model->ramos = $request->ramos_ingresados;
-            $model->disponibles = $request->tallos_disponibles;
-            $model->save();
+            $codigo = CodigoAutorizacion::where('nombre', 'modificar_inventario')
+                ->first();
+            if ($codigo != '' && $codigo->valor == $request->codigo) {
+                $model = InventarioRecepcion::find($request->id);
+                $model->ramos = $request->ramos_ingresados;
+                $model->disponibles = $request->tallos_disponibles;
+                $model->save();
 
-            $success = true;
-            $msg = 'Se ha <strong>MODIFICADO</strong> el inventario correctamente';
+                $success = true;
+                $msg = 'Se ha <strong>MODIFICADO</strong> el inventario correctamente';
 
-            DB::commit();
+                DB::commit();
+            } else {
+                DB::rollBack();
+                $success = false;
+                $msg = '<div class="alert alert-danger text-center">' .
+                    '<h3>El codigo de autorizacion es incorrecto</h3>' .
+                    '</div>';
+            }
         } catch (\Exception $e) {
             DB::rollBack();
             $success = false;

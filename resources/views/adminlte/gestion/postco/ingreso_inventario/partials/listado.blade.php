@@ -229,13 +229,26 @@
     }
 
     function update_inventario(id) {
-        datos = {
-            _token: '{{ csrf_token() }}',
-            id: id,
-            ramos_ingresados: $('#ramos_ingresados_' + id).val(),
-            tallos_disponibles: $('#tallos_disponibles_' + id).val(),
-        }
-        post_jquery_m('{{ url('ingreso_inventario/update_inventario') }}', datos, function() {});
+        texto =
+            '<div class="alert alert-warning text-center"><h3>¿Esta seguro de <b>MODIFICAR</b> el inventario?</h3></div>' +
+            '<div class="input-group">' +
+            '<div class="input-group-addon span-input-group-yura-fixed bg-yura_dark">' +
+            'Codigo de autorizacion' +
+            '</div>' +
+            '<input type="password" id="codigo_autorizacion" style="width: 100%" class="text-center form-control">' +
+            '</div>';
+
+        modal_quest('modal_update_inventario', texto, 'Modificar el inventario', true, false, '40%',
+            function() {
+                datos = {
+                    _token: '{{ csrf_token() }}',
+                    id: id,
+                    ramos_ingresados: $('#ramos_ingresados_' + id).val(),
+                    tallos_disponibles: $('#tallos_disponibles_' + id).val(),
+                    codigo: $('#codigo_autorizacion').val(),
+                }
+                post_jquery_m('{{ url('ingreso_inventario/update_inventario') }}', datos, function() {});
+            });
     }
 
     function delete_inventario(id) {
