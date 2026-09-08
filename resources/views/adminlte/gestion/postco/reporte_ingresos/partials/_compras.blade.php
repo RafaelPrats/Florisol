@@ -30,7 +30,7 @@
         <th class="padding_lateral_5 bg-yura_dark">
             Ramos
         </th>
-        <th class="padding_lateral_5 bg-yura_dark">
+        <th class="padding_lateral_5 bg-yura_dark" style="width: 90px">
             Tallos
         </th>
     </tr>
@@ -75,8 +75,11 @@
                 <th class="padding_lateral_5" style="border-color: #9d9d9d">
                     {{ $item->ramos }}
                 </th>
-                <th class="padding_lateral_5" style="border-color: #9d9d9d">
-                    {{ $item->tallos }}
+                <th class="text-center" style="border-color: #9d9d9d">
+                    <input type="number" readonly value="{{ $item->tallos }}" ondblclick="habilitar_modificar()"
+                        onchange="update_compra($(this))" style="width: 100%; background-color: aliceblue"
+                        data-id_ingreso_recepcion="{{ $item->id_ingreso_recepcion }}"
+                        class="padding_lateral_5 input_compras_tallos">
                 </th>
             </tr>
         @endforeach

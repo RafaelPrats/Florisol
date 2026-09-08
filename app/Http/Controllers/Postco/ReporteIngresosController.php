@@ -5,6 +5,9 @@ namespace yura\Http\Controllers\Postco;
 use DB;
 use Illuminate\Http\Request;
 use yura\Http\Controllers\Controller;
+use yura\Modelos\CodigoAutorizacion;
+use yura\Modelos\IngresoRecepcion;
+use yura\Modelos\InventarioRecepcion;
 use yura\Modelos\Planta;
 use yura\Modelos\Submenu;
 
@@ -152,5 +155,79 @@ class ReporteIngresosController extends Controller
             'listado_compras' => $listado_compras,
             'listado_movimientos' => $listado_movimientos,
         ]);
+    }
+
+    public function habilitar_modificar(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $codigo = CodigoAutorizacion::where('nombre', 'habilitar_modificar')
+                ->first();
+            if ($codigo != '' && $codigo->valor == $request->codigo) {
+                $success = true;
+                $msg = 'Se ha <strong>HABILITADO</strong> la opcion para modificar';
+
+                DB::commit();
+            } else {
+                DB::rollBack();
+                $success = false;
+                $msg = '<div class="alert alert-danger text-center">' .
+                    '<h3>El codigo de autorizacion es incorrecto</h3>' .
+                    '</div>';
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $success = false;
+            $msg = '<div class="alert alert-danger text-center">' .
+                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
+                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
+                . '</div>';
+        }
+
+        return [
+            'success' => $success,
+            'mensaje' => $msg,
+        ];
+    }
+
+    public function update_compra(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $model = IngresoRecepcion::find($request->id);
+            $diferencia = $model->tallos - $request->tallos;
+            $model->tallos = $request->tallos;
+            $model->save();
+
+            $inventario = InventarioRecepcion::where('id_variedad', $model->id_variedad)
+                ->where('fecha', $model->fecha)
+                ->where('tallos_x_ramo', $model->tallos_x_ramo)
+                ->where('longitud', $model->longitud)
+                ->where('id_empresa', $model->id_empresa)
+                ->where('bodega', $model->bodega)
+                ->first();
+            if ($inventario->disponibles - $diferencia >= 0)
+                $inventario->disponibles -= $diferencia;
+            else
+                $inventario->disponibles = 0;
+            $inventario->save();
+
+            $success = true;
+            $msg = 'Se ha <strong>HABILITADO</strong> la opcion para modificar';
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $success = false;
+            $msg = '<div class="alert alert-danger text-center">' .
+                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
+                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
+                . '</div>';
+        }
+
+        return [
+            'success' => $success,
+            'mensaje' => $msg,
+        ];
     }
 }
