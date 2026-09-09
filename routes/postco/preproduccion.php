@@ -28,3 +28,4 @@ Route::get('preproduccion/modal_distribucion', 'Postco\PreproduccionController@m
 Route::post('preproduccion/store_ot_nacional', 'Postco\PreproduccionController@store_ot_nacional');
 Route::get('preproduccion/ver_ot_nacional', 'Postco\PreproduccionController@ver_ot_nacional');
 Route::get('preproduccion/exportar_ot_nacional', 'Postco\PreproduccionController@exportar_ot_nacional');
+Route::post('preproduccion/store_devolver', 'Postco\PreproduccionController@store_devolver');

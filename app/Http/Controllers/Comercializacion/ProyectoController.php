@@ -485,10 +485,10 @@ class ProyectoController extends Controller
         }*/
 
         $query_variedades = Variedad::where('estado', 1)
-                //->where('receta', 1)
-                ->where('id_empresa', $finca)
-                ->orderBy('nombre')
-                ->get();
+            //->where('receta', 1)
+            ->where('id_empresa', $finca)
+            ->orderBy('nombre')
+            ->get();
         $options_variedades = '<option>Seleccione...</option>';
         foreach ($query_variedades as $var) {
             $options_variedades .= '<option value="' . $var->id_variedad . '">' . $var->nombre . '</option>';
@@ -540,6 +540,21 @@ class ProyectoController extends Controller
                         $isNuevo = false;
                         if ($det_caj->receta != $detalle->id_variedad)
                             $isCambioReceta = true;
+
+                        $variedad = $detalle->variedad;
+                        if ($variedad->receta == 0 && $detalle->armados > 0 && $detalle->id_variedad != $det_caj->receta) {
+                            // es flor solida con ramos armados y hay cambio de variedad
+                            DB::rollBack();
+                            $success = false;
+                            $msg = '<div class="alert alert-warning text-center">' .
+                                '<h4><i class="fa fa-fw fa-exclamation-triangle"></i>Ya existen ramos armados para la flor: <b>' . $variedad->nombre . '</b>, debe devolver dichos ramos antes de cambiar de flor</h4>' .
+                                '</div>';
+
+                            return [
+                                'success' => $success,
+                                'mensaje' => $msg,
+                            ];
+                        }
                     } else {
                         // NUEVO DETALLE CAJA PROYECTO
                         $detalle = new DetalleCajaProyecto();

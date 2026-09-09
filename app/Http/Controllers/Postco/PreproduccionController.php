@@ -1161,6 +1161,64 @@ class PreproduccionController extends Controller
         ];
     }
 
+    public function store_devolver(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $det_caja = DetalleCajaProyecto::find($request->id);
+            $det_caja->armados -= $request->devolver;
+            $det_caja->save();
+
+            $salidas = SalidasRecepcion::where('id_detalle_caja_proyecto', $request->id)
+                ->whereNull('orden_basura')
+                ->where('basura', 0)
+                ->where('cantidad', '>', 0)
+                ->whereNull('id_orden_trabajo')
+                ->whereNull('cambio_bodega')
+                ->get();
+
+            $sacar = $request->devolver * $det_caja->tallos_x_ramo;
+            foreach ($salidas as $model) {
+                if ($sacar >= 0) {
+                    $usados = 0;
+                    $disponible = $model->cantidad;
+                    if ($sacar >= $disponible) {
+                        $sacar = $sacar - $disponible;
+                        $usados = $disponible;
+                        $disponible = 0;
+                    } else {
+                        $disponible = $disponible - $sacar;
+                        $usados = $sacar;
+                        $sacar = 0;
+                    }
+
+                    $model->cantidad = $disponible;
+                    $model->save();
+
+                    $inventario = $model->inventario_recepcion;
+                    $inventario->disponibles += $usados;
+                    $inventario->save();
+                }
+            }
+
+            $success = true;
+            $msg = 'Se han <strong>DESARMADO</strong> y devuelto los ramos correctamente';
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $success = false;
+            $msg = '<div class="alert alert-danger text-center">' .
+                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
+                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
+                . '</div>';
+        }
+
+        return [
+            'success' => $success,
+            'mensaje' => $msg,
+        ];
+    }
+
     public function export_armados(Request $request)
     {
         $spread = new Spreadsheet();

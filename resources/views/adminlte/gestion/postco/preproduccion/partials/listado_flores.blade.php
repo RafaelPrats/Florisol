@@ -204,7 +204,7 @@
         }
         get_jquery('{{ url('preproduccion/modal_flor') }}', datos, function(retorno) {
             modal_view('modal_modal_flor', retorno, '<i class="fa fa-fw fa-plus"></i> Pedidos de la Flor',
-                true, false, '{{ isPC() ? '65%' : '' }}',
+                true, false, '{{ isPC() ? '85%' : '' }}',
                 function() {});
         })
     }

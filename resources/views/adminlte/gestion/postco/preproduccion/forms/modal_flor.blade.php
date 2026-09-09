@@ -24,6 +24,9 @@
         <th class="text-center th_yura_green" style="width: 100px">
             ARMAR
         </th>
+        <th class="text-center bg-yura_warning" style="width: 100px">
+            DEVOLVER
+        </th>
     </tr>
     @php
         $total_ramos = 0;
@@ -88,12 +91,30 @@
                 </button>
             </th>
             <th class="text-center" style="border-color: #9d9d9d">
-                <input type="number" max="{{ $disponibles }}" min="0" style="width: 100%" class="text-center"
-                    id="ramos_armar_{{ $item->id_detalle_caja_proyecto }}" onkeyup="verificar_disponibles($(this))">
-                <button type="button" class="btn btn-xs btn-block btn-yura_dark"
-                    onclick="store_armar_flor('{{ $item->id_detalle_caja_proyecto }}')">
-                    Armar
-                </button>
+                <div class="input-group">
+                    <div class="input-group-btn">
+                        <button type="button" class="btn btn-xs btn-yura_dark" style="height: 26px"
+                            onclick="store_armar_flor('{{ $item->id_detalle_caja_proyecto }}')">
+                            <i class="fa fa-fw fa-check"></i>
+                        </button>
+                    </div>
+                    <input type="text" max="{{ $disponibles }}" min="0" style="width: 100%;"
+                        class="text-center" id="ramos_armar_{{ $item->id_detalle_caja_proyecto }}"
+                        onkeyup="verificar_disponibles($(this))">
+                </div>
+            </th>
+            <th class="text-center" style="border-color: #9d9d9d">
+                <div class="input-group">
+                    <input type="text" id="devolver_ramos_{{ $item->id_detalle_caja_proyecto }}" class="text-center"
+                        max="{{ $item->armados }}" min="0" value="{{ $item->armados }}" style="width: 100%;"
+                        onkeyup="verificar_disponibles($(this))">
+                    <div class="input-group-btn">
+                        <button class="btn btn-xs btn-yura_warning"
+                            onclick="store_devolver('{{ $item->id_detalle_caja_proyecto }}')" style="height: 26px">
+                            <i class="fa fa-fw fa-download"></i>
+                        </button>
+                    </div>
+                </div>
             </th>
         </tr>
     @endforeach
@@ -116,7 +137,7 @@
         <th class="text-center th_yura_green">
             {{ number_format($total_disponibles) }}
         </th>
-        <th class="text-center th_yura_green">
+        <th class="text-center th_yura_green" colspan="2">
         </th>
     </tr>
 </table>
@@ -131,7 +152,7 @@
             texto =
                 "<div class='alert alert-warning text-center'><h3><i class='fa fa-fw fa-exclamation-triangle error'></i>¿Esta seguro de <b>ARMAR</b> los ramos?</h3></div>";
 
-            modal_quest('modal_store_armar_flor', texto, 'Eliminar inventario', true, false, '40%', function() {
+            modal_quest('modal_store_armar_flor', texto, 'Armar pedido', true, false, '40%', function() {
                 datos = {
                     _token: '{{ csrf_token() }}',
                     id: id,
@@ -141,6 +162,31 @@
                     cerrar_modals();
                     listar_reporte();
                     export_armados(id, armar);
+                    modal_flor($('#variedad_selected').val(), $('#fechas_selected').val());
+                });
+            })
+        } else {
+            alerta(
+                '<div class="alert alert-warning text-center">No hay flor disponible en el inventario para armar los ramos indicados</div>'
+            );
+        }
+    }
+
+    function store_devolver(id) {
+        devolver = parseInt($('#devolver_ramos_' + id).val());
+        if (devolver <= parseInt($('#devolver_ramos_' + id).prop('max'))) {
+            texto =
+                "<div class='alert alert-warning text-center'><h3><i class='fa fa-fw fa-exclamation-triangle error'></i>¿Esta seguro de <b>DEVOLVER</b> los ramos?</h3></div>";
+
+            modal_quest('modal_store_devolver', texto, 'Devolver al inventario', true, false, '40%', function() {
+                datos = {
+                    _token: '{{ csrf_token() }}',
+                    id: id,
+                    devolver: devolver,
+                }
+                post_jquery_m('{{ url('preproduccion/store_devolver') }}', datos, function() {
+                    cerrar_modals();
+                    listar_reporte();
                     modal_flor($('#variedad_selected').val(), $('#fechas_selected').val());
                 });
             })
