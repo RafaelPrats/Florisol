@@ -150,10 +150,53 @@ class ReporteIngresosController extends Controller
             ->orderBy('v.nombre')
             ->get();
 
+        $listado_corregir = DB::table('ingreso_recepcion as i')
+            ->join('correccion_recepcion as c', 'c.id_correccion_recepcion', '=', 'i.id_correccion_recepcion')
+            ->join('variedad as v', 'v.id_variedad', '=', 'i.id_variedad')
+            ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
+            ->select(
+                'i.id_variedad',
+                'v.nombre as var_nombre',
+                'p.nombre as pta_nombre',
+                'i.tallos_x_ramo',
+                'i.ramos',
+                'i.tallos',
+                'i.longitud',
+                'i.bodega',
+                'i.fecha',
+                'i.id_ingreso_recepcion',
+                'c.orden',
+                'c.anterior',
+                'c.actual',
+            )->distinct()
+            ->whereNotNull('i.id_correccion_recepcion')
+            ->where('i.id_empresa', $finca)
+            ->where('i.fecha', '>=', $request->desde)
+            ->where('i.fecha', '<=', $request->hasta);
+        if ($request->bodega != 'T')
+            $listado_corregir = $listado_corregir->where('i.bodega', $request->bodega);
+        if ($request->planta != '')
+            $listado_corregir = $listado_corregir->where('v.id_planta', $request->planta);
+        if ($request->variedad != '')
+            $listado_corregir = $listado_corregir->where('i.id_variedad', $request->variedad);
+        $listado_corregir = $listado_corregir->orderBy('i.fecha')
+            ->orderBy('c.orden')
+            ->get()
+            ->groupBy('orden')
+            ->map(function ($items, $orden) {
+                return [
+                    'orden' => $orden,
+                    'fecha' => $items->first()->fecha,
+                    'detalles' => $items->values(),
+                ];
+            })
+            ->values();
+
         return view('adminlte.gestion.postco.reporte_ingresos.partials.listado', [
             'listado_documentos' => $listado_documentos,
             'listado_compras' => $listado_compras,
             'listado_movimientos' => $listado_movimientos,
+            'listado_corregir' => $listado_corregir,
         ]);
     }
 

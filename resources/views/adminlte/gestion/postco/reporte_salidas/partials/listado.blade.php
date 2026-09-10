@@ -25,6 +25,11 @@
                 Flor Baja
             </a>
         </li>
+        <li class="">
+            <a href="#correcciones" data-toggle="tab" aria-expanded="true">
+                Correcciones
+            </a>
+        </li>
     </ul>
     <div class="tab-content no-padding">
         <div class="tab-pane active" id="ordenes_trabajo" style="position: relative">
@@ -50,6 +55,11 @@
         <div class="tab-pane" id="flor_baja" style="position: relative">
             <div style="overflow-y: scroll; overflow-x: scroll; max-height: 700px;">
                 @include('adminlte/gestion/postco/reporte_salidas/partials/_flor_baja')
+            </div>
+        </div>
+        <div class="tab-pane" id="correcciones" style="position: relative">
+            <div style="overflow-y: scroll; overflow-x: scroll; max-height: 700px;">
+                @include('adminlte/gestion/postco/reporte_salidas/partials/_correcciones')
             </div>
         </div>
     </div>

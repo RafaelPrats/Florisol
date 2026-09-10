@@ -251,6 +251,45 @@ class ReporteSalidasController extends Controller
             })
             ->values();
 
+        $listado_corregir = DB::table('salidas_recepcion as s')
+            ->join('variedad as v', 'v.id_variedad', '=', 's.id_variedad')
+            ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
+            ->join('inventario_recepcion as i', 'i.id_inventario_recepcion', '=', 's.id_inventario_recepcion')
+            ->join('correccion_recepcion as c', 'c.id_correccion_recepcion', '=', 's.id_correccion_recepcion')
+            ->select(
+                's.*',
+                'v.nombre as var_nombre',
+                'p.nombre as pta_nombre',
+                'c.orden',
+                'c.anterior',
+                'c.actual',
+                'i.fecha as fecha_inventario',
+                'i.tallos_x_ramo',
+                'i.longitud',
+                'i.bodega',
+            )->distinct()
+            ->whereNotNull('s.id_correccion_recepcion')
+            ->where('i.id_empresa', $finca)
+            ->where('s.fecha', '>=', $request->desde)
+            ->where('s.fecha', '<=', $request->hasta);
+        if ($request->bodega != 'T')
+            $listado_corregir = $listado_corregir->where('i.bodega', $request->bodega);
+        if ($request->planta != '')
+            $listado_corregir = $listado_corregir->where('v.id_planta', $request->planta);
+        if ($request->variedad != '')
+            $listado_corregir = $listado_corregir->where('i.id_variedad', $request->variedad);
+        $listado_corregir = $listado_corregir->orderBy('s.fecha')
+            ->orderBy('c.orden')
+            ->get()
+            ->groupBy('orden')
+            ->map(function ($items, $orden) {
+                return [
+                    'orden' => $orden,
+                    'fecha' => $items->first()->fecha,
+                    'detalles' => $items->values(),
+                ];
+            })
+            ->values();
 
         return view('adminlte.gestion.postco.reporte_salidas.partials.listado', [
             'listado_ot' => $listado_ot,
@@ -258,6 +297,7 @@ class ReporteSalidasController extends Controller
             'listado_movimientos' => $listado_movimientos,
             'listado_orden_basura' => $listado_orden_basura,
             'listado_ot_nacional' => $listado_ot_nacional,
+            'listado_corregir' => $listado_corregir,
         ]);
     }
 }
