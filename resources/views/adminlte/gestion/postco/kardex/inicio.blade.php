@@ -1,14 +1,14 @@
 @extends('layouts.adminlte.master')
 
 @section('titulo')
-    Corregir Inventario
+    Kardex
 @endsection
 
 @section('contenido')
     <!-- Content Header (Page header) -->
     <section class="content-header">
         <h1>
-            Corregir Inventario
+            Kardex
             <small class="text-color_yura">módulo de postcosecha</small>
         </h1>
 
@@ -38,11 +38,11 @@
                     <td>
                         <div class="input-group">
                             <div class="input-group-addon bg-yura_dark span-input-group-yura-fixed">
-                                <i class="fa fa-fw fa-gift"></i> Planta
+                                Planta
                             </div>
                             <select name="planta_filtro" id="planta_filtro" class="form-control" style="width: 100%"
-                                onchange="select_planta_global($(this).val(), 'variedad_filtro', 'div_filtro_variedad', '<option value=>Todas las Varidades</option>')">
-                                <option value="">Todas las Plantas</option>
+                                onchange="select_planta_global($(this).val(), 'variedad_filtro', 'div_filtro_variedad', '<option value=>Seleccione...</option>')">
+                                <option value="">Seleccione...</option>
                                 @foreach ($plantas as $p)
                                     <option value="{{ $p->id_planta }}">{{ $p->nombre }}</option>
                                 @endforeach
@@ -52,10 +52,10 @@
                     <td id="div_filtro_variedad">
                         <div class="input-group">
                             <div class="input-group-addon bg-yura_dark">
-                                <i class="fa fa-fw fa-gift"></i> Variedad
+                                Variedad
                             </div>
                             <select name="variedad_filtro" id="variedad_filtro" class="form-control" style="width: 100%">
-                                <option value="">Todas las Varidades</option>
+                                <option value="">Seleccione...</option>
                             </select>
                         </div>
                     </td>
@@ -69,6 +69,24 @@
                                 <option value="V">Ventas</option>
                                 <option value="P">Producción</option>
                             </select>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="input-group">
+                            <div class="input-group-addon bg-yura_dark">
+                                Desde
+                            </div>
+                            <input type="date" name="desde_filtro" id="desde_filtro" class="form-control"
+                                style="width: 100%" value="{{ opDiasFecha('-', 7, hoy()) }}" min="2026-09-11">
+                        </div>
+                    </td>
+                    <td>
+                        <div class="input-group">
+                            <div class="input-group-addon bg-yura_dark">
+                                Hasta
+                            </div>
+                            <input type="date" name="hasta_filtro" id="hasta_filtro" class="form-control"
+                                style="width: 100%" value="{{ opDiasFecha('-', 0, hoy()) }}" min="2026-09-11">
                             <div class="input-group-btn">
                                 <button type="button" class="btn btn-yura_primary" onclick="listar_reporte()">
                                     <i class="fa fa-fw fa-search"></i>
@@ -109,5 +127,5 @@
 @endsection
 
 @section('script_final')
-    @include('adminlte.gestion.postco.corregir_inventario.script')
+    @include('adminlte.gestion.postco.kardex.script')
 @endsection
