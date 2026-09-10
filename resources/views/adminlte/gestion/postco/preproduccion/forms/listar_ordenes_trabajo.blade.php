@@ -104,16 +104,13 @@
                             <th class="text-center padding_lateral_5" style="border-color: #9d9d9d"
                                 rowspan="{{ count($detalles_ot) }}">
                                 <div class="btn-group">
-                                    @if ($estado['estado'] == 'Pendiente')
-                                        <button type="button" class="btn btn-xs btn-yura_danger"
-                                            style="margin-top: 5px"
-                                            onclick="eliminar_orden_trabajo('{{ $ot->id_orden_trabajo }}')">
-                                            <i class="fa fa-fw fa-trash"></i> Eliminar
-                                        </button>
-                                    @endif
                                     <button type="button" class="btn btn-xs btn-yura_default" style="margin-top: 5px"
                                         onclick="exportar_orden_trabajo('{{ $ot->id_orden_trabajo }}')">
                                         <i class="fa fa-fw fa-file-excel-o"></i> Exportar
+                                    </button>
+                                    <button type="button" class="btn btn-xs btn-yura_danger" style="margin-top: 5px"
+                                        onclick="eliminar_orden_trabajo('{{ $ot->id_orden_trabajo }}')">
+                                        <i class="fa fa-fw fa-trash"></i> Deshacer
                                     </button>
                                 </div>
                             </th>
@@ -128,20 +125,27 @@
 <script>
     function eliminar_orden_trabajo(id) {
         texto =
-            "<div class='alert alert-warning text-center'>¿Esta seguro de <b>ELIMINAR</b> la orden de trabajo?</div>";
+            '<div class="alert alert-warning text-center"><h3>¿Esta seguro de <b>DESHACER</b> la ot?</h3></div>' +
+            '<div class="input-group">' +
+            '<div class="input-group-addon span-input-group-yura-fixed bg-yura_dark">' +
+            'Codigo de autorizacion' +
+            '</div>' +
+            '<input type="password" id="codigo_autorizacion" style="width: 100%" class="text-center form-control">' +
+            '</div>';
 
         modal_quest('modal_eliminar_orden_trabajo', texto, 'Eliminar la Orden de Trabajo', true, false, '40%',
             function() {
                 datos = {
                     _token: '{{ csrf_token() }}',
                     id: id,
+                    codigo: $('#codigo_autorizacion').val(),
                 }
                 post_jquery_m('{{ url('preproduccion/eliminar_orden_trabajo') }}', datos, function() {
                     cerrar_modals();
                     modal_receta('{{ $detalle->id_variedad }}', '{{ $detalle->longitud_ramo }}');
                     listar_reporte();
                 });
-            })
+            });
     }
 
     function exportar_orden_trabajo(id) {

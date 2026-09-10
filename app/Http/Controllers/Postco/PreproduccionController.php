@@ -525,20 +525,46 @@ class PreproduccionController extends Controller
     {
         DB::beginTransaction();
         try {
-            $variedades = [];
-            $model = OrdenTrabajo::find($request->id);
-            foreach ($model->detalles as $det) {
-                $variedades[] = $det->id_variedad;
+            $codigo = CodigoAutorizacion::where('nombre', 'deshacer_ot')
+                ->first();
+            if ($codigo != '' && $codigo->valor == $request->codigo) {
+                $ot = OrdenTrabajo::find($request->id);
+
+                $det_caja = $ot->detalle_caja_proyecto;
+                if ($ot->estado == 'D')
+                    $det_caja->despachados -= $ot->ramos;
+                if ($ot->estado == 'A')
+                    $det_caja->armados -= $ot->ramos;
+                $det_caja->save();
+
+                $texto = $det_caja->id_variedad . ' ' . $det_caja->longitud_ramo . 'cm' . '; fecha = ' . $det_caja->getFecha() . ' id_detalle_caja_proyecto = ' . $det_caja->id_detalle_caja_proyecto;
+                bitacora('ORDEN_TRABAJO', $ot->id_orden_trabajo, 'D', 'ELIMINAR OT desde PREPRODUCCION: (' . $ot->ramos . ') ramos de ' . $texto);
+
+                if ($ot->estado != 'P') {
+                    $salidas = SalidasRecepcion::where('id_orden_trabajo', $request->id)
+                        ->get();
+
+                    foreach ($salidas as $model) {
+                        $inventario = $model->inventario_recepcion;
+                        $inventario->disponibles += $model->cantidad;
+                        $inventario->save();
+
+                        $model->delete();
+                    }
+                }
+
+                $ot->delete();
+
+                DB::commit();
+                $success = true;
+                $msg = 'Se ha <strong>ELIMINADO</strong> la orden de trabajo correctamente';
+            } else {
+                DB::rollBack();
+                $success = false;
+                $msg = '<div class="alert alert-danger text-center">' .
+                    '<h3>El codigo de autorizacion es incorrecto</h3>' .
+                    '</div>';
             }
-            $detalle = $model->detalle_caja_proyecto;
-            $texto = $detalle->id_variedad . ' ' . $detalle->longitud_ramo . 'cm' . '; fecha = ' . $detalle->getFecha() . ' id_detalle_caja_proyecto = ' . $detalle->id_detalle_caja_proyecto;
-            bitacora('ORDEN_TRABAJO', $model->id_orden_trabajo, 'D', 'ELIMINAR OT desde PREPRODUCCION: (' . $model->ramos . ') ramos de ' . $texto);
-
-            $model->delete();
-
-            DB::commit();
-            $success = true;
-            $msg = 'Se ha <strong>ELIMINADO</strong> la orden de trabajo correctamente';
         } catch (\Exception $e) {
             DB::rollBack();
             $success = false;
@@ -1165,45 +1191,55 @@ class PreproduccionController extends Controller
     {
         try {
             DB::beginTransaction();
-            $det_caja = DetalleCajaProyecto::find($request->id);
-            $det_caja->armados -= $request->devolver;
-            $det_caja->save();
+            $codigo = CodigoAutorizacion::where('nombre', 'deshacer_ot')
+                ->first();
+            if ($codigo != '' && $codigo->valor == $request->codigo) {
+                $det_caja = DetalleCajaProyecto::find($request->id);
+                $det_caja->armados -= $request->devolver;
+                $det_caja->save();
 
-            $salidas = SalidasRecepcion::where('id_detalle_caja_proyecto', $request->id)
-                ->whereNull('orden_basura')
-                ->where('basura', 0)
-                ->where('cantidad', '>', 0)
-                ->whereNull('id_orden_trabajo')
-                ->whereNull('cambio_bodega')
-                ->get();
+                $salidas = SalidasRecepcion::where('id_detalle_caja_proyecto', $request->id)
+                    ->whereNull('orden_basura')
+                    ->where('basura', 0)
+                    ->where('cantidad', '>', 0)
+                    ->whereNull('id_orden_trabajo')
+                    ->whereNull('cambio_bodega')
+                    ->get();
 
-            $sacar = $request->devolver * $det_caja->tallos_x_ramo;
-            foreach ($salidas as $model) {
-                if ($sacar >= 0) {
-                    $usados = 0;
-                    $disponible = $model->cantidad;
-                    if ($sacar >= $disponible) {
-                        $sacar = $sacar - $disponible;
-                        $usados = $disponible;
-                        $disponible = 0;
-                    } else {
-                        $disponible = $disponible - $sacar;
-                        $usados = $sacar;
-                        $sacar = 0;
+                $sacar = $request->devolver * $det_caja->tallos_x_ramo;
+                foreach ($salidas as $model) {
+                    if ($sacar >= 0) {
+                        $usados = 0;
+                        $disponible = $model->cantidad;
+                        if ($sacar >= $disponible) {
+                            $sacar = $sacar - $disponible;
+                            $usados = $disponible;
+                            $disponible = 0;
+                        } else {
+                            $disponible = $disponible - $sacar;
+                            $usados = $sacar;
+                            $sacar = 0;
+                        }
+
+                        $model->cantidad = $disponible;
+                        $model->save();
+
+                        $inventario = $model->inventario_recepcion;
+                        $inventario->disponibles += $usados;
+                        $inventario->save();
                     }
-
-                    $model->cantidad = $disponible;
-                    $model->save();
-
-                    $inventario = $model->inventario_recepcion;
-                    $inventario->disponibles += $usados;
-                    $inventario->save();
                 }
-            }
 
-            $success = true;
-            $msg = 'Se han <strong>DESARMADO</strong> y devuelto los ramos correctamente';
-            DB::commit();
+                $success = true;
+                $msg = 'Se han <strong>DESARMADO</strong> y devuelto los ramos correctamente';
+                DB::commit();
+            } else {
+                DB::rollBack();
+                $success = false;
+                $msg = '<div class="alert alert-danger text-center">' .
+                    '<h3>El codigo de autorizacion es incorrecto</h3>' .
+                    '</div>';
+            }
         } catch (\Exception $e) {
             DB::rollBack();
             $success = false;

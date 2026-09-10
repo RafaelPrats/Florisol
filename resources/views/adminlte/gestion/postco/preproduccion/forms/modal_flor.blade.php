@@ -173,28 +173,37 @@
     }
 
     function store_devolver(id) {
-        devolver = parseInt($('#devolver_ramos_' + id).val());
-        if (devolver <= parseInt($('#devolver_ramos_' + id).prop('max'))) {
-            texto =
-                "<div class='alert alert-warning text-center'><h3><i class='fa fa-fw fa-exclamation-triangle error'></i>¿Esta seguro de <b>DEVOLVER</b> los ramos?</h3></div>";
+        texto =
+            '<div class="alert alert-warning text-center"><h3>¿Esta seguro de <b>DEVOLVER</b> los ramos?</h3></div>' +
+            '<div class="input-group">' +
+            '<div class="input-group-addon span-input-group-yura-fixed bg-yura_dark">' +
+            'Codigo de autorizacion' +
+            '</div>' +
+            '<input type="password" id="codigo_autorizacion" style="width: 100%" class="text-center form-control">' +
+            '</div>';
 
-            modal_quest('modal_store_devolver', texto, 'Devolver al inventario', true, false, '40%', function() {
-                datos = {
-                    _token: '{{ csrf_token() }}',
-                    id: id,
-                    devolver: devolver,
+        modal_quest('modal_store_devolver', texto, 'Devolver la flor', true, false, '40%',
+            function() {
+                devolver = parseInt($('#devolver_ramos_' + id).val());
+                if (devolver <= parseInt($('#devolver_ramos_' + id).prop('max'))) {
+                    datos = {
+                        _token: '{{ csrf_token() }}',
+                        id: id,
+                        devolver: devolver,
+                        codigo: $('#codigo_autorizacion').val(),
+                    }
+                    post_jquery_m('{{ url('preproduccion/store_devolver') }}', datos, function() {
+                        cerrar_modals();
+                        listar_reporte();
+                        modal_flor($('#variedad_selected').val(), $('#fechas_selected').val());
+                    });
+                } else {
+                    alerta(
+                        '<div class="alert alert-warning text-center">No hay flor disponible en el inventario para armar los ramos indicados</div>'
+                    );
                 }
-                post_jquery_m('{{ url('preproduccion/store_devolver') }}', datos, function() {
-                    cerrar_modals();
-                    listar_reporte();
-                    modal_flor($('#variedad_selected').val(), $('#fechas_selected').val());
-                });
             })
-        } else {
-            alerta(
-                '<div class="alert alert-warning text-center">No hay flor disponible en el inventario para armar los ramos indicados</div>'
-            );
-        }
+
     }
 
     function export_armados(id, armar) {
