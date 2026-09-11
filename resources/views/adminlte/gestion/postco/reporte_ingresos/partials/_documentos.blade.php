@@ -4,6 +4,9 @@
             Fecha
         </th>
         <th class="padding_lateral_5 bg-yura_dark">
+            N°
+        </th>
+        <th class="padding_lateral_5 bg-yura_dark">
             Documento
         </th>
         <th class="padding_lateral_5 bg-yura_dark">
@@ -37,6 +40,10 @@
                     <th class="padding_lateral_5" style="border-color: #9d9d9d"
                         rowspan="{{ count($documento['detalles']) }}">
                         {{ $documento['fecha'] }}
+                    </th>
+                    <th class="padding_lateral_5" style="border-color: #9d9d9d"
+                        rowspan="{{ count($documento['detalles']) }}">
+                        #{{ $documento['id_api_store_cajas'] }}
                     </th>
                     <th class="padding_lateral_5" style="border-color: #9d9d9d"
                         rowspan="{{ count($documento['detalles']) }}">

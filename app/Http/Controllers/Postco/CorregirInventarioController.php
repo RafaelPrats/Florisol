@@ -103,7 +103,8 @@ class CorregirInventarioController extends Controller
                         $ingreso = new IngresoRecepcion();
                         $ingreso->id_variedad = $data->id_variedad;
                         $ingreso->fecha_registro = date('Y-m-d H:i:s');
-                        $ingreso->fecha = $inventario != '' ? $inventario->fecha : $request->fecha;
+                        //$ingreso->fecha = $inventario != '' ? $inventario->fecha : $request->fecha;
+                        $ingreso->fecha = $request->fecha;
                         $ingreso->tallos_x_ramo = 1;
                         $ingreso->ramos = $data->diferencia;
                         $ingreso->bodega = $request->bodega;
