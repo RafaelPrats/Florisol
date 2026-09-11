@@ -78,6 +78,7 @@ Route::group(['middleware' => 'autenticacion'], function () {
             include "postco/corregir_inventario.php";
             include "postco/kardex.php";
             include "postco/inventario_diario.php";
+            include "postco/ventas_diarias.php";
 
             /* ========================== POSTCOSECHA ========================*/
             include "postcosecha/clasificaciones.php";
