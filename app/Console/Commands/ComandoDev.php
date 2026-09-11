@@ -1469,7 +1469,7 @@ class ComandoDev extends Command
         foreach ($listado as $item) {
             $correccion = new CorreccionRecepcion();
             $correccion->id_empresa = $item->id_empresa;
-            $correccion->fecha = '2026-09-11';
+            $correccion->fecha = '2026-09-12';
             $correccion->orden = 0;
             $correccion->id_variedad = $item->id_variedad;
             $correccion->bodega = $item->bodega;
@@ -1477,7 +1477,7 @@ class ComandoDev extends Command
             $correccion->anterior = 0;
             $correccion->actual = $item->disponibles;
             $correccion->diferencia = $item->disponibles;
-            $correccion->fecha_registro = '2026-09-11 00:00:00';
+            $correccion->fecha_registro = '2026-09-12 00:00:00';
             $correccion->save();
             $correccion->id_correccion_recepcion = DB::table('correccion_recepcion')
                 ->select(DB::raw('max(id_correccion_recepcion) as id'))
@@ -1486,8 +1486,8 @@ class ComandoDev extends Command
             $ingreso = new IngresoRecepcion();
             $ingreso->id_variedad = $item->id_variedad;
             $ingreso->fecha_registro = date('Y-m-d H:i:s');
-            $ingreso->fecha = '2026-09-11';
-            $ingreso->fecha_registro = '2026-09-11 00:00:00';
+            $ingreso->fecha = '2026-09-12';
+            $ingreso->fecha_registro = '2026-09-12 00:00:00';
             $ingreso->tallos_x_ramo = 1;
             $ingreso->ramos = 1;
             $ingreso->bodega = $item->bodega;
