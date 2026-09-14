@@ -46,6 +46,22 @@ class DetalleCajaProyecto extends Model
         return $this->hasMany('\yura\Modelos\OtNacional', 'id_detalle_caja_proyecto');
     }
 
+    public function getSalidasRecepcion()
+    {
+        return DB::table('salidas_recepcion')
+            ->select(
+                'orden_flor_solida',
+                DB::raw('sum(cantidad) as tallos'),
+            )
+            ->where('id_detalle_caja_proyecto', $this->id_detalle_caja_proyecto)
+            ->whereNull('id_ot_nacional')
+            ->whereNotNull('orden_flor_solida')
+            ->where('cantidad', '>', 0)
+            ->groupBy('orden_flor_solida')
+            ->orderBy('orden_flor_solida')
+            ->get();
+    }
+
     public function getRamosOt()
     {
         $r = DB::table('orden_trabajo')

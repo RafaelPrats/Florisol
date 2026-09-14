@@ -138,10 +138,10 @@
                                 </th>
                                 <th class="text-center" style="border-color: #9d9d9d">
                                     <div class="btn-group">
-                                        <button type="button" class="btn btn-xs btn-yura_primary"
+                                        {{-- <button type="button" class="btn btn-xs btn-yura_primary"
                                             onclick="update_inventario('{{ $var->id_inventario_recepcion }}')">
                                             <i class="fa fa-fw fa-edit"></i>
-                                        </button>
+                                        </button> --}}
                                         @if ($var->disponibles > 0)
                                             <button type="button" class="btn btn-xs btn-yura_dark"
                                                 title="Mover inventario"
@@ -149,11 +149,11 @@
                                                 <i class="fa fa-fw fa-exchange"></i>
                                             </button>
                                         @endif
-                                        <button type="button" class="btn btn-xs btn-yura_danger"
+                                        {{-- <button type="button" class="btn btn-xs btn-yura_danger"
                                             title="Eliminar inventario"
                                             onclick="delete_inventario('{{ $var->id_inventario_recepcion }}')">
                                             <i class="fa fa-fw fa-times"></i>
-                                        </button>
+                                        </button> --}}
                                     </div>
                                 </th>
                             </tr>

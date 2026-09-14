@@ -27,6 +27,9 @@
         <th class="text-center bg-yura_warning" style="width: 100px">
             DEVOLVER
         </th>
+        <th class="text-center th_yura_green" style="width: 200px">
+            EXPORTAR
+        </th>
     </tr>
     @php
         $total_ramos = 0;
@@ -36,6 +39,7 @@
     @endphp
     @foreach ($listado as $item)
         @php
+            $getSalidasRecepcion = $item->getSalidasRecepcion();
             $inventarioDisponible = getInventarioDisponibleByVariedadFechaSegmento(
                 $variedad,
                 $item->fecha,
@@ -78,11 +82,6 @@
             <th class="text-center" style="border-color: #9d9d9d">
                 @if ($item->armados > 0)
                     {{ $item->armados }}
-                    <br>
-                    <button type="button" class="btn btn-xs btn-yura_default" title="Exportar"
-                        onclick="export_armados('{{ $item->id_detalle_caja_proyecto }}', '{{ $item->armados }}')">
-                        <i class="fa fa-fw fa-file-excel-o"></i>
-                    </button>
                 @endif
             </th>
             <th class="text-center" style="border-color: #9d9d9d">
@@ -116,6 +115,29 @@
                     </div>
                 </div>
             </th>
+            <th class="text-center" style="border-color: #9d9d9d">
+                @if ($item->armados > 0)
+                    <div class="input-group">
+                        <select id="exportar_{{ $item->id_detalle_caja_proyecto }}" style="width: 100%;"
+                            onchange="export_armados('{{ $item->id_detalle_caja_proyecto }}', $(this).val())">
+                            @if (count($getSalidasRecepcion) > 1)
+                                <option value="">Todos los despachos</option>
+                            @endif
+                            @foreach ($getSalidasRecepcion as $orden)
+                                <option value="{{ $orden->orden_flor_solida }}">
+                                    {{ 'Orden #' . $orden->orden_flor_solida . ': ' . $orden->tallos / $item->tallos_x_ramo . ' ramos' }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <div class="input-group-btn">
+                            <button type="button" class="btn btn-xs btn-yura_default" title="Exportar"
+                                onclick="export_armados('{{ $item->id_detalle_caja_proyecto }}', $('#exportar_{{ $item->id_detalle_caja_proyecto }}').val())">
+                                <i class="fa fa-fw fa-file-excel-o"></i>
+                            </button>
+                        </div>
+                    </div>
+                @endif
+            </th>
         </tr>
     @endforeach
     <tr>
@@ -137,7 +159,7 @@
         <th class="text-center th_yura_green">
             {{ number_format($total_disponibles) }}
         </th>
-        <th class="text-center th_yura_green" colspan="2">
+        <th class="text-center th_yura_green" colspan="3">
         </th>
     </tr>
 </table>
@@ -158,11 +180,14 @@
                     id: id,
                     armar: armar,
                 }
-                post_jquery_m('{{ url('preproduccion/store_armar_flor') }}', datos, function() {
+                $.post('{{ url('preproduccion/store_armar_flor') }}', datos, function(retorno) {
                     cerrar_modals();
                     listar_reporte();
-                    export_armados(id, armar);
+                    export_armados(id, retorno.orden);
                     modal_flor($('#variedad_selected').val(), $('#fechas_selected').val());
+                }, 'json').fail(function(retorno) {
+                    console.log(retorno);
+                    alerta_errores(retorno.responseText);
                 });
             })
         } else {
@@ -206,9 +231,10 @@
 
     }
 
-    function export_armados(id, armar) {
+    function export_armados(id, orden) {
         $.LoadingOverlay('show');
-        window.open('{{ url('preproduccion/export_armados') }}?id=' + id + '&armar=' + armar, '_blank');
+        window.open('{{ url('preproduccion/export_armados') }}?id=' + id + '&orden=' + orden,
+            '_blank');
         $.LoadingOverlay('hide');
     }
 

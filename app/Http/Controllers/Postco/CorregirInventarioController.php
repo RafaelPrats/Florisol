@@ -42,7 +42,7 @@ class CorregirInventarioController extends Controller
                 'p.nombre as pta_nombre',
                 DB::raw('sum(i.disponibles) as disponibles')
             )
-            ->where('i.disponibles', '>', 0)
+            //->where('i.disponibles', '>', 0)
             ->where('i.id_empresa', $finca)
             ->where('i.bodega', $request->bodega);
         if ($request->planta != '')
@@ -114,8 +114,33 @@ class CorregirInventarioController extends Controller
                         $ingreso->id_correccion_recepcion = $correccion->id_correccion_recepcion;
                         $ingreso->save();
 
-                        $inventario->disponibles += $data->diferencia;
-                        $inventario->save();
+                        if ($inventario != '') {
+                            $inventario->disponibles += $data->diferencia;
+                            $inventario->save();
+                        } else {
+                            $model_inventario = InventarioRecepcion::where('id_variedad', $data->id_variedad)
+                                ->where('fecha', $request->fecha)
+                                ->where('tallos_x_ramo', 1)
+                                ->where('bodega', $request->bodega)
+                                ->where('longitud', 60)
+                                ->where('id_empresa', $finca)
+                                ->first();
+                            if ($model_inventario == '') {
+                                $model_inventario = new InventarioRecepcion();
+                                $model_inventario->id_variedad = $data->id_variedad;
+                                $model_inventario->fecha = $request->fecha;
+                                $model_inventario->tallos_x_ramo = 1;
+                                $model_inventario->ramos = $data->diferencia;
+                                $model_inventario->bodega = $request->bodega;
+                                $model_inventario->longitud = 60;
+                                $model_inventario->disponibles = $data->diferencia;
+                                $model_inventario->id_empresa = $finca;
+                                $model_inventario->save();
+                            } else {
+                                $model_inventario->disponibles += $data->diferencia;
+                                $model_inventario->save();
+                            }
+                        }
                     } else {    // salida
                         $salidas = new SalidasRecepcion();
                         $salidas->id_inventario_recepcion = $inventario->id_inventario_recepcion;

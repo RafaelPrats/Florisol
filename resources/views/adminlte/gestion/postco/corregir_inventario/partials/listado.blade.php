@@ -71,7 +71,7 @@
             anterior = parseInt($('#' + id).data('disponibles'));
             actual = parseInt($('#' + id).val());
             diferencia = actual - anterior;
-            if (actual > 0 && diferencia != 0) {
+            if (actual >= 0 && diferencia != 0) {
                 data.push({
                     id_variedad: id_variedad,
                     anterior: anterior,

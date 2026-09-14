@@ -1120,6 +1120,13 @@ class PreproduccionController extends Controller
             $segmento = Segmento::where('nombre', $proyecto->segmento)->first();
             $bodega = $segmento != '' ? $segmento->bodega : '';
 
+            $last_orden = DB::table('salidas_recepcion as s')
+                ->join('inventario_recepcion as i', 'i.id_inventario_recepcion', '=', 's.id_inventario_recepcion')
+                ->select(DB::raw('max(s.orden_flor_solida) as orden'))
+                ->where('i.id_empresa', $finca)
+                ->get()[0]->orden;
+            $last_orden++;
+
             $variedad = $det_caja->variedad;
             $query = DB::table('inventario_recepcion as i')
                 ->select('i.*')->distinct()
@@ -1155,14 +1162,17 @@ class PreproduccionController extends Controller
                     $model->disponibles = $disponible;
                     $model->save();
 
-                    $new_salida = new SalidasRecepcion();
-                    $new_salida->id_inventario_recepcion = $model->id_inventario_recepcion;
-                    $new_salida->id_detalle_caja_proyecto = $det_caja->id_detalle_caja_proyecto;
-                    $new_salida->id_variedad = $det_caja->id_variedad;
-                    $new_salida->fecha = $proyecto->fecha;
-                    $new_salida->cantidad = $usados;
-                    $new_salida->basura = 0;
-                    $new_salida->save();
+                    if ($usados > 0) {
+                        $new_salida = new SalidasRecepcion();
+                        $new_salida->id_inventario_recepcion = $model->id_inventario_recepcion;
+                        $new_salida->id_detalle_caja_proyecto = $det_caja->id_detalle_caja_proyecto;
+                        $new_salida->id_variedad = $det_caja->id_variedad;
+                        $new_salida->fecha = $proyecto->fecha;
+                        $new_salida->cantidad = $usados;
+                        $new_salida->basura = 0;
+                        $new_salida->orden_flor_solida = $last_orden;
+                        $new_salida->save();
+                    }
                 }
             }
 
@@ -1174,6 +1184,7 @@ class PreproduccionController extends Controller
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
+            $last_orden = '';
             $success = false;
             $msg = '<div class="alert alert-danger text-center">' .
                 '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
@@ -1184,6 +1195,7 @@ class PreproduccionController extends Controller
         return [
             'success' => $success,
             'mensaje' => $msg,
+            'orden' => $last_orden,
         ];
     }
 
@@ -1274,6 +1286,20 @@ class PreproduccionController extends Controller
     public function excel_armados($spread, $request)
     {
         $model = DetalleCajaProyecto::find($request->id);
+        $salidas = DB::table('salidas_recepcion')
+            ->select(
+                'orden_flor_solida',
+                DB::raw('sum(cantidad) as tallos'),
+            )
+            ->where('id_detalle_caja_proyecto', $model->id_detalle_caja_proyecto)
+            ->whereNull('id_ot_nacional')
+            ->whereNotNull('orden_flor_solida')
+            ->where('cantidad', '>', 0);
+        if ($request->orden != '')
+            $salidas = $salidas->where('orden_flor_solida', $request->orden);
+        $salidas = $salidas->groupBy('orden_flor_solida')
+            ->orderBy('orden_flor_solida')
+            ->get();
 
         $columnas = getColumnasExcel();
         $sheet = $spread->getActiveSheet();
@@ -1281,6 +1307,8 @@ class PreproduccionController extends Controller
 
         $row = 1;
         $col = 0;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'N°');
+        $col++;
         setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'FECHA');
         $col++;
         setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'CLIENTE');
@@ -1302,22 +1330,43 @@ class PreproduccionController extends Controller
         setBgToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, '00b388');
         setColorTextToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, 'ffffff');
 
-        $row++;
-        $col = 0;
-        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $model->caja_proyecto->proyecto->fecha);
-        $col++;
-        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $model->caja_proyecto->proyecto->cliente->detalle()->nombre);
-        $col++;
-        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $model->variedad->nombre);
-        $col++;
-        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $model->tallos_x_ramo);
-        $col++;
-        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $model->longitud_ramo);
-        $col++;
-        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $request->armar);
-        $col++;
-        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $request->armar * $model->tallos_x_ramo);
-        $col += 2;
+        $total_ramos = 0;
+        foreach ($salidas as $pos => $salida) {
+            $row++;
+            $col = 0;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $salida->orden_flor_solida);
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $model->caja_proyecto->proyecto->fecha);
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $model->caja_proyecto->proyecto->cliente->detalle()->nombre);
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $model->variedad->nombre);
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $model->tallos_x_ramo);
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $model->longitud_ramo);
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $salida->tallos / $model->tallos_x_ramo);
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $salida->tallos);
+            $col += 2;
+
+            $total_ramos += $salida->tallos / $model->tallos_x_ramo;
+        }
+        if (count($salidas) > 1) {
+            $row++;
+            $col = 0;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'TOTALES');
+            $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col + 5] . $row);
+            $col+=6;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $total_ramos);
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $total_ramos * $model->tallos_x_ramo);
+            $col += 2;
+
+            setBgToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, '00b388');
+            setColorTextToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, 'ffffff');
+        }
 
         setTextCenterToCeldaExcel($sheet, 'A1:' . $columnas[$col] . $row);
         setBorderToCeldaExcel($sheet, 'A1:' . $columnas[$col] . $row);

@@ -37,7 +37,9 @@ use yura\Modelos\OtPostco;
 use yura\Modelos\ArmadoPostco;
 use yura\Modelos\CorreccionRecepcion;
 use yura\Modelos\DetalleArmadoPostco;
+use yura\Modelos\DetalleCajaProyecto;
 use yura\Modelos\IngresoRecepcion;
+use yura\Modelos\SalidasRecepcion;
 
 class ComandoDev extends Command
 {
@@ -141,6 +143,12 @@ class ComandoDev extends Command
         }
         if ($comando == 'reiniciar_kardex') {
             $this->reiniciar_kardex();
+        }
+        if ($comando == 'ordenar_flor_solida') {
+            $this->ordenar_flor_solida();
+        }
+        if ($comando == 'deshacer_correccion') {
+            $this->deshacer_correccion();
         }
         if ($comando == 'caca') {
             $this->caca();
@@ -1499,47 +1507,86 @@ class ComandoDev extends Command
         }
     }
 
+    function ordenar_flor_solida()
+    {
+        $fincas = [1, 2];
+        foreach ($fincas as $finca) {
+            $query = DB::table('salidas_recepcion as s')
+                ->join('inventario_recepcion as i', 'i.id_inventario_recepcion', '=', 's.id_inventario_recepcion')
+                ->join('detalle_caja_proyecto as d', 'd.id_detalle_caja_proyecto', '=', 's.id_detalle_caja_proyecto')
+                ->select(
+                    's.id_detalle_caja_proyecto',
+                )->distinct()
+                ->whereNotNull('s.id_detalle_caja_proyecto')
+                ->whereNull('s.id_ot_nacional')
+                ->where('s.cantidad', '>', 0)
+                ->where('i.id_empresa', $finca)
+                ->where('s.fecha_registro', '>=', '2026-09-12 00:00:00')
+                ->orderBy('s.fecha_registro')
+                ->get();
+            foreach ($query as $pos => $item) {
+                $salidas = SalidasRecepcion::where('id_detalle_caja_proyecto', $item->id_detalle_caja_proyecto)
+                    ->whereNotNull('id_detalle_caja_proyecto')
+                    ->whereNull('id_ot_nacional')
+                    ->where('cantidad', '>', 0)
+                    ->orderBy('fecha_registro')
+                    ->get();
+                foreach ($salidas as $model) {
+                    $model->orden_flor_solida = $pos + 1;
+                    $model->save();
+                }
+            }
+        }
+    }
+
+    function deshacer_correccion()
+    {
+        $orden = $this->argument('desde');
+        if ($orden != '') {
+            $correcciones = CorreccionRecepcion::where('orden', $orden)->get();
+            foreach ($correcciones as $c) {
+                $salidas = SalidasRecepcion::where('id_correccion_recepcion', $c->id_correccion_recepcion)
+                    ->get();
+                foreach ($salidas as $s) {
+                    $cantidad = $s->cantidad;
+                    $inventario = $s->inventario_recepcion;
+                    $inventario->disponibles += $cantidad;
+                    $s->delete();
+                }
+                $c->delete();
+            }
+        }
+    }
+
     function caca()
     {
-        $plantas_latin = Planta::where('id_empresa', 1)->get();
-        foreach ($plantas_latin as $pta) {
-            foreach ($pta->variedades as $var) {
-                foreach ($var->detalles_receta as $det) {
-                    $det->delete();
-                }
-                $var->delete();
-            }
-            $pta->delete();
-        }
-        $variedades_latin = Variedad::where('id_empresa', 1)->get();
-        foreach ($variedades_latin as $var) {
-            $var->delete();
-        }
-
-        $plantas_florisol = Planta::where('id_empresa', 2)->get();
-        foreach ($plantas_florisol as $ptaOriginal) {
-            $planta = new Planta();
-            $planta->nombre = $ptaOriginal->nombre;
-            $planta->tipo = $ptaOriginal->tipo;
-            $planta->id_empresa = 1;
-            $planta->save();
-            $planta->id_planta = DB::table('planta')->max('id_planta');
-
-            foreach ($ptaOriginal->variedades->where('receta', 0) as $varOriginal) {
-                $variedad = new Variedad();
-                $variedad->nombre = $varOriginal->nombre;
-                $variedad->siglas = $varOriginal->siglas;
-                $variedad->id_planta = $planta->id_planta;
-                $variedad->tallos_x_malla = $varOriginal->tallos_x_malla;
-                $variedad->color = $varOriginal->color;
-                $variedad->tipo = $varOriginal->tipo;
-                $variedad->dias_rotacion_recepcion = $varOriginal->dias_rotacion_recepcion;
-                $variedad->receta = 0;
-                $variedad->id_empresa = 1;
-                $variedad->codigo_exportacion = $varOriginal->codigo_exportacion;
-                $variedad->codigo_latin = $varOriginal->codigo_latin;
-                $variedad->save();
-            }
+        $listado = DB::table('inventario_recepcion as i')
+            ->join('variedad as v', 'v.id_variedad', '=', 'i.id_variedad')
+            ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
+            ->select(
+                'i.id_variedad',
+                'v.nombre as var_nombre',
+                'v.id_planta',
+                'p.nombre as pta_nombre',
+                'i.bodega',
+                'i.id_empresa',
+                DB::raw('sum(i.disponibles) as disponibles')
+            )
+            //->where('i.disponibles', '>', 0)
+            ->groupBy(
+                'i.id_variedad',
+                'v.nombre',
+                'v.id_planta',
+                'p.nombre',
+                'i.bodega',
+                'i.id_empresa',
+            )
+            ->orderBy('p.nombre')
+            ->orderBy('v.nombre')
+            ->get();
+        foreach ($listado as $item) {
+            dd($item);
+            
         }
     }
 }
