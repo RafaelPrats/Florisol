@@ -39,6 +39,7 @@ use yura\Modelos\CorreccionRecepcion;
 use yura\Modelos\DetalleArmadoPostco;
 use yura\Modelos\DetalleCajaProyecto;
 use yura\Modelos\IngresoRecepcion;
+use yura\Modelos\InventarioRecepcion;
 use yura\Modelos\SalidasRecepcion;
 
 class ComandoDev extends Command
@@ -1541,6 +1542,7 @@ class ComandoDev extends Command
 
     function deshacer_correccion()
     {
+        //$data = [];
         $orden = $this->argument('desde');
         if ($orden != '') {
             $correcciones = CorreccionRecepcion::where('orden', $orden)->get();
@@ -1551,6 +1553,11 @@ class ComandoDev extends Command
                     $cantidad = $s->cantidad;
                     $inventario = $s->inventario_recepcion;
                     $inventario->disponibles += $cantidad;
+                    /*$data[] = [
+                        'id_inventario_recepcion' => $s->id_inventario_recepcion,
+                        'cantidad' => $cantidad,
+                    ];*/
+                    $inventario->save();
                     $s->delete();
                 }
                 $c->delete();
@@ -1560,33 +1567,236 @@ class ComandoDev extends Command
 
     function caca()
     {
-        $listado = DB::table('inventario_recepcion as i')
-            ->join('variedad as v', 'v.id_variedad', '=', 'i.id_variedad')
-            ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
-            ->select(
-                'i.id_variedad',
-                'v.nombre as var_nombre',
-                'v.id_planta',
-                'p.nombre as pta_nombre',
-                'i.bodega',
-                'i.id_empresa',
-                DB::raw('sum(i.disponibles) as disponibles')
-            )
-            //->where('i.disponibles', '>', 0)
-            ->groupBy(
-                'i.id_variedad',
-                'v.nombre',
-                'v.id_planta',
-                'p.nombre',
-                'i.bodega',
-                'i.id_empresa',
-            )
-            ->orderBy('p.nombre')
-            ->orderBy('v.nombre')
-            ->get();
-        foreach ($listado as $item) {
-            dd($item);
-            
+        $data = [
+            [
+                "id_inventario_recepcion" => 7287,
+                "cantidad" => 10
+            ],
+            [
+                "id_inventario_recepcion" => 7044,
+                "cantidad" => 50
+            ],
+            [
+                "id_inventario_recepcion" => 7290,
+                "cantidad" => 10
+            ],
+            [
+                "id_inventario_recepcion" => 7420,
+                "cantidad" => 240
+            ],
+            [
+                "id_inventario_recepcion" => 7421,
+                "cantidad" => 10
+            ],
+            [
+                "id_inventario_recepcion" => 7042,
+                "cantidad" => 50
+            ],
+            [
+                "id_inventario_recepcion" => 7426,
+                "cantidad" => 30
+            ],
+            [
+                "id_inventario_recepcion" => 6861,
+                "cantidad" => 60
+            ],
+            [
+                "id_inventario_recepcion" => 7294,
+                "cantidad" => 10
+            ],
+            [
+                "id_inventario_recepcion" => 5214,
+                "cantidad" => 40
+            ],
+            [
+                "id_inventario_recepcion" => 7276,
+                "cantidad" => 20
+            ],
+            [
+                "id_inventario_recepcion" => 7277,
+                "cantidad" => 10
+            ],
+            [
+                "id_inventario_recepcion" => 7020,
+                "cantidad" => 30
+            ],
+            [
+                "id_inventario_recepcion" => 7522,
+                "cantidad" => 10
+            ],
+            [
+                "id_inventario_recepcion" => 7415,
+                "cantidad" => 120
+            ],
+            [
+                "id_inventario_recepcion" => 7375,
+                "cantidad" => 160
+            ],
+            [
+                "id_inventario_recepcion" => 7380,
+                "cantidad" => 10
+            ],
+            [
+                "id_inventario_recepcion" => 7524,
+                "cantidad" => 60
+            ],
+            [
+                "id_inventario_recepcion" => 7525,
+                "cantidad" => 10
+            ],
+            [
+                "id_inventario_recepcion" => 7417,
+                "cantidad" => 220
+            ],
+            [
+                "id_inventario_recepcion" => 6994,
+                "cantidad" => 10
+            ],
+            [
+                "id_inventario_recepcion" => 7529,
+                "cantidad" => 10
+            ],
+            [
+                "id_inventario_recepcion" => 7530,
+                "cantidad" => 30
+            ],
+            [
+                "id_inventario_recepcion" => 7265,
+                "cantidad" => 10
+            ],
+            [
+                "id_inventario_recepcion" => 6952,
+                "cantidad" => 90
+            ],
+            [
+                "id_inventario_recepcion" => 7526,
+                "cantidad" => 10
+            ],
+            [
+                "id_inventario_recepcion" => 7391,
+                "cantidad" => 120
+            ],
+            [
+                "id_inventario_recepcion" => 7388,
+                "cantidad" => 30
+            ],
+            [
+                "id_inventario_recepcion" => 7175,
+                "cantidad" => 4
+            ],
+            [
+                "id_inventario_recepcion" => 6331,
+                "cantidad" => 30
+            ],
+            [
+                "id_inventario_recepcion" => 7003,
+                "cantidad" => 30
+            ],
+            [
+                "id_inventario_recepcion" => 7531,
+                "cantidad" => 10
+            ],
+            [
+                "id_inventario_recepcion" => 7004,
+                "cantidad" => 130
+            ],
+            [
+                "id_inventario_recepcion" => 7007,
+                "cantidad" => 20
+            ],
+            [
+                "id_inventario_recepcion" => 7387,
+                "cantidad" => 120
+            ],
+            [
+                "id_inventario_recepcion" => 7399,
+                "cantidad" => 150
+            ],
+            [
+                "id_inventario_recepcion" => 5026,
+                "cantidad" => 440
+            ],
+            [
+                "id_inventario_recepcion" => 7418,
+                "cantidad" => 100
+            ],
+            [
+                "id_inventario_recepcion" => 7024,
+                "cantidad" => 110
+            ],
+            [
+                "id_inventario_recepcion" => 7410,
+                "cantidad" => 70
+            ],
+            [
+                "id_inventario_recepcion" => 7533,
+                "cantidad" => 10
+            ],
+            [
+                "id_inventario_recepcion" => 7413,
+                "cantidad" => 20
+            ],
+            [
+                "id_inventario_recepcion" => 7414,
+                "cantidad" => 130
+            ],
+            [
+                "id_inventario_recepcion" => 7116,
+                "cantidad" => 10
+            ],
+            [
+                "id_inventario_recepcion" => 7484,
+                "cantidad" => 30
+            ],
+            [
+                "id_inventario_recepcion" => 7508,
+                "cantidad" => 24
+            ],
+            [
+                "id_inventario_recepcion" => 7487,
+                "cantidad" => 50
+            ],
+            [
+                "id_inventario_recepcion" => 7483,
+                "cantidad" => 50
+            ],
+            [
+                "id_inventario_recepcion" => 7345,
+                "cantidad" => 40
+            ],
+            [
+                "id_inventario_recepcion" => 6916,
+                "cantidad" => 50
+            ],
+            [
+                "id_inventario_recepcion" => 5186,
+                "cantidad" => 45
+            ],
+            [
+                "id_inventario_recepcion" => 7488,
+                "cantidad" => 30
+            ],
+            [
+                "id_inventario_recepcion" => 7419,
+                "cantidad" => 15
+            ],
+            [
+                "id_inventario_recepcion" => 6973,
+                "cantidad" => 670
+            ],
+            [
+                "id_inventario_recepcion" => 6600,
+                "cantidad" => 22
+            ],
+            [
+                "id_inventario_recepcion" => 5000,
+                "cantidad" => 2610
+            ]
+        ];
+        foreach ($data as $d) {
+            $model = InventarioRecepcion::find($d['id_inventario_recepcion']);
+            $model->disponibles += $d['cantidad'];
+            $model->save();
         }
     }
 }
