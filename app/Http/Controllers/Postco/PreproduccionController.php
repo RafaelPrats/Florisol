@@ -1167,7 +1167,7 @@ class PreproduccionController extends Controller
                         $new_salida->id_inventario_recepcion = $model->id_inventario_recepcion;
                         $new_salida->id_detalle_caja_proyecto = $det_caja->id_detalle_caja_proyecto;
                         $new_salida->id_variedad = $det_caja->id_variedad;
-                        $new_salida->fecha = $proyecto->fecha;
+                        $new_salida->fecha = $request->fecha;
                         $new_salida->cantidad = $usados;
                         $new_salida->basura = 0;
                         $new_salida->orden_flor_solida = $last_orden;

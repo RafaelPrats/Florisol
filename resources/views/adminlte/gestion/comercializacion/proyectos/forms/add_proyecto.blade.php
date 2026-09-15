@@ -132,9 +132,9 @@
                             <span class="badge bg-yura_dark" id="span_total_monto_pedido">$0</span>
                             <i class="fa fa-fw fa-refresh"></i> Reiniciar Formulario
                         </button>
-                        {{-- <button type="button" class="btn btn-yura_warning" onclick="store_proyecto(1)">
+                        <button type="button" class="btn btn-yura_warning" onclick="store_proyecto(1)">
                             <i class="fa fa-fw fa-gift"></i> GRABAR Y DESPACHAR
-                        </button> --}}
+                        </button>
                     </div>
                 </td>
                 <th style="width: 25%; text-align: right; min-width: 120px">

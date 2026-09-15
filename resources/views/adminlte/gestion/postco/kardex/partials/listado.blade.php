@@ -50,9 +50,7 @@
                     </th>
                     <th class="padding_lateral_5" style="border-color: #9d9d9d">
                         {{ $item->concepto }}
-                        @if (!in_array($item->concepto, ['MOVIMIENTO', 'FLOR SOLIDA']))
-                            - {{ $item->documento }}
-                        @endif
+                        - {{ $item->documento }}
                     </th>
                     <th class="padding_lateral_5 text-sm" style="border-color: #9d9d9d">
                         {{ $item->detalle }}

@@ -4,6 +4,8 @@ namespace yura\Http\Controllers\Comercializacion;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use yura\Http\Controllers\Controller;
 use yura\Jobs\jobGrabarOrdenFija;
 use yura\Jobs\jobStoreProyecto;
@@ -14,6 +16,8 @@ use yura\Modelos\DatosExportacion;
 use yura\Modelos\DetalleCajaProyecto;
 use yura\Modelos\DistribucionReceta;
 use yura\Modelos\InventarioRecepcion;
+use yura\Modelos\OrdenTrabajo;
+use yura\Modelos\OtNacional;
 use yura\Modelos\Proyecto;
 use yura\Modelos\RenovarOrdenFija;
 use yura\Modelos\SalidasRecepcion;
@@ -318,14 +322,27 @@ class ProyectoController extends Controller
 
                     $variedad = $detalle->variedad;
                     if ($request->liquidar && !$variedad->receta) {
-                        // DESPACHAR SOLIDOS
-                        $return = $this->despachar_ramos_solidos($detalle, $variedad, $proyecto);
-                        if ($return['success'] == false) {
+                        if ($fecha >= '2026-09-15') {
+                            // DESPACHAR SOLIDOS
+                            $return = $this->despachar_ramos_solidos($detalle, $variedad, $proyecto);
+                            if ($return['success'] == false) {
+                                DB::rollBack();
+
+                                return [
+                                    'success' => false,
+                                    'mensaje' => $return['mensaje'],
+                                ];
+                            }
+                        } else {
                             DB::rollBack();
+                            $success = false;
+                            $msg = '<div class="alert alert-danger text-center">' .
+                                '<h4>No esta permitido usar esta funcion para pedidos previos al 15 de Sept 2026</h4>' .
+                                '</div>';
 
                             return [
-                                'success' => false,
-                                'mensaje' => $return['mensaje'],
+                                'success' => $success,
+                                'mensaje' => $msg,
                             ];
                         }
                     }
@@ -401,6 +418,13 @@ class ProyectoController extends Controller
         $segmento = Segmento::where('nombre', $proyecto->segmento)->first();
         $bodega = $segmento != '' ? $segmento->bodega : '';
         $caja_proyecto = $det_caja->caja_proyecto;
+        $last_orden = DB::table('salidas_recepcion as s')
+            ->join('inventario_recepcion as i', 'i.id_inventario_recepcion', '=', 's.id_inventario_recepcion')
+            ->select(DB::raw('max(s.orden_flor_solida) as orden'))
+            ->where('i.id_empresa', $finca)
+            ->get()[0]->orden;
+        $last_orden++;
+
         $query = DB::table('inventario_recepcion as i')
             ->select('i.*')->distinct()
             ->where('i.disponibles', '>', 0)
@@ -438,14 +462,17 @@ class ProyectoController extends Controller
                     $inv->disponibles = $disponible;
                     $inv->save();
 
-                    $new_salida = new SalidasRecepcion();
-                    $new_salida->id_inventario_recepcion = $inv->id_inventario_recepcion;
-                    $new_salida->id_detalle_caja_proyecto = $det_caja->id_detalle_caja_proyecto;
-                    $new_salida->id_variedad = $det_caja->id_variedad;
-                    $new_salida->fecha = $proyecto->fecha;
-                    $new_salida->cantidad = $usados;
-                    $new_salida->basura = 0;
-                    $new_salida->save();
+                    if ($usados > 0) {
+                        $new_salida = new SalidasRecepcion();
+                        $new_salida->id_inventario_recepcion = $inv->id_inventario_recepcion;
+                        $new_salida->id_detalle_caja_proyecto = $det_caja->id_detalle_caja_proyecto;
+                        $new_salida->id_variedad = $det_caja->id_variedad;
+                        $new_salida->fecha = hoy();
+                        $new_salida->cantidad = $usados;
+                        $new_salida->basura = 0;
+                        $new_salida->orden_flor_solida = $last_orden;
+                        $new_salida->save();
+                    }
                 }
             }
 
@@ -749,5 +776,458 @@ class ProyectoController extends Controller
             'success' => $success,
             'mensaje' => $msg,
         ];
+    }
+
+    public function descargar_despachos(Request $request)
+    {
+        $spread = new Spreadsheet();
+        $this->excel_descargar_despachos($spread, $request);
+        $fileName = "Despachos.xlsx";
+        $writer = new Xlsx($spread);
+
+        //--------------------------- GUARDAR EL EXCEL -----------------------
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . urlencode($fileName) . '"');
+        $writer->save('php://output');
+
+        //$writer->save('/var/www/html/Dasalflor/storage/storage/excel/excel_prueba.xlsx');
+    }
+
+    public function excel_descargar_despachos($spread, $request)
+    {
+        $proyecto = Proyecto::find($request->id);
+        $ids_detalles = DB::table('detalle_caja_proyecto as dc')
+            ->join('caja_proyecto as c', 'c.id_caja_proyecto', '=', 'dc.id_caja_proyecto')
+            ->select('dc.id_detalle_caja_proyecto')->distinct()
+            ->where('c.id_proyecto', $proyecto->id_proyecto)
+            ->get()->pluck('id_detalle_caja_proyecto')->toArray();
+
+        // ORDENES DE TRABAJO
+        $listado_ot = OrdenTrabajo::whereIn('id_detalle_caja_proyecto', $ids_detalles)
+            ->orderBy('id_orden_trabajo')
+            ->get();
+
+        $columnas = getColumnasExcel();
+        $sheet = $spread->getActiveSheet();
+        $sheet->setTitle('OT');
+
+        $row_ini = 1;
+        foreach ($listado_ot as $orden_trabajo) {
+            $despachador = $orden_trabajo->despachador;
+
+            $row = $row_ini;
+            $col = 0;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'OT');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'FECHA');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'CLIENTE');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'RECETA');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'LONGITUD');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'RAMOS');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'VARIEDAD');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'TALLOS');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'UNIDADES');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'TxR');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'RESPONSABLE');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'OBSERVACION');
+
+            setBgToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, '00b388');
+            setColorTextToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, 'ffffff');
+
+            $detalle = $orden_trabajo->detalle_caja_proyecto;
+            $tallos_x_ramo = 0;
+            $total_tallos = 0;
+            $detalles_ot = $orden_trabajo->detalles;
+            foreach ($detalles_ot as $det) {
+                $total_tallos += $det->unidades * $orden_trabajo->ramos;
+                $tallos_x_ramo += $det->unidades;
+            }
+
+            foreach ($detalles_ot as $pos_d => $det_ot) {
+                $row++;
+                if ($pos_d == 0) {
+                    $col = 0;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, '#' . $orden_trabajo->id_orden_trabajo);
+                    $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($detalles_ot) - 1));
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, convertDateToText($detalle->getFecha()));
+                    $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($detalles_ot) - 1));
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $orden_trabajo->cliente->detalle()->nombre);
+                    $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($detalles_ot) - 1));
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $detalle->variedad->nombre);
+                    $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($detalles_ot) - 1));
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $orden_trabajo->longitud);
+                    $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($detalles_ot) - 1));
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $orden_trabajo->ramos);
+                    $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($detalles_ot) - 1));
+                }
+                $col = 6;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det_ot->variedad->nombre);
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det_ot->unidades * $orden_trabajo->ramos);
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det_ot->unidades);
+                if ($pos_d == 0) {
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $tallos_x_ramo);
+                    $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($detalles_ot) - 1));
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $despachador != '' ? $despachador->nombre : '');
+                    $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($detalles_ot) - 1));
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $orden_trabajo->observacion);
+                    $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($detalles_ot) - 1));
+                }
+            }
+            $row++;
+            $col = 7;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $total_tallos);
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $tallos_x_ramo);
+            $col = 11;
+            setBgToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, '00b388');
+            setColorTextToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, 'ffffff');
+
+            setTextCenterToCeldaExcel($sheet, 'A' . $row_ini . ':' . $columnas[$col] . $row);
+            setBorderToCeldaExcel($sheet, 'A' . $row_ini . ':' . $columnas[$col] . $row);
+
+            for ($i = 0; $i <= $col; $i++)
+                $sheet->getColumnDimension($columnas[$i])->setAutoSize(true);
+
+            $row_ini = $row + 2;
+        }
+
+        // OT NACIONALES
+        $listado_ot_nacional = DB::table('ot_nacional')
+            ->select('id_detalle_caja_proyecto')->distinct()
+            ->whereIn('id_detalle_caja_proyecto', $ids_detalles)
+            ->orderBy('numero')
+            ->get()->pluck('id_detalle_caja_proyecto')->toArray();
+
+        $sheet = $spread->createSheet()->setTitle('OT_Nacional');
+
+        $row_ini = 1;
+        foreach ($listado_ot_nacional as $id_det) {
+            $detalle = DetalleCajaProyecto::find($id_det);
+            $caja = $detalle->caja_proyecto;
+
+            $row = $row_ini;
+            $col = 0;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, '#' . $detalle->ot_nacional[0]->numero);
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $caja->cantidad . ' Cajas');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $caja->cantidad * $detalle->ramos_x_caja . ' Ramos');
+            $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col + 3] . $row);
+            $col = 6;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $detalle->variedad->nombre);
+            $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col + 4] . $row);
+            $col = 10;
+
+            $row++;
+            $col = 0;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Fecha');
+            $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + 1));
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Distribucion RECETA ORIGINAL');
+            $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col + 4] . $row);
+            $col += 5;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'VARIEDAD / ESPECIE');
+            $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col + 3] . $row);
+            $col += 4;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Total Tallos');
+            $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + 1));
+
+            setBgToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, '00b388');
+            setColorTextToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, 'ffffff');
+
+            $row++;
+            $col = 1;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'PLANTA');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'VARIEDAD');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'UNIDADES');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'TALLOS');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'TxR');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'PLANTA');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'VARIEDAD');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'LONGITUD');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'TALLOS');
+            setBgToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, '5a7177');
+            setColorTextToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, 'ffffff');
+            $col++;
+
+            $getOtNacional = $detalle->getOtNacional();
+            $total_row = count($detalle->ot_nacional);
+            $tallos_x_ramo = 0;
+            $total_tallos = 0;
+            foreach ($getOtNacional as $pos) {
+                $tallos_x_ramo += $pos['unidades_dist'];
+                foreach ($pos['detalles'] as $det) {
+                    $total_tallos += $det->tallos;
+                }
+            }
+            foreach ($getOtNacional as $pos_pos => $pos) {
+                foreach ($pos['detalles'] as $pos_det => $det) {
+                    $row++;
+                    $col = 0;
+                    if ($pos_pos == 0 && $pos_det == 0) {
+                        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $pos['fecha']);
+                        $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + $total_row - 1));
+                    }
+                    if ($pos_det == 0) {
+                        $col++;
+                        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $pos['pta_dist_nombre']);
+                        $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($pos['detalles']) - 1));
+                        $col++;
+                        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $pos['var_dist_nombre'] . ' ' . $pos['longitud_dist'] . 'cm');
+                        $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($pos['detalles']) - 1));
+                        $col++;
+                        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $pos['unidades_dist']);
+                        $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($pos['detalles']) - 1));
+                        $col++;
+                        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $pos['total_tallos_dist']);
+                        $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($pos['detalles']) - 1));
+                    }
+                    if ($pos_pos == 0 && $pos_det == 0) {
+                        $col = 5;
+                        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $tallos_x_ramo);
+                        $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + $total_row - 1));
+                    }
+                    $col = 6;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det->pta_nombre);
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det->var_nombre);
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det->longitud . 'cm');
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det->tallos);
+                    if ($pos_pos == 0 && $pos_det == 0) {
+                        $col = 10;
+                        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $total_tallos);
+                        $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + $total_row - 1));
+                    }
+                }
+            }
+            $col = 10;
+
+            setTextCenterToCeldaExcel($sheet, 'A' . $row_ini . ':' . $columnas[$col] . $row);
+            setBorderToCeldaExcel($sheet, 'A' . $row_ini . ':' . $columnas[$col] . $row);
+
+            for ($i = 0; $i <= $col; $i++)
+                $sheet->getColumnDimension($columnas[$i])->setAutoSize(true);
+
+            $row_ini = $row + 2;
+        }
+
+        // FLOR SOLIDA
+        $listado_solido = [];
+        foreach ($proyecto->cajas as $caja) {
+            if (count($caja->detalles) == 1) {
+                foreach ($caja->detalles as $det_caja) {
+                    if ($det_caja->variedad->receta == 0) {
+                        $listado_solido[] = $det_caja;
+                    }
+                }
+            }
+        }
+
+        $sheet = $spread->createSheet()->setTitle('FLOR_SOLIDA');
+
+        $row_ini = 1;
+        foreach ($listado_solido as $model) {
+            $salidas = DB::table('salidas_recepcion')
+                ->select(
+                    'orden_flor_solida',
+                    DB::raw('sum(cantidad) as tallos'),
+                )
+                ->where('id_detalle_caja_proyecto', $model->id_detalle_caja_proyecto)
+                ->whereNull('id_ot_nacional')
+                ->whereNotNull('orden_flor_solida')
+                ->where('cantidad', '>', 0)
+                ->groupBy('orden_flor_solida')
+                ->orderBy('orden_flor_solida')
+                ->get();
+
+            if (count($salidas) > 0) {
+                $row = $row_ini;
+                $col = 0;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'N°');
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'FECHA');
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'CLIENTE');
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'VARIEDAD');
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'TxR');
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'LONGITUD');
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'RAMOS');
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'TALLOS');
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'RESPONSABLE');
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'OBSERVACION');
+
+                setBgToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, '00b388');
+                setColorTextToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, 'ffffff');
+
+                $total_ramos = 0;
+                foreach ($salidas as $pos => $salida) {
+                    $row++;
+                    $col = 0;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $salida->orden_flor_solida);
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $model->caja_proyecto->proyecto->fecha);
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $model->caja_proyecto->proyecto->cliente->detalle()->nombre);
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $model->variedad->nombre);
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $model->tallos_x_ramo);
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $model->longitud_ramo);
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $salida->tallos / $model->tallos_x_ramo);
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $salida->tallos);
+                    $col += 2;
+
+                    $total_ramos += $salida->tallos / $model->tallos_x_ramo;
+                }
+                if (count($salidas) > 0) {
+                    $row++;
+                    $col = 0;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'TOTALES');
+                    $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col + 5] . $row);
+                    $col += 6;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $total_ramos);
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $total_ramos * $model->tallos_x_ramo);
+                    $col += 2;
+
+                    setBgToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, '00b388');
+                    setColorTextToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, 'ffffff');
+                }
+
+                setTextCenterToCeldaExcel($sheet, 'A' . $row_ini . ':' . $columnas[$col] . $row);
+                setBorderToCeldaExcel($sheet, 'A' . $row_ini . ':' . $columnas[$col] . $row);
+
+                for ($i = 0; $i <= $col; $i++)
+                    $sheet->getColumnDimension($columnas[$i])->setAutoSize(true);
+
+                $row_ini = $row + 2;
+            }
+        }
+
+        // CAJAS COMBOS
+        $listado_combos = [];
+        foreach ($proyecto->cajas as $caja) {
+            if (count($caja->detalles) > 1) {
+                $list_detalles = [];
+                foreach ($caja->detalles as $det_caja) {
+                    if ($det_caja->variedad->receta == 0) {
+                        $salidas = DB::table('salidas_recepcion')
+                            ->select(
+                                'orden_flor_solida',
+                                DB::raw('sum(cantidad) as tallos'),
+                            )
+                            ->where('id_detalle_caja_proyecto', $det_caja->id_detalle_caja_proyecto)
+                            ->whereNull('id_ot_nacional')
+                            ->whereNotNull('orden_flor_solida')
+                            ->where('cantidad', '>', 0)
+                            ->groupBy('orden_flor_solida')
+                            ->orderBy('orden_flor_solida')
+                            ->get();
+                        if (count($salidas) > 0) {
+                            $list_detalles[] = [
+                                'det_caja' => $det_caja,
+                                'query' => $salidas,
+                                'receta' => 0,
+                                'tipo' => 'SOLIDO',
+                            ];
+                        }
+                    } else {
+                        $ordenes = OrdenTrabajo::where('id_detalle_caja_proyecto', $det_caja->id_detalle_caja_proyecto)
+                            ->orderBy('id_orden_trabajo')
+                            ->get();
+                        if (count($ordenes) > 0) {
+                            $list_detalles[] = [
+                                'det_caja' => $det_caja,
+                                'query' => $ordenes,
+                                'receta' => 1,
+                                'tipo' => 'OT',
+                            ];
+                        } else {
+                            $ordenes_nacional = DB::table('ot_nacional')
+                                ->select('numero')->distinct()
+                                ->where('id_detalle_caja_proyecto', $det_caja->id_detalle_caja_proyecto)
+                                ->orderBy('numero')
+                                ->get()->pluck('numero')->toArray();
+                            if (count($ordenes_nacional) > 0) {
+                                $list_detalles[] = [
+                                    'det_caja' => $det_caja,
+                                    'query' => $ordenes_nacional[0],
+                                    'receta' => 1,
+                                    'tipo' => 'NACIONAL',
+                                ];
+                            }
+                        }
+                    }
+                }
+                if (count($list_detalles) > 0)
+                    $listado_combos[] = [
+                        'caja' => $caja,
+                        'detalles' => $list_detalles,
+                    ];
+            }
+        }
+
+        $sheet = $spread->createSheet()->setTitle('COMBOS');
+
+        $row_ini = 1;
+        foreach ($listado_combos as $combo) {
+            $row = $row_ini;
+            $col = 0;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $combo['caja']->cantidad . ' Caja(s) ' . $combo['caja']->tipo_caja);
+            $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col + 9] . $row);
+
+            dd($combo);
+            foreach ($combo['detalles'] as $det) {
+            }
+
+            setTextCenterToCeldaExcel($sheet, 'A' . $row_ini . ':' . $columnas[$col] . $row);
+            setBorderToCeldaExcel($sheet, 'A' . $row_ini . ':' . $columnas[$col] . $row);
+
+            for ($i = 0; $i <= $col; $i++)
+                $sheet->getColumnDimension($columnas[$i])->setAutoSize(true);
+
+            $row_ini = $row + 2;
+        }
     }
 }

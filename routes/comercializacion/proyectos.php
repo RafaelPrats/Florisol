@@ -14,3 +14,4 @@ Route::post('proyectos/update_proyecto', 'Comercializacion\ProyectoController@up
 Route::get('proyectos/copiar_pedido', 'Comercializacion\ProyectoController@copiar_pedido');
 Route::post('proyectos/store_copiar_pedido', 'Comercializacion\ProyectoController@store_copiar_pedido');
 Route::post('proyectos/delete_pedido', 'Comercializacion\ProyectoController@delete_pedido');
+Route::get('proyectos/descargar_despachos', 'Comercializacion\ProyectoController@descargar_despachos');

@@ -193,12 +193,12 @@
                         '<input type="number" style="width: 100%; height: 34px;" class="text-center" ' +
                         'id="form_combos_tallos_x_ramos_' + num_combo +
                         '" onchange="calcular_totales_form_combos()" ' +
-                        'onkeyup="calcular_totales_form_combos()">');
+                        'onkeyup="calcular_totales_form_combos()" value="' + retorno.tallos_x_ramo + '">');
                     $('#td_longitud_' + num_combo).html(
                         '<input type="number" style="width: 100%; height: 34px;" class="text-center" ' +
                         'id="form_combos_longitud_' + num_combo + '">');
                     $('#td_precio_' + num_combo).html(
-                        '<input type="number" style="width: 100%; height: 34px;" class="text-center" ' +
+                        '<input type="number" style="width: 100%; height: 34px;" class="text-center form_combos_precio" ' +
                         'id="form_combos_precio_' + num_combo + '">');
 
                     if (retorno.tallos_x_ramo != null) {

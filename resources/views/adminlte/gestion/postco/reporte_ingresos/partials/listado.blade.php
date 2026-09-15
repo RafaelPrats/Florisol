@@ -69,17 +69,22 @@
     }
 
     function update_compra(input) {
-        texto =
-            '<div class="alert alert-warning text-center"><h3>¿Esta seguro de <b>MODIFICAR</b> el inventario?</h3></div>';
+        if (input.val() != input.data('original')) {
+            texto =
+                '<div class="alert alert-info text-center"><h3>¿Esta seguro de <b>MODIFICAR</b> la compra?</h3>' +
+                '</div>';
 
-        modal_quest('modal_update_compra', texto, 'Modificar el inventario', true, false, '40%',
-            function() {
-                datos = {
-                    _token: '{{ csrf_token() }}',
-                    id: input.data('id_ingreso_recepcion'),
-                    tallos: input.val(),
-                }
-                post_jquery_m('{{ url('reporte_ingresos/update_compra') }}', datos, function() {});
-            });
+            modal_quest('modal_update_compra', texto, 'Modificar la compra', true, false, '40%',
+                function() {
+                    datos = {
+                        _token: '{{ csrf_token() }}',
+                        id: input.data('id_ingreso_recepcion'),
+                        tallos: input.val(),
+                    }
+                    post_jquery_m('{{ url('reporte_ingresos/update_compra') }}', datos, function() {
+                        input.data('original', input.val());
+                    });
+                });
+        }
     }
 </script>

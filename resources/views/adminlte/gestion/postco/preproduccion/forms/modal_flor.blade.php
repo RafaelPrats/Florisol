@@ -103,17 +103,19 @@
                 </div>
             </th>
             <th class="text-center" style="border-color: #9d9d9d">
-                <div class="input-group">
-                    <input type="text" id="devolver_ramos_{{ $item->id_detalle_caja_proyecto }}" class="text-center"
-                        max="{{ $item->armados }}" min="0" value="{{ $item->armados }}" style="width: 100%;"
-                        onkeyup="verificar_disponibles($(this))">
-                    <div class="input-group-btn">
-                        <button class="btn btn-xs btn-yura_warning"
-                            onclick="store_devolver('{{ $item->id_detalle_caja_proyecto }}')" style="height: 26px">
-                            <i class="fa fa-fw fa-download"></i>
-                        </button>
+                @if ($item->fecha >= '2026-09-15')
+                    <div class="input-group">
+                        <input type="text" id="devolver_ramos_{{ $item->id_detalle_caja_proyecto }}"
+                            class="text-center" max="{{ $item->armados }}" min="0" value="{{ $item->armados }}"
+                            style="width: 100%;" onkeyup="verificar_disponibles($(this))">
+                        <div class="input-group-btn">
+                            <button class="btn btn-xs btn-yura_warning"
+                                onclick="store_devolver('{{ $item->id_detalle_caja_proyecto }}')" style="height: 26px">
+                                <i class="fa fa-fw fa-download"></i>
+                            </button>
+                        </div>
                     </div>
-                </div>
+                @endif
             </th>
             <th class="text-center" style="border-color: #9d9d9d">
                 @if ($item->armados > 0)
@@ -179,6 +181,7 @@
                     _token: '{{ csrf_token() }}',
                     id: id,
                     armar: armar,
+                    fecha: $('#fecha_filtro').val()
                 }
                 $.post('{{ url('preproduccion/store_armar_flor') }}', datos, function(retorno) {
                     cerrar_modals();

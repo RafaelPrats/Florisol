@@ -29,7 +29,7 @@ class KardexController extends Controller
     {
         $finca = getFincaActiva();
         $variedad = Variedad::find($request->variedad);
-        $desde = $request->desde >= '2026-09-12' ? $request->desde : '2026-09-12';
+        $desde = $request->desde >= '2026-09-15' ? $request->desde : '2026-09-15';
         $hasta = $request->hasta;
         // Calcular saldo inicial
         $ingreso_inicial = DB::table('ingreso_recepcion')
@@ -38,7 +38,8 @@ class KardexController extends Controller
             ->where('id_empresa', $finca)
             ->where('bodega', $request->bodega)
             ->where('fecha', '<', $desde)
-            ->where('fecha', '>=', '2026-09-12')
+            ->where('fecha', '>=', '2026-09-15')
+            ->where('fecha_registro', '>=', '2026-09-15 00:00:00')
             ->get()[0]->cantidad;
         $salida_inicial = DB::table('salidas_recepcion as s')
             ->join('inventario_recepcion as i', 'i.id_inventario_recepcion', '=', 's.id_inventario_recepcion')
@@ -47,8 +48,8 @@ class KardexController extends Controller
             ->where('i.id_empresa', $finca)
             ->where('i.bodega', $request->bodega)
             ->where('s.fecha', '<', $desde)
-            ->where('s.fecha', '>=', '2026-09-12')
-            ->where('s.fecha_registro', '>=', '2026-09-12')
+            ->where('s.fecha', '>=', '2026-09-15')
+            ->where('s.fecha_registro', '>=', '2026-09-15 00:00:00')
             ->get()[0]->cantidad;
         $saldo_inicial = $ingreso_inicial - $salida_inicial;
         // INGRESOS
@@ -129,6 +130,7 @@ class KardexController extends Controller
 
         $ingresos_correccion = DB::table('ingreso_recepcion as i')
             ->join('correccion_recepcion as c', 'c.id_correccion_recepcion', '=', 'i.id_correccion_recepcion')
+            ->join('usuario as u', 'u.id_usuario', '=', 'c.id_usuario')
             ->select(
                 DB::raw("'INGRESO' as tipo"),
                 'c.orden as documento',
@@ -136,7 +138,7 @@ class KardexController extends Controller
                 DB::raw("DATE_FORMAT(i.fecha_registro, '%Y-%m-%d %H:%i') as fecha_registro"),
                 DB::raw('sum(i.tallos) as cantidad'),
                 DB::raw("'CORRECCION' as concepto"),
-                DB::raw("NULL as detalle")
+                DB::raw("CONCAT('Usuario: ', u.nombre_completo) as detalle"),
             )
             ->whereNotNull('i.id_correccion_recepcion')
             ->where('i.id_empresa', $finca)
@@ -147,7 +149,8 @@ class KardexController extends Controller
             ->groupBy(
                 'documento',
                 'fecha',
-                DB::raw("DATE_FORMAT(i.fecha_registro, '%Y-%m-%d %H:%i')")
+                DB::raw("DATE_FORMAT(i.fecha_registro, '%Y-%m-%d %H:%i')"),
+                'detalle'
             )
             ->orderBy('i.fecha')
             ->orderBy('i.fecha_registro')
@@ -230,7 +233,7 @@ class KardexController extends Controller
             ->join('detalle_cliente as cli', 'cli.id_cliente', '=', 'proy.id_cliente')
             ->select(
                 DB::raw("'SALIDA' as tipo"),
-                's.id_salidas_recepcion as documento',
+                's.orden_flor_solida as documento',
                 's.fecha',
                 DB::raw("DATE_FORMAT(s.fecha_registro, '%Y-%m-%d %H:%i') as fecha_registro"),
                 DB::raw('sum(s.cantidad) as cantidad'),
@@ -314,6 +317,7 @@ class KardexController extends Controller
         $salidas_correccion = DB::table('salidas_recepcion as s')
             ->join('inventario_recepcion as i', 'i.id_inventario_recepcion', '=', 's.id_inventario_recepcion')
             ->join('correccion_recepcion as c', 'c.id_correccion_recepcion', '=', 's.id_correccion_recepcion')
+            ->join('usuario as u', 'u.id_usuario', '=', 'c.id_usuario')
             ->select(
                 DB::raw("'SALIDA' as tipo"),
                 'c.orden as documento',
@@ -321,7 +325,7 @@ class KardexController extends Controller
                 DB::raw("DATE_FORMAT(s.fecha_registro, '%Y-%m-%d %H:%i') as fecha_registro"),
                 DB::raw('sum(s.cantidad) as cantidad'),
                 DB::raw("'CORRECCION' as concepto"),
-                DB::raw("NULL as detalle")
+                DB::raw("CONCAT('usuario: ', u.nombre_completo) as detalle"),
             )
             ->whereNotNull('s.id_correccion_recepcion')
             ->where('s.cantidad', '>', 0)
@@ -335,6 +339,7 @@ class KardexController extends Controller
                 'documento',
                 'fecha',
                 DB::raw("DATE_FORMAT(s.fecha_registro, '%Y-%m-%d %H:%i')"),
+                'detalle'
             )
             ->orderBy('s.fecha')
             ->orderBy('s.fecha_registro')

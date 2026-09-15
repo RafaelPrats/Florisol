@@ -209,9 +209,9 @@
                                         </li>
                                         <li>
                                             <a target="_blank" style="color: black" href="javascript:void(0)"
-                                                onclick="descargar_packing('{{ $proyecto->id_proyecto }}')">
+                                                onclick="descargar_despachos('{{ $proyecto->id_proyecto }}')">
                                                 <i class="fa fa-cubes fa-fw"></i>
-                                                Descargar packing list
+                                                Despachos
                                             </a>
                                         </li>
                                     </ul>
@@ -379,5 +379,11 @@
                     listar_reporte();
                 });
             });
+    }
+
+    function descargar_despachos(id) {
+        $.LoadingOverlay('show');
+        window.open('{{ url('proyectos/descargar_despachos') }}?id=' + id, '_blank');
+        $.LoadingOverlay('hide');
     }
 </script>

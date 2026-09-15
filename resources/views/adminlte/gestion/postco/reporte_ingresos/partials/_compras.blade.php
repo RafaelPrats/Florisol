@@ -76,10 +76,14 @@
                     {{ $item->ramos }}
                 </th>
                 <th class="text-center" style="border-color: #9d9d9d">
-                    <input type="number" readonly value="{{ $item->tallos }}" ondblclick="habilitar_modificar()"
-                        onchange="update_compra($(this))" style="width: 100%; background-color: aliceblue"
-                        data-id_ingreso_recepcion="{{ $item->id_ingreso_recepcion }}"
-                        class="padding_lateral_5 input_compras_tallos">
+                    @if ($item->fecha >= '2026-09-15' && $item->fecha_registro >= '2026-09-15 00:00:00')
+                        <input type="number" readonly value="{{ $item->tallos }}" ondblclick="habilitar_modificar()"
+                            onchange="update_compra($(this))" style="width: 100%; background-color: aliceblue"
+                            data-id_ingreso_recepcion="{{ $item->id_ingreso_recepcion }}"
+                            data-original="{{ $item->tallos }}" class="padding_lateral_5 input_compras_tallos">
+                    @else
+                        {{ $item->tallos }}
+                    @endif
                 </th>
             </tr>
         @endforeach

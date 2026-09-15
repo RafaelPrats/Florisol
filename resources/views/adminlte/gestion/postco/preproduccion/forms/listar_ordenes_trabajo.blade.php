@@ -108,10 +108,13 @@
                                         onclick="exportar_orden_trabajo('{{ $ot->id_orden_trabajo }}')">
                                         <i class="fa fa-fw fa-file-excel-o"></i> Exportar
                                     </button>
-                                    <button type="button" class="btn btn-xs btn-yura_danger" style="margin-top: 5px"
-                                        onclick="eliminar_orden_trabajo('{{ $ot->id_orden_trabajo }}')">
-                                        <i class="fa fa-fw fa-trash"></i> Deshacer
-                                    </button>
+                                    @if ($ot->fecha >= '2026-09-15')
+                                        <button type="button" class="btn btn-xs btn-yura_danger"
+                                            style="margin-top: 5px"
+                                            onclick="eliminar_orden_trabajo('{{ $ot->id_orden_trabajo }}')">
+                                            <i class="fa fa-fw fa-trash"></i> Deshacer
+                                        </button>
+                                    @endif
                                 </div>
                             </th>
                         @endif

@@ -1451,15 +1451,11 @@ class ComandoDev extends Command
     function reiniciar_kardex()
     {
         $listado = DB::table('inventario_recepcion as i')
-            ->join('variedad as v', 'v.id_variedad', '=', 'i.id_variedad')
             ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
             ->select(
                 'i.bodega',
                 'i.id_empresa',
                 'i.id_variedad',
-                'v.nombre as var_nombre',
-                'v.id_planta',
-                'p.nombre as pta_nombre',
                 DB::raw('sum(i.disponibles) as disponibles')
             )
             ->where('i.disponibles', '>', 0)
@@ -1467,18 +1463,14 @@ class ComandoDev extends Command
                 'i.bodega',
                 'i.id_empresa',
                 'i.id_variedad',
-                'v.nombre',
-                'v.id_planta',
-                'p.nombre'
             )
-            ->orderBy('p.nombre')
-            ->orderBy('v.nombre')
             ->get();
 
-        foreach ($listado as $item) {
+        foreach ($listado as $pos => $item) {
+            dump('pos: ' . ($pos + 1) . '/' . count($listado));
             $correccion = new CorreccionRecepcion();
             $correccion->id_empresa = $item->id_empresa;
-            $correccion->fecha = '2026-09-12';
+            $correccion->fecha = '2026-09-15';
             $correccion->orden = 0;
             $correccion->id_variedad = $item->id_variedad;
             $correccion->bodega = $item->bodega;
@@ -1486,7 +1478,7 @@ class ComandoDev extends Command
             $correccion->anterior = 0;
             $correccion->actual = $item->disponibles;
             $correccion->diferencia = $item->disponibles;
-            $correccion->fecha_registro = '2026-09-12 00:00:00';
+            $correccion->fecha_registro = '2026-09-15 00:00:00';
             $correccion->save();
             $correccion->id_correccion_recepcion = DB::table('correccion_recepcion')
                 ->select(DB::raw('max(id_correccion_recepcion) as id'))
@@ -1495,8 +1487,8 @@ class ComandoDev extends Command
             $ingreso = new IngresoRecepcion();
             $ingreso->id_variedad = $item->id_variedad;
             $ingreso->fecha_registro = date('Y-m-d H:i:s');
-            $ingreso->fecha = '2026-09-12';
-            $ingreso->fecha_registro = '2026-09-12 00:00:00';
+            $ingreso->fecha = '2026-09-15';
+            $ingreso->fecha_registro = '2026-09-15 00:00:00';
             $ingreso->tallos_x_ramo = 1;
             $ingreso->ramos = 1;
             $ingreso->bodega = $item->bodega;
@@ -1522,7 +1514,7 @@ class ComandoDev extends Command
                 ->whereNull('s.id_ot_nacional')
                 ->where('s.cantidad', '>', 0)
                 ->where('i.id_empresa', $finca)
-                ->where('s.fecha_registro', '>=', '2026-09-12 00:00:00')
+                ->where('s.fecha_registro', '>=', '2026-09-15 00:00:00')
                 ->orderBy('s.fecha_registro')
                 ->get();
             foreach ($query as $pos => $item) {
@@ -1542,6 +1534,7 @@ class ComandoDev extends Command
 
     function deshacer_correccion()
     {
+        dd('incompleto');
         //$data = [];
         $orden = $this->argument('desde');
         if ($orden != '') {
@@ -1560,6 +1553,18 @@ class ComandoDev extends Command
                     $inventario->save();
                     $s->delete();
                 }
+
+                /*$ingresos = IngresoRecepcion::where('id_correccion_recepcion', $c->id_correccion_recepcion)
+                    ->get();
+                foreach ($ingresos as $ing) {
+                    $cantidad = $ing->tallos;
+                    $inventario = InventarioRecepcion::where('id_empresa', $ing->id_empresa)
+                        ->where('id_variedad', $ing->id_variedad)
+                        ->where('bodega', $ing->bodega)
+                        ->orderBy('fecha', 'asc')
+                        ->first();
+                }*/
+
                 $c->delete();
             }
         }

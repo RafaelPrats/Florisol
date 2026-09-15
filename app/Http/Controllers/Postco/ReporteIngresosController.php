@@ -46,7 +46,7 @@ class ReporteIngresosController extends Controller
                 'i.tallos',
                 'i.longitud',
                 'i.bodega',
-                'i.id_ingreso_recepcion'
+                'i.id_ingreso_recepcion',
             )->distinct()
             ->where('i.id_empresa', $finca)
             ->where('api.fecha', '>=', $request->desde)
@@ -90,6 +90,7 @@ class ReporteIngresosController extends Controller
                 'i.bodega',
                 'i.fecha',
                 'i.id_ingreso_recepcion',
+                'i.fecha_registro',
                 'prov.nombre as proveedor_nombre',
             )->distinct()
             ->whereNotNull('i.packing')
@@ -238,25 +239,81 @@ class ReporteIngresosController extends Controller
         try {
             DB::beginTransaction();
             $model = IngresoRecepcion::find($request->id);
-            $diferencia = $model->tallos - $request->tallos;
+            $diferencia = $request->tallos - $model->tallos;
             $model->tallos = $request->tallos;
             $model->save();
 
-            $inventario = InventarioRecepcion::where('id_variedad', $model->id_variedad)
-                ->where('fecha', $model->fecha)
-                ->where('tallos_x_ramo', $model->tallos_x_ramo)
-                ->where('longitud', $model->longitud)
-                ->where('id_empresa', $model->id_empresa)
-                ->where('bodega', $model->bodega)
-                ->first();
-            if ($inventario->disponibles - $diferencia >= 0)
-                $inventario->disponibles -= $diferencia;
-            else
-                $inventario->disponibles = 0;
-            $inventario->save();
+            if ($diferencia != 0) {
+                if ($diferencia < 0) {  // salida
+                    $inventarios = InventarioRecepcion::where('id_variedad', $model->id_variedad)
+                        ->where('disponibles', '>', 0)
+                        ->where('bodega', $model->bodega)
+                        ->where('id_empresa', $model->id_empresa)
+                        ->orderBy('fecha')
+                        ->get();
+
+                    $sacar = abs($diferencia);
+                    foreach ($inventarios as $model_inventario) {
+                        if ($sacar >= 0) {
+                            $usados = 0;
+                            $disponible = $model_inventario->disponibles;
+                            if ($sacar >= $disponible) {
+                                $sacar = $sacar - $disponible;
+                                $usados = $disponible;
+                                $disponible = 0;
+                            } else {
+                                $disponible = $disponible - $sacar;
+                                $usados = $sacar;
+                                $sacar = 0;
+                            }
+
+                            $model_inventario->disponibles = $disponible;
+                            $model_inventario->save();
+                        }
+                    }
+                    if ($sacar > 0) {
+                        DB::rollBack();
+                        $success = false;
+                        $msg = '<div class="alert alert-danger text-center">' .
+                            '<h4><em>No se ha podido modificar la compra:</em><br>' .
+                            '<b><i class="fa fa-fw fa-exclamation-triangle"></i> Actualmente no hay flor ' .
+                            'disponible en el inventario para reducir ' . abs($diferencia) . ' tallos de diferencia.<br></b>' .
+                            '<i class="fa fa-fw fa-check"></i> Debe realizar el cambio a traves de un ajuste de inventario</h4>' .
+                            '</div>';
+
+                        return [
+                            'success' => $success,
+                            'mensaje' => $msg,
+                        ];
+                    }
+                } else {    // ingreso
+                    $model_inventario = InventarioRecepcion::where('id_variedad', $model->id_variedad)
+                        ->where('fecha', $model->fecha)
+                        ->where('tallos_x_ramo', $model->tallos_x_ramo)
+                        ->where('bodega', $model->bodega)
+                        ->where('longitud', $model->longitud)
+                        ->where('id_empresa', $model->id_empresa)
+                        ->first();
+                    if ($model_inventario == '') {
+                        $model_inventario = new InventarioRecepcion();
+                        $model_inventario->id_variedad = $model->id_variedad;
+                        $model_inventario->fecha = $model->fecha;
+                        $model_inventario->tallos_x_ramo = $model->tallos_x_ramo;
+                        $model_inventario->ramos = abs($diferencia);
+                        $model_inventario->bodega = $model->bodega;
+                        $model_inventario->longitud = $model->longitud;
+                        $model_inventario->disponibles = abs($diferencia);
+                        $model_inventario->id_empresa = $model->id_empresa;
+                        $model_inventario->save();
+                    } else {
+                        $model_inventario->disponibles += abs($diferencia);
+                        $model_inventario->save();
+                    }
+                }
+            }
 
             $success = true;
-            $msg = 'Se ha <strong>HABILITADO</strong> la opcion para modificar';
+            $msg = 'Se ha <strong>MODIFICADO</strong> la compra correctamente';
 
             DB::commit();
         } catch (\Exception $e) {

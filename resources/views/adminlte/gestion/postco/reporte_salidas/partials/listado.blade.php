@@ -37,7 +37,7 @@
                 @include('adminlte/gestion/postco/reporte_salidas/partials/_ordenes_trabajo')
             </div>
         </div>
-        <div class="tab-pane active" id="ot_nacional" style="position: relative">
+        <div class="tab-pane" id="ot_nacional" style="position: relative">
             <div style="overflow-y: scroll; overflow-x: scroll; max-height: 700px;">
                 @include('adminlte/gestion/postco/reporte_salidas/partials/_ot_nacional')
             </div>
