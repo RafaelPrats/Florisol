@@ -1451,7 +1451,6 @@ class ComandoDev extends Command
     function reiniciar_kardex()
     {
         $listado = DB::table('inventario_recepcion as i')
-            ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
             ->select(
                 'i.bodega',
                 'i.id_empresa',
