@@ -308,6 +308,7 @@
                 datos = {
                     _token: '{{ csrf_token() }}',
                     id: id,
+                    fecha: $('#fecha_filtro').val(),
                     data: JSON.stringify(data)
                 }
                 post_jquery_m('{{ url('ingreso_inventario/recibir_all_pendientes') }}', datos, function() {

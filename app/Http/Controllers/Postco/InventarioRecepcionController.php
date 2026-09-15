@@ -284,7 +284,7 @@ class InventarioRecepcionController extends Controller
                     $ingreso->id_variedad = $model_inventario->id_variedad;
                     $ingreso->id_api_store_cajas = $detApi->id_api_store_cajas;
                     $ingreso->fecha_registro = date('Y-m-d H:i:s');
-                    $ingreso->fecha = $model_inventario->fecha;
+                    $ingreso->fecha = $request->fecha;
                     $ingreso->tallos_x_ramo = $model_inventario->tallos_x_ramo;
                     $ingreso->ramos = $data->ramos_ventas;
                     $ingreso->bodega = 'V';
@@ -323,7 +323,7 @@ class InventarioRecepcionController extends Controller
                     $ingreso->id_variedad = $model_inventario->id_variedad;
                     $ingreso->id_api_store_cajas = $detApi->id_api_store_cajas;
                     $ingreso->fecha_registro = date('Y-m-d H:i:s');
-                    $ingreso->fecha = $model_inventario->fecha;
+                    $ingreso->fecha = $request->fecha;
                     $ingreso->tallos_x_ramo = $model_inventario->tallos_x_ramo;
                     $ingreso->ramos = $data->ramos_produccion;
                     $ingreso->bodega = 'P';
