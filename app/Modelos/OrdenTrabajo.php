@@ -62,4 +62,22 @@ class OrdenTrabajo extends Model
             ];
         }
     }
+
+    function getTotalTallos()
+    {
+        $tallos = 0;
+        foreach ($this->detalles as $d) {
+            $tallos += $d->unidades * $this->ramos;
+        }
+        return $tallos;
+    }
+
+    function getTxR()
+    {
+        $valor = 0;
+        foreach ($this->detalles as $d) {
+            $valor += $d->unidades;
+        }
+        return $valor;
+    }
 }

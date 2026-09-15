@@ -780,9 +780,10 @@ class ProyectoController extends Controller
 
     public function descargar_despachos(Request $request)
     {
+        $proyecto = Proyecto::find($request->id);
         $spread = new Spreadsheet();
         $this->excel_descargar_despachos($spread, $request);
-        $fileName = "Despachos.xlsx";
+        $fileName = "Despachos " . $proyecto->fecha . " " . $proyecto->cliente->detalle()->nombre . ".xlsx";
         $writer = new Xlsx($spread);
 
         //--------------------------- GUARDAR EL EXCEL -----------------------
@@ -1214,11 +1215,154 @@ class ProyectoController extends Controller
         foreach ($listado_combos as $combo) {
             $row = $row_ini;
             $col = 0;
-            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $combo['caja']->cantidad . ' Caja(s) ' . $combo['caja']->tipo_caja);
-            $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col + 9] . $row);
+            $marcaciones = $combo['caja']->marcaciones->pluck('valor')->toArray();
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $combo['caja']->cantidad . ' Caja(s) ' . $combo['caja']->tipo_caja . ': ' . implode(' - ', $marcaciones));
+            $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col + 11] . $row);
+            setBgToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, '5a7177');
+            setColorTextToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, 'ffffff');
 
-            dd($combo);
+            $row++;
+            $col = 0;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'TIPO');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'N°');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'FECHA');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'CLIENTE');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'VARIEDAD');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'TxR');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'LONGITUD');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'RxC');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'RAMOS');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'TALLOS');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'RESPONSABLE');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'OBSERVACION');
+
+            setBgToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, '00b388');
+            setColorTextToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, 'ffffff');
+
             foreach ($combo['detalles'] as $det) {
+                if ($det['tipo'] == 'NACIONAL') {
+                    $row++;
+                    $col = 0;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det['tipo']);
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det['query']);
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det['det_caja']->caja_proyecto->proyecto->fecha);
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det['det_caja']->caja_proyecto->proyecto->cliente->detalle()->nombre);
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det['det_caja']->variedad->nombre);
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det['det_caja']->tallos_x_ramo);
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det['det_caja']->longitud_ramo);
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det['det_caja']->ramos_x_caja);
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det['det_caja']->ramos_x_caja * $combo['caja']->cantidad);
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det['det_caja']->ramos_x_caja * $combo['caja']->cantidad * $det['det_caja']->tallos_x_ramo);
+                    $col += 2;
+                }
+                if ($det['tipo'] == 'OT') {
+                    foreach ($det['query'] as $pos_ot => $ot) {
+                        $row++;
+                        $col = 0;
+                        if ($pos_ot == 0) {
+                            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det['tipo']);
+                            $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($det['query']) - 1));
+                        }
+                        $col++;
+                        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $ot->id_orden_trabajo);
+                        $col++;
+                        if ($pos_ot == 0) {
+                            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det['det_caja']->caja_proyecto->proyecto->fecha);
+                            $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($det['query']) - 1));
+                        }
+                        $col++;
+                        if ($pos_ot == 0) {
+                            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det['det_caja']->caja_proyecto->proyecto->cliente->detalle()->nombre);
+                            $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($det['query']) - 1));
+                        }
+                        $col++;
+                        if ($pos_ot == 0) {
+                            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det['det_caja']->variedad->nombre);
+                            $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($det['query']) - 1));
+                        }
+                        $col++;
+                        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $ot->getTxR());
+                        $col++;
+                        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $ot->longitud);
+                        $col++;
+                        if ($pos_ot == 0) {
+                            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det['det_caja']->ramos_x_caja);
+                            $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($det['query']) - 1));
+                        }
+                        $col++;
+                        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $ot->ramos);
+                        $col++;
+                        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $ot->getTotalTallos());
+                        $col += 2;
+                    }
+                }
+                if ($det['tipo'] == 'SOLIDO') {
+                    foreach ($det['query'] as $pos_salida => $salida) {
+                        $row++;
+                        $col = 0;
+                        if ($pos_salida == 0) {
+                            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det['tipo']);
+                            $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($det['query']) - 1));
+                        }
+                        $col++;
+                        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $salida->orden_flor_solida);
+                        $col++;
+                        if ($pos_salida == 0) {
+                            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det['det_caja']->caja_proyecto->proyecto->fecha);
+                            $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($det['query']) - 1));
+                        }
+                        $col++;
+                        if ($pos_salida == 0) {
+                            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det['det_caja']->caja_proyecto->proyecto->cliente->detalle()->nombre);
+                            $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($det['query']) - 1));
+                        }
+                        $col++;
+                        if ($pos_salida == 0) {
+                            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det['det_caja']->variedad->nombre);
+                            $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($det['query']) - 1));
+                        }
+                        $col++;
+                        if ($pos_salida == 0) {
+                            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det['det_caja']->tallos_x_ramo);
+                            $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($det['query']) - 1));
+                        }
+                        $col++;
+                        if ($pos_salida == 0) {
+                            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det['det_caja']->longitud_ramo);
+                            $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($det['query']) - 1));
+                        }
+                        $col++;
+                        if ($pos_salida == 0) {
+                            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $det['det_caja']->ramos_x_caja);
+                            $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($det['query']) - 1));
+                        }
+                        $col++;
+                        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $salida->tallos / $det['det_caja']->tallos_x_ramo);
+                        $col++;
+                        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $salida->tallos);
+                        $col += 2;
+                    }
+                }
             }
 
             setTextCenterToCeldaExcel($sheet, 'A' . $row_ini . ':' . $columnas[$col] . $row);
