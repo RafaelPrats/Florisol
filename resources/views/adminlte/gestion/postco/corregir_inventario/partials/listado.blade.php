@@ -21,7 +21,10 @@
                     Variedad
                 </th>
                 <th class="padding_lateral_5 bg-yura_dark" style="width: 90px">
-                    Tallos Actuales
+                    Kardex
+                </th>
+                <th class="padding_lateral_5 bg-yura_dark" style="width: 90px">
+                    Inventario Actual
                 </th>
                 <th class="padding_lateral_5 bg-yura_warning" style="width: 90px">
                     Corregir
@@ -39,6 +42,10 @@
                         {{ $item->var_nombre }}
                     </th>
                     <th class="padding_lateral_5" style="border-color: #9d9d9d">
+                        {{ $item->saldo }}
+                    </th>
+                    <th class="padding_lateral_5"
+                        style="border-color: #9d9d9d; background-color: {{ $item->disponibles != $item->saldo ? '#ffe283' : 'white' }}">
                         {{ $item->disponibles }}
                     </th>
                     <th style="border-color: #9d9d9d">

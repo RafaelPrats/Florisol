@@ -61,6 +61,28 @@ class CorregirInventarioController extends Controller
         $last_orden = DB::table('correccion_recepcion')
             ->select(DB::raw('max(orden) as orden'))
             ->get()[0]->orden + 1;
+        foreach ($listado as $item) {
+            $ingreso = DB::table('ingreso_recepcion')
+                ->select(DB::raw('sum(tallos) as cantidad'))
+                ->where('id_variedad', $item->id_variedad)
+                ->where('id_empresa', $finca)
+                ->where('bodega', $request->bodega)
+                ->where('fecha', '<', hoy())
+                ->where('fecha', '>=', '2026-09-15')
+                ->get()[0]->cantidad;
+            $salida = DB::table('salidas_recepcion as s')
+                ->join('inventario_recepcion as i', 'i.id_inventario_recepcion', '=', 's.id_inventario_recepcion')
+                ->select(DB::raw('sum(s.cantidad + s.basura) as cantidad'))
+                ->where('s.id_variedad', $item->id_variedad)
+                ->where('i.id_empresa', $finca)
+                ->where('i.bodega', $request->bodega)
+                ->where('s.fecha', '<', hoy())
+                ->where('s.fecha', '>=', '2026-09-15')
+                ->where('s.fecha_registro', '>=', '2026-09-15')
+                ->get()[0]->cantidad;
+            $saldo = $ingreso - $salida;
+            $item->saldo = $saldo;
+        }
 
         return view('adminlte.gestion.postco.corregir_inventario.partials.listado', [
             'last_orden' => $last_orden,
