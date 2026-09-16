@@ -459,7 +459,9 @@ class ProyectoController extends Controller
                         $sacar = 0;
                     }
 
-                    $inv->disponibles = $disponible;
+                    //dd($usados, $disponible, $inv->disponibles);
+
+                    $inv->disponibles = $disponible > 0 ? $disponible : 0;
                     $inv->save();
 
                     if ($usados > 0) {

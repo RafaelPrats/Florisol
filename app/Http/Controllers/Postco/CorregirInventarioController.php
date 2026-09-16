@@ -67,7 +67,7 @@ class CorregirInventarioController extends Controller
                 ->where('id_variedad', $item->id_variedad)
                 ->where('id_empresa', $finca)
                 ->where('bodega', $request->bodega)
-                ->where('fecha', '<', hoy())
+                ->where('fecha', '<=', hoy())
                 ->where('fecha', '>=', '2026-09-15')
                 ->get()[0]->cantidad;
             $salida = DB::table('salidas_recepcion as s')
@@ -76,7 +76,7 @@ class CorregirInventarioController extends Controller
                 ->where('s.id_variedad', $item->id_variedad)
                 ->where('i.id_empresa', $finca)
                 ->where('i.bodega', $request->bodega)
-                ->where('s.fecha', '<', hoy())
+                ->where('s.fecha', '<=', hoy())
                 ->where('s.fecha', '>=', '2026-09-15')
                 ->where('s.fecha_registro', '>=', '2026-09-15')
                 ->get()[0]->cantidad;

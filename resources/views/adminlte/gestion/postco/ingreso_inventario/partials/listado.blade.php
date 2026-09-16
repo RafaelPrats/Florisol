@@ -338,8 +338,8 @@
     }
 
     function mover_inventario(id) {
-        alert('Deshabilitado momentanemente');
-        /*datos = {
+        //alert('Deshabilitado momentanemente');
+        datos = {
             id: id,
         }
         get_jquery('{{ url('ingreso_inventario/mover_inventario') }}', datos, function(retorno) {
@@ -347,6 +347,6 @@
                 '<i class="fa fa-fw fa-plus"></i> Mover Inventario',
                 true, false, '{{ isPC() ? '75%' : '' }}',
                 function() {});
-        })*/
+        })
     }
 </script>
