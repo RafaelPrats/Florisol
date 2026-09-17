@@ -261,7 +261,7 @@ class BotarInventarioController extends Controller
             DB::beginTransaction();
             foreach (json_decode($request->data) as $data) {
                 $model = InventarioRecepcion::find($data->id_inv);
-                if ($model->disponibles < $data->botar) {
+                if ($model2026-09-17 < $data->botar) {
                     DB::rollBack();
                     $success = false;
                     $msg = 'No se pueden botar mas tallos de los disponibles, flor: ' . $model->variedad->nombre;
