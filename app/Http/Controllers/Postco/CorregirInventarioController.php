@@ -44,7 +44,7 @@ class CorregirInventarioController extends Controller
                 'p.nombre as pta_nombre',
                 DB::raw('sum(i.disponibles) as disponibles')
             )
-            //->where('i.disponibles', '>', 0)
+            ->where('i.disponibles', '>=', 0)
             ->where('i.id_empresa', $finca)
             ->where('i.bodega', $request->bodega);
         if ($request->planta != '')

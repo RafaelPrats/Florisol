@@ -40,6 +40,7 @@ use yura\Modelos\DetalleArmadoPostco;
 use yura\Modelos\DetalleCajaProyecto;
 use yura\Modelos\IngresoRecepcion;
 use yura\Modelos\InventarioRecepcion;
+use yura\Modelos\RegistroMovimientos;
 use yura\Modelos\SalidasRecepcion;
 
 class ComandoDev extends Command
@@ -1457,7 +1458,7 @@ class ComandoDev extends Command
                 'i.id_variedad',
                 DB::raw('sum(i.disponibles) as disponibles')
             )
-            ->where('i.disponibles', '>', 0)
+            ->where('i.disponibles', '>=', 0)
             ->groupBy(
                 'i.bodega',
                 'i.id_empresa',
@@ -1496,6 +1497,20 @@ class ComandoDev extends Command
             $ingreso->tallos = $item->disponibles;
             $ingreso->id_correccion_recepcion = $correccion->id_correccion_recepcion;
             $ingreso->save();
+
+            $registro = new RegistroMovimientos();
+            $registro->id_variedad = $item->id_variedad;
+            $registro->id_empresa = $item->id_empresa;
+            $registro->bodega = $item->bodega;
+            $registro->fecha = '2026-09-17';
+            $registro->tipo = 'I';
+            $registro->concepto = 'CORRECCION';
+            $registro->numero = 0;
+            $registro->cantidad = $item->disponibles;
+            $registro->id_usuario = 1;
+            $registro->descripcion = 'REINICIO del KARDEX';
+            $registro->id_correccion_recepcion = $correccion->id_correccion_recepcion;
+            $registro->save();
         }
     }
 
