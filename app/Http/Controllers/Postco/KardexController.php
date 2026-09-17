@@ -57,12 +57,12 @@ class KardexController extends Controller
             ->join('api_store_cajas as api', 'api.id_api_store_cajas', '=', 'i.id_api_store_cajas')
             ->select(
                 DB::raw("'INGRESO' as tipo"),
-                'api.documento as documento',
+                'i.id_api_store_cajas as documento',
                 'i.fecha',
                 DB::raw("DATE_FORMAT(i.fecha_registro, '%Y-%m-%d %H:%i') as fecha_registro"),
                 DB::raw('sum(i.tallos) as cantidad'),
                 DB::raw("'INTERNO' as concepto"),
-                DB::raw("NULL as detalle")
+                DB::raw("CONCAT('Documento: ', api.documento) as detalle"),
             )
             ->where('i.id_empresa', $finca)
             ->where('i.fecha', '>=', $desde)
@@ -70,15 +70,17 @@ class KardexController extends Controller
             ->where('i.bodega', $request->bodega)
             ->where('i.id_variedad', $request->variedad)
             ->groupBy(
-                'documento',
+                'i.id_api_store_cajas',
                 'fecha',
-                DB::raw("DATE_FORMAT(i.fecha_registro, '%Y-%m-%d %H:%i')")
+                DB::raw("DATE_FORMAT(i.fecha_registro, '%Y-%m-%d %H:%i')"),
+                'detalle'
             )
             ->orderBy('i.fecha')
             ->orderBy('i.fecha_registro')
             ->get();
 
         $ingresos_compra = DB::table('ingreso_recepcion as i')
+            ->join('configuracion_empresa as p', 'p.id_configuracion_empresa', '=', 'i.id_proveedor')
             ->select(
                 DB::raw("'INGRESO' as tipo"),
                 'i.packing as documento',
@@ -86,7 +88,7 @@ class KardexController extends Controller
                 DB::raw("DATE_FORMAT(i.fecha_registro, '%Y-%m-%d %H:%i') as fecha_registro"),
                 DB::raw('sum(i.tallos) as cantidad'),
                 DB::raw("'COMPRA' as concepto"),
-                DB::raw("NULL as detalle")
+                DB::raw("CONCAT('Proveedor: ', p.nombre) as detalle"),
             )
             ->whereNotNull('i.packing')
             ->where('i.id_empresa', $finca)
@@ -97,7 +99,8 @@ class KardexController extends Controller
             ->groupBy(
                 'documento',
                 'fecha',
-                DB::raw("DATE_FORMAT(i.fecha_registro, '%Y-%m-%d %H:%i')")
+                DB::raw("DATE_FORMAT(i.fecha_registro, '%Y-%m-%d %H:%i')"),
+                'detalle'
             )
             ->orderBy('i.fecha')
             ->orderBy('i.fecha_registro')
