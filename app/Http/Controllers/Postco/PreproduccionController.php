@@ -31,6 +31,7 @@ use yura\Modelos\InventarioRecepcion;
 use yura\Modelos\OaPostco;
 use yura\Modelos\OrdenTrabajo;
 use yura\Modelos\OtNacional;
+use yura\Modelos\RegistroMovimientos;
 use yura\Modelos\SalidasRecepcion;
 use yura\Modelos\Segmento;
 
@@ -345,18 +346,34 @@ class PreproduccionController extends Controller
                                 $sacar = 0;
                             }
 
-                            $model->disponibles = $disponible;
-                            $model->save();
-
                             if ($usados > 0) {
+                                $model->disponibles -= $usados;
+                                $model->save();
+
                                 $new_salida = new SalidasRecepcion();
                                 $new_salida->id_inventario_recepcion = $model->id_inventario_recepcion;
                                 $new_salida->id_orden_trabajo = $ot->id_orden_trabajo;
                                 $new_salida->id_variedad = $d->id_variedad;
-                                $new_salida->fecha = $ot->fecha;
+                                $new_salida->fecha = $request->fecha;
                                 $new_salida->cantidad = $usados;
                                 $new_salida->basura = 0;
                                 $new_salida->save();
+
+                                $registro = new RegistroMovimientos();
+                                $registro->id_variedad = $model->id_variedad;
+                                $registro->id_empresa = $model->id_empresa;
+                                $registro->bodega = $model->bodega;
+                                $registro->fecha = $request->fecha;
+                                $registro->tipo = 'S';
+                                $registro->concepto = 'OT';
+                                $registro->numero = $ot->id_orden_trabajo;
+                                $registro->cantidad = $usados;
+                                $registro->id_usuario = session('id_usuario');
+                                $registro->descripcion = 'Despacho a traves de OT, en el menu Preproduccion';
+                                // campos de relacion
+                                $registro->id_inventario_recepcion = $model->id_inventario_recepcion;
+                                $registro->id_orden_trabajo = $ot->id_orden_trabajo;
+                                $registro->save();
                             }
                         }
                     }
@@ -548,6 +565,22 @@ class PreproduccionController extends Controller
                         $inventario = $model->inventario_recepcion;
                         $inventario->disponibles += $model->cantidad;
                         $inventario->save();
+
+                        $registro = new RegistroMovimientos();
+                        $registro->id_variedad = $inventario->id_variedad;
+                        $registro->id_empresa = $inventario->id_empresa;
+                        $registro->bodega = $inventario->bodega;
+                        $registro->fecha = hoy();
+                        $registro->tipo = 'I';
+                        $registro->concepto = 'RE-INGRESO';
+                        $registro->numero = $ot->id_orden_trabajo;
+                        $registro->cantidad = $model->cantidad;
+                        $registro->id_usuario = session('id_usuario');
+                        $registro->descripcion = 'Re-Ingreso a traves de deshacer una OT en el menu Preproduccion';
+                        // campos de relacion
+                        $registro->id_inventario_recepcion = $inventario->id_inventario_recepcion;
+                        $registro->id_orden_trabajo = $ot->id_orden_trabajo;
+                        $registro->save();
 
                         $model->delete();
                     }
@@ -1159,10 +1192,10 @@ class PreproduccionController extends Controller
                         $sacar = 0;
                     }
 
-                    $model->disponibles = $disponible;
-                    $model->save();
-
                     if ($usados > 0) {
+                        $model->disponibles -= $usados;
+                        $model->save();
+
                         $new_salida = new SalidasRecepcion();
                         $new_salida->id_inventario_recepcion = $model->id_inventario_recepcion;
                         $new_salida->id_detalle_caja_proyecto = $det_caja->id_detalle_caja_proyecto;
@@ -1172,6 +1205,22 @@ class PreproduccionController extends Controller
                         $new_salida->basura = 0;
                         $new_salida->orden_flor_solida = $last_orden;
                         $new_salida->save();
+
+                        $registro = new RegistroMovimientos();
+                        $registro->id_variedad = $model->id_variedad;
+                        $registro->id_empresa = $model->id_empresa;
+                        $registro->bodega = $model->bodega;
+                        $registro->fecha = hoy();
+                        $registro->tipo = 'S';
+                        $registro->concepto = 'FLOR_SOLIDA';
+                        $registro->numero = $last_orden;
+                        $registro->cantidad = $usados;
+                        $registro->id_usuario = session('id_usuario');
+                        $registro->descripcion = 'Despacho de Flor Solida en el menu Preproduccion';
+                        // campos de relacion
+                        $registro->id_inventario_recepcion = $model->id_inventario_recepcion;
+                        $registro->id_detalle_caja_proyecto = $det_caja->id_detalle_caja_proyecto;
+                        $registro->save();
                     }
                 }
             }
@@ -1233,12 +1282,30 @@ class PreproduccionController extends Controller
                             $sacar = 0;
                         }
 
-                        $model->cantidad = $disponible;
-                        $model->save();
+                        if ($usados > 0) {
+                            $model->cantidad -= $usados;
+                            $model->save();
 
-                        $inventario = $model->inventario_recepcion;
-                        $inventario->disponibles += $usados;
-                        $inventario->save();
+                            $inventario = $model->inventario_recepcion;
+                            $inventario->disponibles += $usados;
+                            $inventario->save();
+
+                            $registro = new RegistroMovimientos();
+                            $registro->id_variedad = $inventario->id_variedad;
+                            $registro->id_empresa = $inventario->id_empresa;
+                            $registro->bodega = $inventario->bodega;
+                            $registro->fecha = hoy();
+                            $registro->tipo = 'I';
+                            $registro->concepto = 'RE_INGRESO';
+                            $registro->numero = $model->orden_flor_solida;
+                            $registro->cantidad = $usados;
+                            $registro->id_usuario = session('id_usuario');
+                            $registro->descripcion = 'Re-Ingreso a traves de devolver ' . $request->devolver . ' ramos SOLIDOS en el menu Preproduccion';
+                            // campos de relacion
+                            $registro->id_inventario_recepcion = $inventario->id_inventario_recepcion;
+                            $registro->id_detalle_caja_proyecto = $model->id_detalle_caja_proyecto;
+                            $registro->save();
+                        }
                     }
                 }
 
@@ -1358,7 +1425,7 @@ class PreproduccionController extends Controller
             $col = 0;
             setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'TOTALES');
             $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col + 5] . $row);
-            $col+=6;
+            $col += 6;
             setValueToCeldaExcel($sheet, $columnas[$col] . $row, $total_ramos);
             $col++;
             setValueToCeldaExcel($sheet, $columnas[$col] . $row, $total_ramos * $model->tallos_x_ramo);
@@ -1449,7 +1516,7 @@ class PreproduccionController extends Controller
                 $ot->longitud = $data->longitud;
                 $ot->tallos = $data->tallos;
                 $ot->id_usuario = session('id_usuario');
-                $ot->fecha = $proyecto->fecha;
+                $ot->fecha = $request->fecha;
                 $ot->id_variedad_dist = $data->pos_variedad;
                 $ot->unidades_dist = $data->pos_unidades;
                 $ot->total_tallos_dist = $data->pos_total_tallos;
@@ -1505,19 +1572,35 @@ class PreproduccionController extends Controller
                                 $sacar = 0;
                             }
 
-                            $model->disponibles = $disponible;
-                            $model->save();
-
                             if ($usados > 0) {
+                                $model->disponibles -= $usados;
+                                $model->save();
+
                                 $new_salida = new SalidasRecepcion();
                                 $new_salida->id_inventario_recepcion = $model->id_inventario_recepcion;
                                 $new_salida->id_detalle_caja_proyecto = $ot->id_detalle_caja_proyecto;
                                 $new_salida->id_ot_nacional = $ot->id_ot_nacional;
                                 $new_salida->id_variedad = $ot->id_variedad;
-                                $new_salida->fecha = $ot->fecha;
+                                $new_salida->fecha = $request->fecha;
                                 $new_salida->cantidad = $usados;
                                 $new_salida->basura = 0;
                                 $new_salida->save();
+
+                                $registro = new RegistroMovimientos();
+                                $registro->id_variedad = $model->id_variedad;
+                                $registro->id_empresa = $model->id_empresa;
+                                $registro->bodega = $model->bodega;
+                                $registro->fecha = $request->fecha;
+                                $registro->tipo = 'S';
+                                $registro->concepto = 'NACIONAL';
+                                $registro->numero = $next_numero;
+                                $registro->cantidad = $usados;
+                                $registro->id_usuario = session('id_usuario');
+                                $registro->descripcion = 'Despacho a traves de una OT NACIONAL en el menu Preproduccion';
+                                // campos de relacion
+                                $registro->id_inventario_recepcion = $model->id_inventario_recepcion;
+                                $registro->id_ot_nacional = $ot->id_ot_nacional;
+                                $registro->save();
                             }
                         }
                     }

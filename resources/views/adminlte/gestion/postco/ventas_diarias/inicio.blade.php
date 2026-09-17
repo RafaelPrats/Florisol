@@ -78,7 +78,7 @@
                                 Desde
                             </div>
                             <input type="date" name="desde_filtro" id="desde_filtro" class="form-control"
-                                style="width: 100%" value="{{ opDiasFecha('-', 7, hoy()) }}" min="2026-09-15">
+                                style="width: 100%" value="{{ opDiasFecha('-', 7, hoy()) }}" min="2026-09-17">
                         </div>
                     </td>
                     <td>
@@ -87,7 +87,7 @@
                                 Hasta
                             </div>
                             <input type="date" name="hasta_filtro" id="hasta_filtro" class="form-control"
-                                style="width: 100%" value="{{ opDiasFecha('-', 0, hoy()) }}" min="2026-09-15">
+                                style="width: 100%" value="{{ opDiasFecha('-', 0, hoy()) }}" min="2026-09-17">
                             <div class="input-group-btn">
                                 <button type="button" class="btn btn-yura_primary" onclick="listar_reporte()">
                                     <i class="fa fa-fw fa-search"></i>

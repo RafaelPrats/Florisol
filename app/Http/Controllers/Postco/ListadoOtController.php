@@ -83,6 +83,7 @@ class ListadoOtController extends Controller
 
     public function despachar_orden_trabajo(Request $request)
     {
+        dd('DESHABILITADO');
         DB::beginTransaction();
         try {
             $finca = getFincaActiva();

@@ -10,8 +10,10 @@ use yura\Modelos\CorreccionRecepcion;
 use yura\Modelos\IngresoRecepcion;
 use yura\Modelos\InventarioRecepcion;
 use yura\Modelos\Planta;
+use yura\Modelos\RegistroMovimientos;
 use yura\Modelos\SalidasRecepcion;
 use yura\Modelos\Submenu;
+use yura\Modelos\Variedad;
 
 class CorregirInventarioController extends Controller
 {
@@ -68,17 +70,29 @@ class CorregirInventarioController extends Controller
                 ->where('id_empresa', $finca)
                 ->where('bodega', $request->bodega)
                 ->where('fecha', '<=', hoy())
-                ->where('fecha', '>=', '2026-09-15')
+                ->where('fecha', '>=', '2026-09-17')
                 ->get()[0]->cantidad;
             $salida = DB::table('salidas_recepcion as s')
                 ->join('inventario_recepcion as i', 'i.id_inventario_recepcion', '=', 's.id_inventario_recepcion')
-                ->select(DB::raw('sum(s.cantidad + s.basura) as cantidad'))
+                ->select(DB::raw("
+        SUM(
+            s.cantidad +
+            CASE
+                WHEN s.orden_basura IS NOT NULL
+                     AND s.estado_orden_basura = 1
+                THEN s.basura
+                ELSE 0
+            END
+        ) as cantidad
+    "))
+
                 ->where('s.id_variedad', $item->id_variedad)
                 ->where('i.id_empresa', $finca)
                 ->where('i.bodega', $request->bodega)
                 ->where('s.fecha', '<=', hoy())
-                ->where('s.fecha', '>=', '2026-09-15')
-                ->where('s.fecha_registro', '>=', '2026-09-15')
+                ->where('s.fecha', '>=', '2026-09-17')
+                ->where('s.fecha_registro', '>=', '2026-09-17')
+
                 ->get()[0]->cantidad;
             $saldo = $ingreso - $salida;
             $item->saldo = $saldo;
@@ -99,6 +113,8 @@ class CorregirInventarioController extends Controller
             if ($codigo != '' && $codigo->valor == $request->codigo) {
                 $finca = getFincaActiva();
                 foreach (json_decode($request->data) as $data) {
+                    $variedad = Variedad::find($data->id_variedad);
+
                     $correccion = new CorreccionRecepcion();
                     $correccion->id_empresa = $finca;
                     $correccion->fecha = $request->fecha;
@@ -139,6 +155,7 @@ class CorregirInventarioController extends Controller
                         if ($inventario != '') {
                             $inventario->disponibles += $data->diferencia;
                             $inventario->save();
+                            $id_inventario = $inventario->id_inventario_recepcion;
                         } else {
                             $model_inventario = InventarioRecepcion::where('id_variedad', $data->id_variedad)
                                 ->where('fecha', $request->fecha)
@@ -158,11 +175,31 @@ class CorregirInventarioController extends Controller
                                 $model_inventario->disponibles = $data->diferencia;
                                 $model_inventario->id_empresa = $finca;
                                 $model_inventario->save();
+                                $id_inventario = DB::table('inventario_recepcion')
+                                    ->select(DB::raw('max(id_inventario_recepcion) as id'))
+                                    ->get()[0]->id;
                             } else {
                                 $model_inventario->disponibles += $data->diferencia;
                                 $model_inventario->save();
+                                $id_inventario = $model_inventario->id_inventario_recepcion;
                             }
                         }
+
+                        $registro = new RegistroMovimientos();
+                        $registro->id_variedad = $data->id_variedad;
+                        $registro->id_empresa = $finca;
+                        $registro->bodega = $request->bodega;
+                        $registro->fecha = $request->fecha;
+                        $registro->tipo = 'I';
+                        $registro->concepto = 'CORRECCION';
+                        $registro->numero = $request->orden;
+                        $registro->cantidad = $data->diferencia;
+                        $registro->id_usuario = session('id_usuario');
+                        $registro->descripcion = 'Ingreso a traves de la Correccion de inventario';
+                        // campos de relacion
+                        $registro->id_inventario_recepcion = $id_inventario;
+                        $registro->id_correccion_recepcion = $correccion->id_correccion_recepcion;
+                        $registro->save();
                     } else {    // salida
                         $salidas = new SalidasRecepcion();
                         $salidas->id_inventario_recepcion = $inventario->id_inventario_recepcion;
@@ -173,8 +210,32 @@ class CorregirInventarioController extends Controller
                         $salidas->id_correccion_recepcion = $correccion->id_correccion_recepcion;
                         $salidas->save();
 
-                        $inventario->disponibles -= abs($data->diferencia);
-                        $inventario->save();
+                        if ($inventario != '' && $inventario->disponibles >= abs($data->diferencia)) {
+                            $inventario->disponibles -= abs($data->diferencia);
+                            $inventario->save();
+
+                            $registro = new RegistroMovimientos();
+                            $registro->id_variedad = $data->id_variedad;
+                            $registro->id_empresa = $finca;
+                            $registro->bodega = $request->bodega;
+                            $registro->fecha = $request->fecha;
+                            $registro->tipo = 'S';
+                            $registro->concepto = 'CORRECCION';
+                            $registro->numero = $request->orden;
+                            $registro->cantidad = abs($data->diferencia);
+                            $registro->id_usuario = session('id_usuario');
+                            $registro->descripcion = 'Salida a traves de la Correccion de inventario';
+                            // campos de relacion
+                            $registro->id_inventario_recepcion = $inventario->id_inventario_recepcion;
+                            $registro->id_correccion_recepcion = $correccion->id_correccion_recepcion;
+                            $registro->save();
+                        } else {
+                            DB::rollBack();
+                            $success = false;
+                            $msg = '<div class="alert alert-danger text-center">' .
+                                '<h3>Ya no hay flor disponible de ' . $variedad->nombre . '. Refresque el inventario e intentelo de nuevo</h3>' .
+                                '</div>';
+                        }
                     }
                 }
 

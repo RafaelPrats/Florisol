@@ -9,6 +9,7 @@ use yura\Modelos\CodigoAutorizacion;
 use yura\Modelos\IngresoRecepcion;
 use yura\Modelos\InventarioRecepcion;
 use yura\Modelos\Planta;
+use yura\Modelos\RegistroMovimientos;
 use yura\Modelos\Submenu;
 
 class ReporteIngresosController extends Controller
@@ -239,6 +240,8 @@ class ReporteIngresosController extends Controller
         try {
             DB::beginTransaction();
             $model = IngresoRecepcion::find($request->id);
+            $antes = $model->tallos;
+            $ahora = $request->tallos;
             $diferencia = $request->tallos - $model->tallos;
             $model->tallos = $request->tallos;
             $model->save();
@@ -267,8 +270,26 @@ class ReporteIngresosController extends Controller
                                 $sacar = 0;
                             }
 
-                            $model_inventario->disponibles = $disponible;
-                            $model_inventario->save();
+                            if ($usados > 0) {
+                                $model_inventario->disponibles -= $usados;
+                                $model_inventario->save();
+
+                                $registro = new RegistroMovimientos();
+                                $registro->id_variedad = $model_inventario->id_variedad;
+                                $registro->id_empresa = $model_inventario->id_empresa;
+                                $registro->bodega = $model_inventario->bodega;
+                                $registro->fecha = hoy();
+                                $registro->tipo = 'S';
+                                $registro->concepto = 'MODIFICACION-COMPRA';
+                                $registro->numero = $model->packing;
+                                $registro->cantidad = $usados;
+                                $registro->id_usuario = session('id_usuario');
+                                $registro->descripcion = 'Salida de flor al MODIFICAR una COMPRA en el menu Reporte de Ingresos. Se cambio de: ' . $antes . ', a: ' . $ahora;
+                                // campos de relacion
+                                $registro->id_inventario_recepcion = $model_inventario->id_inventario_recepcion;
+                                $registro->id_proveedor = $model->id_proveedor;
+                                $registro->save();
+                            }
                         }
                     }
                     if ($sacar > 0) {
@@ -305,10 +326,30 @@ class ReporteIngresosController extends Controller
                         $model_inventario->disponibles = abs($diferencia);
                         $model_inventario->id_empresa = $model->id_empresa;
                         $model_inventario->save();
+                        $id_inventario = DB::table('inventario_recepcion')
+                            ->select(DB::raw('max(id_inventario_recepcion) as id'))
+                            ->get()[0]->id;
                     } else {
                         $model_inventario->disponibles += abs($diferencia);
                         $model_inventario->save();
+                        $id_inventario = $model_inventario->id_inventario_recepcion;
                     }
+
+                    $registro = new RegistroMovimientos();
+                    $registro->id_variedad = $model_inventario->id_variedad;
+                    $registro->id_empresa = $model_inventario->id_empresa;
+                    $registro->bodega = $model_inventario->bodega;
+                    $registro->fecha = hoy();
+                    $registro->tipo = 'I';
+                    $registro->concepto = 'MODIFICACION-COMPRA';
+                    $registro->numero = $model->packing;
+                    $registro->cantidad = abs($diferencia);
+                    $registro->id_usuario = session('id_usuario');
+                    $registro->descripcion = 'Ingreso de flor al MODIFICAR una COMPRA en el menu Reporte de Ingresos. Se cambio de: ' . $antes . ', a: ' . $ahora;
+                    // campos de relacion
+                    $registro->id_inventario_recepcion = $id_inventario;
+                    $registro->id_proveedor = $model->id_proveedor;
+                    $registro->save();
                 }
             }
 

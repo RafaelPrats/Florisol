@@ -103,7 +103,7 @@
                 </div>
             </th>
             <th class="text-center" style="border-color: #9d9d9d">
-                @if ($item->fecha >= '2026-09-15')
+                @if ($item->fecha >= '2026-09-17')
                     <div class="input-group">
                         <input type="text" id="devolver_ramos_{{ $item->id_detalle_caja_proyecto }}"
                             class="text-center" max="{{ $item->armados }}" min="0" value="{{ $item->armados }}"

@@ -77,7 +77,7 @@
                                 Fecha
                             </div>
                             <input type="date" name="fecha_filtro" id="fecha_filtro" class="form-control"
-                                style="width: 100%" value="{{ opDiasFecha('-', 0, hoy()) }}" min="2026-09-15">
+                                style="width: 100%" value="{{ opDiasFecha('-', 0, hoy()) }}" min="2026-09-17">
                             <div class="input-group-btn">
                                 <button type="button" class="btn btn-yura_primary" onclick="listar_reporte()">
                                     <i class="fa fa-fw fa-search"></i>

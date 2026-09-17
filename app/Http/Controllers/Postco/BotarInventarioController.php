@@ -9,6 +9,7 @@ use yura\Modelos\CodigoAutorizacion;
 use yura\Modelos\InventarioRecepcion;
 use yura\Modelos\MotivoBaja;
 use yura\Modelos\Planta;
+use yura\Modelos\RegistroMovimientos;
 use yura\Modelos\SalidasRecepcion;
 use yura\Modelos\Submenu;
 
@@ -375,6 +376,7 @@ class BotarInventarioController extends Controller
             $codigo = CodigoAutorizacion::where('nombre', 'desechar_orden')
                 ->first();
             if ($codigo != '' && $codigo->valor == $request->codigo) {
+                $finca = getFincaActiva();
                 $query = SalidasRecepcion::where('orden_basura', $request->orden)->where('estado_orden_basura', 0)->get();
                 foreach ($query as $q) {
                     $inventario = $q->inventario_recepcion;
@@ -384,6 +386,21 @@ class BotarInventarioController extends Controller
 
                         $q->estado_orden_basura = 1;
                         $q->save();
+
+                        $registro = new RegistroMovimientos();
+                        $registro->id_variedad = $inventario->id_variedad;
+                        $registro->id_empresa = $inventario->id_empresa;
+                        $registro->bodega = $inventario->bodega;
+                        $registro->fecha = hoy();
+                        $registro->tipo = 'S';
+                        $registro->concepto = 'FLOR_BAJA';
+                        $registro->numero = $q->orden_basura;
+                        $registro->cantidad = $q->basura;
+                        $registro->id_usuario = session('id_usuario');
+                        $registro->descripcion = 'Salida a traves del formulario de Flor de Baja';
+                        // campos de relacion
+                        $registro->id_inventario_recepcion = $inventario->id_inventario_recepcion;
+                        $registro->save();
                     } else {
                         $query_inventarios = InventarioRecepcion::where('id_variedad', $inventario->id_variedad)
                             ->where('longitud', $inventario->longitud)
@@ -413,10 +430,10 @@ class BotarInventarioController extends Controller
                                             $sacar = 0;
                                         }
 
-                                        $model->disponibles = $disponible;
-                                        $model->save();
-
                                         if ($usados > 0) {
+                                            $model->disponibles -= $usados;
+                                            $model->save();
+
                                             $salidas = new SalidasRecepcion();
                                             $salidas->id_inventario_recepcion = $model->id_inventario_recepcion;
                                             $salidas->id_variedad = $model->id_variedad;
@@ -427,6 +444,21 @@ class BotarInventarioController extends Controller
                                             $salidas->orden_basura = $q->orden_basura;
                                             $salidas->estado_orden_basura = 1;
                                             $salidas->save();
+
+                                            $registro = new RegistroMovimientos();
+                                            $registro->id_variedad = $model->id_variedad;
+                                            $registro->id_empresa = $model->id_empresa;
+                                            $registro->bodega = $model->bodega;
+                                            $registro->fecha = hoy();
+                                            $registro->tipo = 'S';
+                                            $registro->concepto = 'FLOR_BAJA';
+                                            $registro->numero = $q->orden_basura;
+                                            $registro->cantidad = $usados;
+                                            $registro->id_usuario = session('id_usuario');
+                                            $registro->descripcion = 'Salida a traves del formulario de Flor de Baja. (se tuvo que completar con otro inventario)';
+                                            // campos de relacion
+                                            $registro->id_inventario_recepcion = $model->id_inventario_recepcion;
+                                            $registro->save();
                                         }
                                     }
                                 }

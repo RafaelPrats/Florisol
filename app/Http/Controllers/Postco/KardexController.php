@@ -29,7 +29,7 @@ class KardexController extends Controller
     {
         $finca = getFincaActiva();
         $variedad = Variedad::find($request->variedad);
-        $desde = $request->desde >= '2026-09-15' ? $request->desde : '2026-09-15';
+        $desde = $request->desde >= '2026-09-17' ? $request->desde : '2026-09-17';
         $hasta = $request->hasta;
         // Calcular saldo inicial
         $ingreso_inicial = DB::table('ingreso_recepcion')
@@ -38,8 +38,8 @@ class KardexController extends Controller
             ->where('id_empresa', $finca)
             ->where('bodega', $request->bodega)
             ->where('fecha', '<', $desde)
-            ->where('fecha', '>=', '2026-09-15')
-            ->where('fecha_registro', '>=', '2026-09-15 00:00:00')
+            ->where('fecha', '>=', '2026-09-17')
+            ->where('fecha_registro', '>=', '2026-09-17 00:00:00')
             ->get()[0]->cantidad;
         $salida_inicial = DB::table('salidas_recepcion as s')
             ->join('inventario_recepcion as i', 'i.id_inventario_recepcion', '=', 's.id_inventario_recepcion')
@@ -48,8 +48,8 @@ class KardexController extends Controller
             ->where('i.id_empresa', $finca)
             ->where('i.bodega', $request->bodega)
             ->where('s.fecha', '<', $desde)
-            ->where('s.fecha', '>=', '2026-09-15')
-            ->where('s.fecha_registro', '>=', '2026-09-15 00:00:00')
+            ->where('s.fecha', '>=', '2026-09-17')
+            ->where('s.fecha_registro', '>=', '2026-09-17 00:00:00')
             ->get()[0]->cantidad;
         $saldo_inicial = $ingreso_inicial - $salida_inicial;
         // INGRESOS

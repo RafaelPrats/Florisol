@@ -51,7 +51,7 @@ class ReporteInventarioDiarioController extends Controller
             ->orderBy('p.nombre')
             ->orderBy('v.nombre')
             ->get();
-        $fecha = $request->fecha >= '2026-09-15' ? $request->fecha : '2026-09-15';
+        $fecha = $request->fecha >= '2026-09-17' ? $request->fecha : '2026-09-17';
         $fecha = opDiasFecha('+', 1, $fecha);
 
         foreach ($variedades as $var) {
@@ -61,17 +61,27 @@ class ReporteInventarioDiarioController extends Controller
                 ->where('id_empresa', $finca)
                 ->where('bodega', $request->bodega)
                 ->where('fecha', '<', $fecha)
-                ->where('fecha', '>=', '2026-09-15')
+                ->where('fecha', '>=', '2026-09-17')
                 ->get()[0]->cantidad;
             $salida = DB::table('salidas_recepcion as s')
                 ->join('inventario_recepcion as i', 'i.id_inventario_recepcion', '=', 's.id_inventario_recepcion')
-                ->select(DB::raw('sum(s.cantidad + s.basura) as cantidad'))
+                ->select(DB::raw("
+        SUM(
+            s.cantidad +
+            CASE
+                WHEN s.orden_basura IS NOT NULL
+                     AND s.estado_orden_basura = 1
+                THEN s.basura
+                ELSE 0
+            END
+        ) as cantidad
+    "))
                 ->where('s.id_variedad', $var->id_variedad)
                 ->where('i.id_empresa', $finca)
                 ->where('i.bodega', $request->bodega)
                 ->where('s.fecha', '<', $fecha)
-                ->where('s.fecha', '>=', '2026-09-15')
-                ->where('s.fecha_registro', '>=', '2026-09-15')
+                ->where('s.fecha', '>=', '2026-09-17')
+                ->where('s.fecha_registro', '>=', '2026-09-17')
                 ->get()[0]->cantidad;
             $saldo = $ingreso - $salida;
 

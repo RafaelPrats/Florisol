@@ -69,7 +69,7 @@
     }
 
     function update_compra(input) {
-        if (input.val() != input.data('original')) {
+        if (input.val() != input.data('original') && input.val() >= 0) {
             texto =
                 '<div class="alert alert-info text-center"><h3>¿Esta seguro de <b>MODIFICAR</b> la compra?</h3>' +
                 '</div>';

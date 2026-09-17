@@ -11,6 +11,7 @@ use yura\Modelos\DetalleApiStoreCajas;
 use yura\Modelos\IngresoRecepcion;
 use yura\Modelos\InventarioRecepcion;
 use yura\Modelos\Planta;
+use yura\Modelos\RegistroMovimientos;
 use yura\Modelos\SalidasRecepcion;
 use yura\Modelos\Segmento;
 use yura\Modelos\Submenu;
@@ -204,10 +205,14 @@ class InventarioRecepcionController extends Controller
                     $model_inventario->disponibles = $data->ramos * $data->tallos_x_ramo;
                     $model_inventario->id_empresa = $finca;
                     $model_inventario->save();
+                    $id_inventario = DB::table('inventario_recepcion')
+                        ->select(DB::raw('max(id_inventario_recepcion) as id'))
+                        ->get()[0]->id;
                 } else {
                     $model_inventario->ramos += $data->ramos;
                     $model_inventario->disponibles += $data->ramos * $data->tallos_x_ramo;
                     $model_inventario->save();
+                    $id_inventario = $model_inventario->id_inventario_recepcion;
                 }
 
                 $ingreso = new IngresoRecepcion();
@@ -224,6 +229,22 @@ class InventarioRecepcionController extends Controller
                 $ingreso->id_empresa = $finca;
                 $ingreso->tallos = $data->tallos_x_ramo * $data->ramos;
                 $ingreso->save();
+
+                $registro = new RegistroMovimientos();
+                $registro->id_variedad = $data->variedad;
+                $registro->id_empresa = $finca;
+                $registro->bodega = $data->bodega;
+                $registro->fecha = $request->fecha;
+                $registro->tipo = 'I';
+                $registro->concepto = 'COMPRA';
+                $registro->numero = $request->packing;
+                $registro->cantidad = $data->tallos_x_ramo * $data->ramos;
+                $registro->id_usuario = session('id_usuario');
+                $registro->descripcion = 'Compra a traves del formulario de compras, en el menu Ingreso Inventario';
+                // campos de relacion
+                $registro->id_inventario_recepcion = $id_inventario;
+                $registro->id_proveedor = $request->id_proveedor;
+                $registro->save();
             }
 
             $success = true;
@@ -274,10 +295,14 @@ class InventarioRecepcionController extends Controller
                         $model_inventario->disponibles = $data->ramos_ventas * $model->tallos_x_ramo;
                         $model_inventario->id_empresa = $model->id_empresa;
                         $model_inventario->save();
+                        $id_inventario = DB::table('inventario_recepcion')
+                            ->select(DB::raw('max(id_inventario_recepcion) as id'))
+                            ->get()[0]->id;
                     } else {
                         $model_inventario->ramos += $data->ramos_ventas;
                         $model_inventario->disponibles += $data->ramos_ventas * $model->tallos_x_ramo;
                         $model_inventario->save();
+                        $id_inventario = $model_inventario->id_inventario_recepcion;
                     }
 
                     $ingreso = new IngresoRecepcion();
@@ -292,6 +317,22 @@ class InventarioRecepcionController extends Controller
                     $ingreso->id_empresa = $model_inventario->id_empresa;
                     $ingreso->tallos = $model_inventario->tallos_x_ramo * $data->ramos_ventas;
                     $ingreso->save();
+
+                    $registro = new RegistroMovimientos();
+                    $registro->id_variedad = $model_inventario->id_variedad;
+                    $registro->id_empresa = $model_inventario->id_empresa;
+                    $registro->bodega = 'V';
+                    $registro->fecha = $request->fecha;
+                    $registro->tipo = 'I';
+                    $registro->concepto = 'INTERNO';
+                    $registro->numero = $detApi->id_api_store_cajas;
+                    $registro->cantidad = $model_inventario->tallos_x_ramo * $data->ramos_ventas;
+                    $registro->id_usuario = session('id_usuario');
+                    $registro->descripcion = 'Ingreso a traves de packings Internos, en el menu Ingreso Inventario';
+                    // campos de relacion
+                    $registro->id_inventario_recepcion = $id_inventario;
+                    $registro->id_api_store_cajas = $detApi->id_api_store_cajas;
+                    $registro->save();
                 }
 
                 if ($data->ramos_produccion > 0) {
@@ -313,10 +354,14 @@ class InventarioRecepcionController extends Controller
                         $model_inventario->disponibles = $data->ramos_produccion * $model->tallos_x_ramo;
                         $model_inventario->id_empresa = $model->id_empresa;
                         $model_inventario->save();
+                        $id_inventario = DB::table('inventario_recepcion')
+                            ->select(DB::raw('max(id_inventario_recepcion) as id'))
+                            ->get()[0]->id;
                     } else {
                         $model_inventario->ramos += $data->ramos_produccion;
                         $model_inventario->disponibles += $data->ramos_produccion * $model->tallos_x_ramo;
                         $model_inventario->save();
+                        $id_inventario = $model_inventario->id_inventario_recepcion;
                     }
 
                     $ingreso = new IngresoRecepcion();
@@ -331,6 +376,22 @@ class InventarioRecepcionController extends Controller
                     $ingreso->id_empresa = $model_inventario->id_empresa;
                     $ingreso->tallos = $model_inventario->tallos_x_ramo * $data->ramos_produccion;
                     $ingreso->save();
+
+                    $registro = new RegistroMovimientos();
+                    $registro->id_variedad = $model_inventario->id_variedad;
+                    $registro->id_empresa = $model_inventario->id_empresa;
+                    $registro->bodega = 'P';
+                    $registro->fecha = $request->fecha;
+                    $registro->tipo = 'I';
+                    $registro->concepto = 'INTERNO';
+                    $registro->numero = $detApi->id_api_store_cajas;
+                    $registro->cantidad = $model_inventario->tallos_x_ramo * $data->ramos_produccion;
+                    $registro->id_usuario = session('id_usuario');
+                    $registro->descripcion = 'Ingreso a traves de packings Internos, en el menu Ingreso Inventario';
+                    // campos de relacion
+                    $registro->id_inventario_recepcion = $id_inventario;
+                    $registro->id_api_store_cajas = $detApi->id_api_store_cajas;
+                    $registro->save();
                 }
 
                 $detApi->recibido += $data->ramos_ventas + $data->ramos_produccion;
@@ -359,6 +420,7 @@ class InventarioRecepcionController extends Controller
 
     public function update_inventario(Request $request)
     {
+        dd('DESHABILITADO');
         try {
             DB::beginTransaction();
             $codigo = CodigoAutorizacion::where('nombre', 'modificar_inventario')
@@ -423,6 +485,7 @@ class InventarioRecepcionController extends Controller
 
     public function botar_inventario(Request $request)
     {
+        dd('DESHABILITADO');
         try {
             DB::beginTransaction();
             $model = InventarioRecepcion::find($request->id);
@@ -480,64 +543,111 @@ class InventarioRecepcionController extends Controller
         try {
             DB::beginTransaction();
             $invOriginal = InventarioRecepcion::find($request->id_inventario);
-            $invOriginal->longitud = $request->original_longitud;
-            $invOriginal->tallos_x_ramo = $request->original_tallos_x_ramo;
-            $diferencia_tallos = $invOriginal->disponibles - $request->original_disponibles;
-            $invOriginal->ramos = $request->original_ramos;
-            $invOriginal->disponibles = $request->original_disponibles;
-            $invOriginal->bodega = $request->original_bodega;
-            $invOriginal->save();
+            if ($invOriginal->disponibles >= $request->mover_tallos) {
+                // salida
+                $invOriginal->disponibles -= $request->mover_tallos;
+                $invOriginal->save();
 
-            $salidas = new SalidasRecepcion();
-            $salidas->id_inventario_recepcion = $invOriginal->id_inventario_recepcion;
-            $salidas->id_variedad = $invOriginal->id_variedad;
-            $salidas->cambio_bodega = $request->mover_bodega;
-            $salidas->cantidad = $diferencia_tallos;
-            $salidas->basura = 0;
-            $salidas->fecha = hoy();
-            $salidas->save();
+                $last_orden = DB::table('salidas_recepcion as s')
+                    ->join('inventario_recepcion as i', 'i.id_inventario_recepcion', '=', 's.id_inventario_recepcion')
+                    ->select(DB::raw('max(s.orden_movimiento) as orden'))
+                    ->where('i.id_empresa', $invOriginal->id_empresa)
+                    ->get()[0]->orden;
+                $next_orden = $last_orden + 1;
 
-            $model_inventario = InventarioRecepcion::where('id_variedad', $invOriginal->id_variedad)
-                ->where('fecha', $invOriginal->fecha)
-                ->where('tallos_x_ramo', $request->mover_tallos_x_ramo)
-                ->where('longitud', $request->mover_longitud)
-                ->where('id_empresa', $invOriginal->id_empresa)
-                ->where('bodega', $request->mover_bodega)
-                ->first();
-            if ($model_inventario == '') {
-                $model_inventario = new InventarioRecepcion();
-                $model_inventario->id_variedad = $invOriginal->id_variedad;
-                $model_inventario->fecha = $invOriginal->fecha;
-                $model_inventario->tallos_x_ramo = $request->mover_tallos_x_ramo;
-                $model_inventario->ramos = $request->mover_ramos;
-                $model_inventario->bodega = $request->mover_bodega;
-                $model_inventario->longitud = $request->mover_longitud;
-                $model_inventario->disponibles = $request->mover_disponibles;
-                $model_inventario->id_empresa = $invOriginal->id_empresa;
-                $model_inventario->save();
+                $salidas = new SalidasRecepcion();
+                $salidas->id_inventario_recepcion = $invOriginal->id_inventario_recepcion;
+                $salidas->id_variedad = $invOriginal->id_variedad;
+                $salidas->cambio_bodega = $request->mover_bodega;
+                $salidas->cantidad = $request->mover_tallos;
+                $salidas->basura = 0;
+                $salidas->fecha = $request->mover_fecha;
+                $salidas->orden_movimiento = $next_orden;
+                $salidas->save();
+
+                $registro = new RegistroMovimientos();
+                $registro->id_variedad = $invOriginal->id_variedad;
+                $registro->id_empresa = $invOriginal->id_empresa;
+                $registro->bodega = $invOriginal->bodega;
+                $registro->fecha = $request->mover_fecha;
+                $registro->tipo = 'S';
+                $registro->concepto = 'MOVIMIENTO';
+                $registro->numero = $next_orden;
+                $registro->cantidad = $request->mover_tallos;
+                $registro->id_usuario = session('id_usuario');
+                $registro->descripcion = 'Salida a traves del formulario de movimiento entre bodegas, en el menu Ingreso Inventario: De ' . $invOriginal->bodega . ' a ' . $request->mover_bodega;
+                // campos de relacion
+                $registro->id_inventario_recepcion = $invOriginal->id_inventario_recepcion;
+                $registro->save();
+
+                // ingreso
+                $model_inventario = InventarioRecepcion::where('id_variedad', $invOriginal->id_variedad)
+                    ->where('fecha', $invOriginal->fecha)
+                    ->where('tallos_x_ramo', $invOriginal->tallos_x_ramo)
+                    ->where('longitud', $invOriginal->longitud)
+                    ->where('id_empresa', $invOriginal->id_empresa)
+                    ->where('bodega', $request->mover_bodega)
+                    ->first();
+                if ($model_inventario == '') {
+                    $model_inventario = new InventarioRecepcion();
+                    $model_inventario->id_variedad = $invOriginal->id_variedad;
+                    $model_inventario->fecha = $invOriginal->fecha;
+                    $model_inventario->tallos_x_ramo = $invOriginal->tallos_x_ramo;
+                    $model_inventario->ramos = 1;
+                    $model_inventario->bodega = $request->mover_bodega;
+                    $model_inventario->longitud = $invOriginal->longitud;
+                    $model_inventario->disponibles = $request->mover_tallos;
+                    $model_inventario->id_empresa = $invOriginal->id_empresa;
+                    $model_inventario->save();
+                    $id_inventario = DB::table('inventario_recepcion')
+                        ->select(DB::raw('max(id_inventario_recepcion) as id'))
+                        ->get()[0]->id;
+                } else {
+                    $model_inventario->disponibles += $request->mover_tallos;
+                    $model_inventario->save();
+                    $id_inventario = $model_inventario->id_inventario_recepcion;
+                }
+
+                $ingreso = new IngresoRecepcion();
+                $ingreso->id_variedad = $invOriginal->id_variedad;
+                $ingreso->fecha_registro = date('Y-m-d H:i:s');
+                $ingreso->fecha = $request->mover_fecha;
+                $ingreso->tallos_x_ramo = $invOriginal->tallos_x_ramo;
+                $ingreso->ramos = 1;
+                $ingreso->bodega = $request->mover_bodega;
+                $ingreso->longitud = $invOriginal->longitud;
+                $ingreso->id_empresa = $invOriginal->id_empresa;
+                $ingreso->tallos = $request->mover_tallos;
+                $ingreso->cambio_bodega = $invOriginal->bodega;
+                $ingreso->orden_movimiento = $next_orden;
+                $ingreso->save();
+
+                $registro = new RegistroMovimientos();
+                $registro->id_variedad = $model_inventario->id_variedad;
+                $registro->id_empresa = $model_inventario->id_empresa;
+                $registro->bodega = $model_inventario->bodega;
+                $registro->fecha = $request->mover_fecha;
+                $registro->tipo = 'I';
+                $registro->concepto = 'MOVIMIENTO';
+                $registro->numero = $next_orden;
+                $registro->cantidad = $request->mover_tallos;
+                $registro->id_usuario = session('id_usuario');
+                $registro->descripcion = 'Salida a traves del formulario de movimiento entre bodegas, en el menu Ingreso Inventario: De ' . $invOriginal->bodega . ' a ' . $request->mover_bodega;
+                // campos de relacion
+                $registro->id_inventario_recepcion = $id_inventario;
+                $registro->save();
+
+                $success = true;
+                $msg = 'Se ha <strong>GRABADO</strong> la informacion correctamente';
+
+                DB::commit();
             } else {
-                $model_inventario->ramos += $request->mover_ramos;
-                $model_inventario->disponibles += $request->mover_disponibles;
-                $model_inventario->save();
+                DB::rollBack();
+                $success = false;
+                $msg = '<div class="alert alert-danger text-center">' .
+                    '<h3>No hay flor disponible para mover del inventario original</h3>' .
+                    '</div>';
             }
-
-            $ingreso = new IngresoRecepcion();
-            $ingreso->id_variedad = $model_inventario->id_variedad;
-            $ingreso->fecha_registro = date('Y-m-d H:i:s');
-            $ingreso->fecha = hoy();
-            $ingreso->tallos_x_ramo = $request->mover_tallos_x_ramo;
-            $ingreso->ramos = $request->mover_ramos;
-            $ingreso->bodega = $model_inventario->bodega;
-            $ingreso->longitud = $model_inventario->longitud;
-            $ingreso->id_empresa = $model_inventario->id_empresa;
-            $ingreso->tallos = $request->mover_disponibles;
-            $ingreso->cambio_bodega = $request->original_bodega;
-            $ingreso->save();
-
-            $success = true;
-            $msg = 'Se ha <strong>GRABADO</strong> la informacion correctamente';
-
-            DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
             $success = false;

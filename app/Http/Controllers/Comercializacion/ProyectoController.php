@@ -19,6 +19,7 @@ use yura\Modelos\InventarioRecepcion;
 use yura\Modelos\OrdenTrabajo;
 use yura\Modelos\OtNacional;
 use yura\Modelos\Proyecto;
+use yura\Modelos\RegistroMovimientos;
 use yura\Modelos\RenovarOrdenFija;
 use yura\Modelos\SalidasRecepcion;
 use yura\Modelos\Segmento;
@@ -322,7 +323,7 @@ class ProyectoController extends Controller
 
                     $variedad = $detalle->variedad;
                     if ($request->liquidar && !$variedad->receta) {
-                        if ($fecha >= '2026-09-15') {
+                        if ($fecha >= '2026-09-17') {
                             // DESPACHAR SOLIDOS
                             $return = $this->despachar_ramos_solidos($detalle, $variedad, $proyecto);
                             if ($return['success'] == false) {
@@ -446,7 +447,7 @@ class ProyectoController extends Controller
         $sacar = $caja_proyecto->cantidad * $det_caja->ramos_x_caja * $det_caja->tallos_x_ramo;
         if ($sacar <= $total_inventario) {
             foreach ($inventarios as $inv) {
-                if ($sacar >= 0) {
+                if ($sacar > 0) {
                     $usados = 0;
                     $disponible = $inv->disponibles;
                     if ($sacar >= $disponible) {
@@ -459,12 +460,10 @@ class ProyectoController extends Controller
                         $sacar = 0;
                     }
 
-                    //dd($usados, $disponible, $inv->disponibles);
-
-                    $inv->disponibles = $disponible > 0 ? $disponible : 0;
-                    $inv->save();
-
                     if ($usados > 0) {
+                        $inv->disponibles -= $usados;
+                        $inv->save();
+
                         $new_salida = new SalidasRecepcion();
                         $new_salida->id_inventario_recepcion = $inv->id_inventario_recepcion;
                         $new_salida->id_detalle_caja_proyecto = $det_caja->id_detalle_caja_proyecto;
@@ -474,6 +473,22 @@ class ProyectoController extends Controller
                         $new_salida->basura = 0;
                         $new_salida->orden_flor_solida = $last_orden;
                         $new_salida->save();
+
+                        $registro = new RegistroMovimientos();
+                        $registro->id_variedad = $det_caja->id_variedad;
+                        $registro->id_empresa = $finca;
+                        $registro->bodega = $bodega;
+                        $registro->fecha = hoy();
+                        $registro->tipo = 'I';
+                        $registro->concepto = 'FLOR_SOLIDA';
+                        $registro->numero = $last_orden;
+                        $registro->cantidad = $usados;
+                        $registro->id_usuario = session('id_usuario');
+                        $registro->descripcion = 'Despacho a traves del boton GRABAR Y DESPACHAR del formulario de pedidos';
+                        // campos de relacion
+                        $registro->id_inventario_recepcion = $inv->id_inventario_recepcion;
+                        $registro->id_detalle_caja_proyecto = $det_caja->id_detalle_caja_proyecto;
+                        $registro->save();
                     }
                 }
             }
