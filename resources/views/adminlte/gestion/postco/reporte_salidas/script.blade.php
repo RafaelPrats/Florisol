@@ -16,4 +16,15 @@
             $('#div_listado').html(retorno);
         });
     }
+
+    function exportar_reporte() {
+        $.LoadingOverlay('show');
+        window.open('{{ url('reporte_salidas/exportar_reporte') }}?planta=' + $("#planta_filtro").val() +
+            '&variedad=' + $("#variedad_filtro").val() +
+            '&bodega=' + $("#bodega_filtro").val() +
+            '&desde=' + $("#desde_filtro").val() +
+            '&hasta=' + $("#hasta_filtro").val() +
+            '&bodega=' + $("#bodega_filtro").val(), '_blank');
+        $.LoadingOverlay('hide');
+    }
 </script>

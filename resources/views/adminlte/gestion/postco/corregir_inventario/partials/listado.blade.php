@@ -48,11 +48,15 @@
                         style="border-color: #9d9d9d; background-color: {{ $item->disponibles != $item->saldo ? '#ffe283' : 'white' }}">
                         {{ $item->disponibles }}
                     </th>
-                    <th style="border-color: #9d9d9d">
-                        <input type="number" style="width: 100%; background-color: #ffd993"
-                            class="text-center input_corregir" min="0"
-                            id="tallos_corregir_{{ $item->id_variedad }}" data-id_variedad="{{ $item->id_variedad }}"
-                            data-disponibles="{{ $item->disponibles }}">
+                    <th class="text-center" style="border-color: #9d9d9d">
+                        @if ($item->disponibles == $item->saldo)
+                            <input type="number" style="width: 100%; background-color: #ffd993"
+                                class="text-center input_corregir" min="0"
+                                id="tallos_corregir_{{ $item->id_variedad }}"
+                                data-id_variedad="{{ $item->id_variedad }}" data-disponibles="{{ $item->disponibles }}">
+                        @else
+                            <span class="error">REVISAR</span>
+                        @endif
                     </th>
                 </tr>
             @endforeach

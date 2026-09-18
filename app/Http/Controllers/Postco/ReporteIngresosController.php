@@ -4,6 +4,8 @@ namespace yura\Http\Controllers\Postco;
 
 use DB;
 use Illuminate\Http\Request;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use yura\Http\Controllers\Controller;
 use yura\Modelos\CodigoAutorizacion;
 use yura\Modelos\IngresoRecepcion;
@@ -370,5 +372,436 @@ class ReporteIngresosController extends Controller
             'success' => $success,
             'mensaje' => $msg,
         ];
+    }
+
+    public function exportar_reporte(Request $request)
+    {
+        $spread = new Spreadsheet();
+        $this->excel_reporte($spread, $request);
+        $fileName = "Ingresos.xlsx";
+        $writer = new Xlsx($spread);
+
+        //--------------------------- GUARDAR EL EXCEL -----------------------
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . urlencode($fileName) . '"');
+        $writer->save('php://output');
+
+        //$writer->save('/var/www/html/Dasalflor/storage/storage/excel/excel_prueba.xlsx');
+    }
+
+    public function excel_reporte($spread, $request)
+    {
+        $finca = getFincaActiva();
+        $listado_documentos = DB::table('ingreso_recepcion as i')
+            ->join('variedad as v', 'v.id_variedad', '=', 'i.id_variedad')
+            ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
+            ->join('api_store_cajas as api', 'api.id_api_store_cajas', '=', 'i.id_api_store_cajas')
+            ->select(
+                'i.id_api_store_cajas',
+                'i.id_variedad',
+                'v.nombre as var_nombre',
+                'p.nombre as pta_nombre',
+                'api.documento',
+                'api.fecha',
+                'i.tallos_x_ramo',
+                'i.ramos',
+                'i.tallos',
+                'i.longitud',
+                'i.bodega',
+                'i.id_ingreso_recepcion',
+            )->distinct()
+            ->where('i.id_empresa', $finca)
+            ->where('api.fecha', '>=', $request->desde)
+            ->where('api.fecha', '<=', $request->hasta);
+        if ($request->documento != '')
+            $listado_documentos = $listado_documentos->where('api.documento', $request->documento);
+        if ($request->bodega != 'T')
+            $listado_documentos = $listado_documentos->where('i.bodega', $request->bodega);
+        if ($request->planta != '')
+            $listado_documentos = $listado_documentos->where('v.id_planta', $request->planta);
+        if ($request->variedad != '')
+            $listado_documentos = $listado_documentos->where('i.id_variedad', $request->variedad);
+        $listado_documentos = $listado_documentos->orderBy('api.fecha')
+            ->orderBy('api.documento')
+            ->get()
+            ->groupBy('documento')
+            ->map(function ($items, $documento) {
+                return [
+                    'documento' => $documento,
+                    'fecha' => $items->first()->fecha,
+                    'id_api_store_cajas' => $items->first()->id_api_store_cajas,
+                    'detalles' => $items->values(),
+                ];
+            })
+            ->values();
+
+        $listado_compras = DB::table('ingreso_recepcion as i')
+            ->leftJoin('configuracion_empresa as prov', 'prov.id_configuracion_empresa', '=', 'i.id_proveedor')
+            ->join('variedad as v', 'v.id_variedad', '=', 'i.id_variedad')
+            ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
+            ->select(
+                'i.id_variedad',
+                'v.nombre as var_nombre',
+                'p.nombre as pta_nombre',
+                'i.tallos_x_ramo',
+                'i.ramos',
+                'i.tallos',
+                'i.longitud',
+                'i.factura',
+                'i.packing',
+                'i.bodega',
+                'i.fecha',
+                'i.id_ingreso_recepcion',
+                'i.fecha_registro',
+                'prov.nombre as proveedor_nombre',
+            )->distinct()
+            ->whereNotNull('i.packing')
+            ->where('i.id_empresa', $finca)
+            ->where('i.fecha', '>=', $request->desde)
+            ->where('i.fecha', '<=', $request->hasta);
+        if ($request->documento != '')
+            $listado_compras = $listado_compras->where('i.factura', $request->documento);
+        if ($request->bodega != 'T')
+            $listado_compras = $listado_compras->where('i.bodega', $request->bodega);
+        if ($request->planta != '')
+            $listado_compras = $listado_compras->where('v.id_planta', $request->planta);
+        if ($request->variedad != '')
+            $listado_compras = $listado_compras->where('i.id_variedad', $request->variedad);
+        $listado_compras = $listado_compras->orderBy('i.fecha')
+            ->orderBy('i.packing')
+            ->get()
+            ->groupBy('packing')
+            ->map(function ($items, $packing) {
+                return [
+                    'packing' => $packing,
+                    'fecha' => $items->first()->fecha,
+                    'factura' => $items->first()->factura,
+                    'proveedor_nombre' => $items->first()->proveedor_nombre,
+                    'detalles' => $items->values(),
+                ];
+            })
+            ->values();
+
+        $listado_movimientos = DB::table('ingreso_recepcion as i')
+            ->join('variedad as v', 'v.id_variedad', '=', 'i.id_variedad')
+            ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
+            ->select(
+                'i.id_variedad',
+                'v.nombre as var_nombre',
+                'p.nombre as pta_nombre',
+                'i.tallos_x_ramo',
+                'i.ramos',
+                'i.tallos',
+                'i.longitud',
+                'i.bodega',
+                'i.cambio_bodega',
+                'i.fecha',
+                'i.id_ingreso_recepcion',
+            )->distinct()
+            ->whereNotNull('i.cambio_bodega')
+            ->where('i.id_empresa', $finca)
+            ->where('i.fecha', '>=', $request->desde)
+            ->where('i.fecha', '<=', $request->hasta);
+        if ($request->bodega != 'T')
+            $listado_movimientos = $listado_movimientos->where('i.bodega', $request->bodega);
+        if ($request->planta != '')
+            $listado_movimientos = $listado_movimientos->where('v.id_planta', $request->planta);
+        if ($request->variedad != '')
+            $listado_movimientos = $listado_movimientos->where('i.id_variedad', $request->variedad);
+        $listado_movimientos = $listado_movimientos->orderBy('i.fecha')
+            ->orderBy('p.nombre')
+            ->orderBy('v.nombre')
+            ->get();
+
+        $listado_corregir = DB::table('ingreso_recepcion as i')
+            ->join('correccion_recepcion as c', 'c.id_correccion_recepcion', '=', 'i.id_correccion_recepcion')
+            ->join('variedad as v', 'v.id_variedad', '=', 'i.id_variedad')
+            ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
+            ->select(
+                'i.id_variedad',
+                'v.nombre as var_nombre',
+                'p.nombre as pta_nombre',
+                'i.tallos_x_ramo',
+                'i.ramos',
+                'i.tallos',
+                'i.longitud',
+                'i.bodega',
+                'i.fecha',
+                'i.id_ingreso_recepcion',
+                'c.orden',
+                'c.anterior',
+                'c.actual',
+            )->distinct()
+            ->whereNotNull('i.id_correccion_recepcion')
+            ->where('i.id_empresa', $finca)
+            ->where('i.fecha', '>=', $request->desde)
+            ->where('i.fecha', '<=', $request->hasta);
+        if ($request->bodega != 'T')
+            $listado_corregir = $listado_corregir->where('i.bodega', $request->bodega);
+        if ($request->planta != '')
+            $listado_corregir = $listado_corregir->where('v.id_planta', $request->planta);
+        if ($request->variedad != '')
+            $listado_corregir = $listado_corregir->where('i.id_variedad', $request->variedad);
+        $listado_corregir = $listado_corregir->orderBy('i.fecha')
+            ->orderBy('c.orden')
+            ->get()
+            ->groupBy('orden')
+            ->map(function ($items, $orden) {
+                return [
+                    'orden' => $orden,
+                    'fecha' => $items->first()->fecha,
+                    'detalles' => $items->values(),
+                ];
+            })
+            ->values();
+
+        $columnas = getColumnasExcel();
+
+        // COMPRAS
+        $sheet = $spread->getActiveSheet();
+        $sheet->setTitle('Compras');
+
+        $row = 1;
+        $col = 0;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Fecha');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Packing');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Factura');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Proveedor');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Bodega');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Planta');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Variedad');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Longitud');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'TxR');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Ramos');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Tallos');
+        setBgToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, '00b388');
+        setColorTextToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, 'ffffff');
+
+        foreach ($listado_compras as $compra) {
+            foreach ($compra['detalles'] as $pos_i => $item) {
+                $row++;
+                if ($pos_i == 0) {
+                    $col = 0;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $compra['fecha']);
+                    $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($compra['detalles']) - 1));
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $compra['packing']);
+                    $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($compra['detalles']) - 1));
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $compra['factura']);
+                    $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($compra['detalles']) - 1));
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $compra['proveedor_nombre']);
+                    $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($compra['detalles']) - 1));
+                }
+                $col = 4;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->bodega == 'V' ? 'Ventas' : 'Produccion');
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->pta_nombre);
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->var_nombre);
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->longitud);
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->tallos_x_ramo);
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->ramos);
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->tallos);
+            }
+        }
+
+        setTextCenterToCeldaExcel($sheet, 'A1:' . $columnas[$col] . $row);
+        setBorderToCeldaExcel($sheet, 'A1:' . $columnas[$col] . $row);
+
+        for ($i = 0; $i <= $col; $i++)
+            $sheet->getColumnDimension($columnas[$i])->setAutoSize(true);
+
+        // INTERNOS
+        $sheet = $spread->createSheet()->setTitle('Internos');
+
+        $row = 1;
+        $col = 0;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Fecha');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'N°');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Documento');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Bodega');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Planta');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Variedad');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Longitud');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'TxR');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Ramos');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Tallos');
+        setBgToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, '00b388');
+        setColorTextToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, 'ffffff');
+
+        foreach ($listado_documentos as $documento) {
+            foreach ($documento['detalles'] as $pos_i => $item) {
+                $row++;
+                if ($pos_i == 0) {
+                    $col = 0;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $documento['fecha']);
+                    $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($documento['detalles']) - 1));
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $documento['id_api_store_cajas']);
+                    $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($documento['detalles']) - 1));
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $documento['documento']);
+                    $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($documento['detalles']) - 1));
+                }
+                $col = 3;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->bodega == 'V' ? 'Ventas' : 'Produccion');
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->pta_nombre);
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->var_nombre);
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->longitud);
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->tallos_x_ramo);
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->ramos);
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->tallos);
+            }
+        }
+
+        setTextCenterToCeldaExcel($sheet, 'A1:' . $columnas[$col] . $row);
+        setBorderToCeldaExcel($sheet, 'A1:' . $columnas[$col] . $row);
+
+        for ($i = 0; $i <= $col; $i++)
+            $sheet->getColumnDimension($columnas[$i])->setAutoSize(true);
+
+        // MOVIMIENTOS
+        $sheet = $spread->createSheet()->setTitle('Movimientos');
+
+        $row = 1;
+        $col = 0;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Fecha');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'De');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'A');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Planta');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Variedad');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Longitud');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'TxR');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Ramos');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Tallos');
+        setBgToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, '00b388');
+        setColorTextToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, 'ffffff');
+
+        foreach ($listado_movimientos as $item) {
+            $row++;
+            $col = 0;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->fecha);
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->cambio_bodega == 'V' ? 'Ventas' : 'Produccion');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->bodega == 'V' ? 'Ventas' : 'Produccion');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->pta_nombre);
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->var_nombre);
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->longitud);
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->tallos_x_ramo);
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->ramos);
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->tallos);
+        }
+
+        setTextCenterToCeldaExcel($sheet, 'A1:' . $columnas[$col] . $row);
+        setBorderToCeldaExcel($sheet, 'A1:' . $columnas[$col] . $row);
+
+        for ($i = 0; $i <= $col; $i++)
+            $sheet->getColumnDimension($columnas[$i])->setAutoSize(true);
+
+        // CORRECCION
+        $sheet = $spread->createSheet()->setTitle('Correccion');
+
+        $row = 1;
+        $col = 0;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Fecha');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'N°');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Bodega');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Planta');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Variedad');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Longitud');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Tallos Anteriores');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Tallos Corregidos');
+        $col++;
+        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Tallos Ingresados');
+        setBgToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, '00b388');
+        setColorTextToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, 'ffffff');
+
+        foreach ($listado_corregir as $correccion) {
+            foreach ($correccion['detalles'] as $pos_i => $item) {
+                $row++;
+                if ($pos_i == 0) {
+                    $col = 0;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $correccion['fecha']);
+                    $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($correccion['detalles']) - 1));
+                    $col++;
+                    setValueToCeldaExcel($sheet, $columnas[$col] . $row, $correccion['orden']);
+                    $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col] . ($row + count($correccion['detalles']) - 1));
+                }
+                $col = 2;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->bodega == 'V' ? 'Ventas' : 'Produccion');
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->pta_nombre);
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->var_nombre);
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->longitud);
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->anterior);
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->actual);
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->tallos);
+            }
+        }
+
+        setTextCenterToCeldaExcel($sheet, 'A1:' . $columnas[$col] . $row);
+        setBorderToCeldaExcel($sheet, 'A1:' . $columnas[$col] . $row);
+
+        for ($i = 0; $i <= $col; $i++)
+            $sheet->getColumnDimension($columnas[$i])->setAutoSize(true);
     }
 }
