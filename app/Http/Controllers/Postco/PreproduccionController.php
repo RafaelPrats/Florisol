@@ -1210,7 +1210,7 @@ class PreproduccionController extends Controller
                         $registro->id_variedad = $model->id_variedad;
                         $registro->id_empresa = $model->id_empresa;
                         $registro->bodega = $model->bodega;
-                        $registro->fecha = hoy();
+                        $registro->fecha = $request->fecha;
                         $registro->tipo = 'S';
                         $registro->concepto = 'FLOR_SOLIDA';
                         $registro->numero = $last_orden;
