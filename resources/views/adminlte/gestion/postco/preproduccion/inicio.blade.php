@@ -41,7 +41,8 @@
                             <div class="input-group-addon span-input-group-yura-fixed bg-yura_dark">
                                 Fecha
                             </div>
-                            <input type="date" id="fecha_filtro" class="form-control" value="{{ hoy() }}">
+                            <input type="date" id="fecha_filtro" class="form-control" value="{{ hoy() }}"
+                                min="2026-09-17">
                         </div>
                     </td>
                     <td>
