@@ -27,7 +27,8 @@
                         <th class="padding_lateral_5" style="border-color: #9d9d9d">
                             {{ $item->pta_nombre }}
                         </th>
-                        <th class="padding_lateral_5" style="border-color: #9d9d9d">
+                        <th class="padding_lateral_5 mouse-hand" style="border-color: #9d9d9d"
+                            onclick="modal_kardex('{{ $item->id_variedad }}')">
                             {{ $item->var_nombre }}
                         </th>
                         @php
@@ -55,5 +56,20 @@
 </div>
 
 <script>
-    estructura_tabla('table_listado')
+    estructura_tabla('table_listado');
+
+    function modal_kardex(id_var) {
+        datos = {
+            variedad: id_var,
+            bodega: $('#bodega_filtro').val(),
+            desde: $('#desde_filtro').val(),
+            hasta: $('#hasta_filtro').val(),
+        }
+        get_jquery('{{ url('kardex/listar_reporte') }}', datos, function(retorno) {
+            modal_view('modal_modal_kardex', retorno,
+                '<i class="fa fa-fw fa-plus"></i> Kardex',
+                true, false, '{{ isPC() ? '90%' : '' }}',
+                function() {});
+        })
+    }
 </script>

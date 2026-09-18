@@ -36,7 +36,7 @@ class ReporteInventarioDiarioController extends Controller
                 'i.id_variedad',
                 'v.nombre as var_nombre',
                 'p.nombre as pta_nombre'
-            )
+            )->distinct()
             ->where('i.id_empresa', $finca)
             ->where('i.bodega', $request->bodega)
             ->when($request->planta != '', function ($q) use ($request) {
