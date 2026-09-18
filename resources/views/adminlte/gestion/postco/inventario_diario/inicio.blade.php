@@ -74,13 +74,25 @@
                     <td>
                         <div class="input-group">
                             <div class="input-group-addon bg-yura_dark">
-                                Fecha
+                                Desde
                             </div>
-                            <input type="date" name="fecha_filtro" id="fecha_filtro" class="form-control"
+                            <input type="date" name="desde_filtro" id="desde_filtro" class="form-control"
+                                style="width: 100%" value="{{ opDiasFecha('-', 7, hoy()) }}" min="2026-09-17">
+                        </div>
+                    </td>
+                    <td>
+                        <div class="input-group">
+                            <div class="input-group-addon bg-yura_dark">
+                                Hasta
+                            </div>
+                            <input type="date" name="hasta_filtro" id="hasta_filtro" class="form-control"
                                 style="width: 100%" value="{{ opDiasFecha('-', 0, hoy()) }}" min="2026-09-17">
                             <div class="input-group-btn">
                                 <button type="button" class="btn btn-yura_primary" onclick="listar_reporte()">
                                     <i class="fa fa-fw fa-search"></i>
+                                </button>
+                                <button type="button" class="btn btn-yura_default" onclick="exportar_reporte()">
+                                    <i class="fa fa-fw fa-file-excel-o"></i>
                                 </button>
                             </div>
                         </div>

@@ -9,10 +9,21 @@
             planta: $('#planta_filtro').val(),
             variedad: $('#variedad_filtro').val(),
             bodega: $('#bodega_filtro').val(),
-            fecha: $('#fecha_filtro').val(),
+            desde: $('#desde_filtro').val(),
+            hasta: $('#hasta_filtro').val(),
         };
         get_jquery('{{ url('inventario_diario/listar_reporte') }}', datos, function(retorno) {
             $('#div_listado').html(retorno);
         });
+    }
+
+    function exportar_reporte() {
+        $.LoadingOverlay('show');
+        window.open('{{ url('inventario_diario/exportar_reporte') }}?planta=' + $("#planta_filtro").val() +
+            '&variedad=' + $("#variedad_filtro").val() +
+            '&desde=' + $("#desde_filtro").val() +
+            '&hasta=' + $("#hasta_filtro").val() +
+            '&bodega=' + $("#bodega_filtro").val(), '_blank');
+        $.LoadingOverlay('hide');
     }
 </script>

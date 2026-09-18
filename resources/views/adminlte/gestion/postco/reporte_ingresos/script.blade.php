@@ -22,7 +22,6 @@
         $.LoadingOverlay('show');
         window.open('{{ url('reporte_ingresos/exportar_reporte') }}?planta=' + $("#planta_filtro").val() +
             '&variedad=' + $("#variedad_filtro").val() +
-            '&bodega=' + $("#bodega_filtro").val() +
             '&desde=' + $("#desde_filtro").val() +
             '&hasta=' + $("#hasta_filtro").val() +
             '&documento=' + $("#documento_filtro").val() +
