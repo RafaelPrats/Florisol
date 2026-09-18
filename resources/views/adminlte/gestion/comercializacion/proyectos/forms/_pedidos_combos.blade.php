@@ -14,13 +14,13 @@
                 <th class="text-center th_yura_green" style="min-width: 60px">
                     R. X CAJA
                 </th>
-                <th class="text-center th_yura_green" style="min-width: 60px">
+                <th class="text-center th_yura_green" style="min-width: 60px" colspan="2">
                     TOTAL RAMOS
                 </th>
                 <th class="text-center th_yura_green" style="min-width: 60px">
                     T. X RAMOS
                 </th>
-                <th class="text-center th_yura_green" style="min-width: 60px">
+                <th class="text-center th_yura_green" style="min-width: 60px" colspan="2">
                     TOTAL TALLOS
                 </th>
                 <th class="text-center th_yura_green" style="min-width: 60px">
@@ -43,6 +43,9 @@
                 @endforeach
                 <th class="text-center th_yura_green" style="min-width: 60px">
                     INVENTARIO
+                </th>
+                <th class="text-center th_yura_green" style="min-width: 60px">
+                    DISP.
                 </th>
                 <th class="text-center th_yura_green col_fija_right_0" style="min-width: 40px">
                 </th>
@@ -78,6 +81,10 @@
                         id="form_combos_ramos_x_caja_1" onchange="calcular_totales_form_combos()"
                         onkeyup="calcular_totales_form_combos()" value="1">
                 </td>
+                <td class="text-center" style="border-color: #9d9d9d" id="td_ramos_var_1">
+                    <input type="number" style="width: 100%; height: 34px;" class="text-center"
+                        id="form_combos_ramos_var_1" disabled>
+                </td>
                 <td class="text-center" style="border-color: #9d9d9d" id="td_total_ramos_combos">
                     <input type="number" style="width: 100%; height: 34px;" class="text-center"
                         id="form_combos_total_ramos" readonly="" disabled="">
@@ -86,6 +93,10 @@
                     <input type="number" style="width: 100%; height: 34px;" class="text-center"
                         id="form_combos_tallos_x_ramos_1" onchange="calcular_totales_form_combos()"
                         onkeyup="calcular_totales_form_combos()">
+                </td>
+                <td class="text-center" style="border-color: #9d9d9d" id="td_tallos_var_1">
+                    <input type="number" style="width: 100%; height: 34px;" class="text-center"
+                        id="form_combos_tallos_var_1" disabled>
                 </td>
                 <td class="text-center" style="border-color: #9d9d9d" id="td_total_tallos_combos">
                     <input type="number" style="width: 100%; height: 34px;" class="text-center"
@@ -110,6 +121,10 @@
                 <td class="text-center" style="border-color: #9d9d9d">
                     <input type="number" style="width: 100%; height: 34px;" class="text-center" readonly
                         id="form_combos_inventario_1">
+                </td>
+                <td class="text-center" style="border-color: #9d9d9d" id="td_disponibles_var_1">
+                    <input type="number" style="width: 100%; height: 34px;" class="text-center"
+                        id="form_combos_disponibles_var_1" disabled>
                 </td>
                 <td class="text-center col_fija_right_0 bg-yura_dark" style="border-color: #9d9d9d">
                     <button type="button" class="btn btn-xs btn-yura_default hidden"
@@ -238,11 +253,23 @@
             form_combos_cant_detalles +
             '" onchange="calcular_totales_form_combos()" onkeyup="calcular_totales_form_combos()" value="1">' +
             '</td>' +
+            '<td class="text-center" style="border-color: #9d9d9d" id="td_ramos_var_' +
+            form_combos_cant_detalles + '">' +
+            '<input type="number" style="width: 100%; height: 34px;" class="text-center" id="form_combos_ramos_var_' +
+            form_combos_cant_detalles +
+            '" disabled>' +
+            '</td>' +
             '<td class="text-center" style="border-color: #9d9d9d" id="td_tallos_x_ramos_' +
             form_combos_cant_detalles + '">' +
             '<input type="number" style="width: 100%; height: 34px;" class="text-center" id="form_combos_tallos_x_ramos_' +
             form_combos_cant_detalles +
             '" onchange="calcular_totales_form_combos()" onkeyup="calcular_totales_form_combos()">' +
+            '</td>' +
+            '<td class="text-center" style="border-color: #9d9d9d" id="td_tallos_var_' +
+            form_combos_cant_detalles + '">' +
+            '<input type="number" style="width: 100%; height: 34px;" class="text-center" id="form_combos_tallos_var_' +
+            form_combos_cant_detalles +
+            '" disabled>' +
             '</td>' +
             '<td class="text-center" style="border-color: #9d9d9d" id="td_longitud_' + form_combos_cant_detalles +
             '">' +
@@ -257,6 +284,12 @@
             '<td class="text-center" style="border-color: #9d9d9d">' +
             '<input type="number" style="width: 100%; height: 34px;" class="text-center" readonly ' +
             'id="form_combos_inventario_' + form_combos_cant_detalles + '">' +
+            '</td>' +
+            '<td class="text-center" style="border-color: #9d9d9d" id="td_disponibles_var_' +
+            form_combos_cant_detalles + '">' +
+            '<input type="number" style="width: 100%; height: 34px;" class="text-center" id="form_combos_disponibles_var_' +
+            form_combos_cant_detalles +
+            '" disabled>' +
             '</td>' +
             '<td class="text-center col_fija_right_0" style="border-color: #9d9d9d; background-color: white">' +
             '<button type="button" class="btn btn-xs btn-yura_danger" onclick="form_delete_detalle_combos(' +
@@ -316,9 +349,20 @@
             ramos_x_caja = ramos_x_caja != '' ? parseInt(ramos_x_caja) : 0;
             tallos_x_ramos = $('#form_combos_tallos_x_ramos_' + pos_combo).val();
             tallos_x_ramos = tallos_x_ramos != '' ? parseInt(tallos_x_ramos) : 0;
+            inventario = $('#form_combos_inventario_' + pos_combo).val();
+            inventario = inventario != '' ? parseInt(inventario) : 0;
 
-            total_combo_ramos += piezas * ramos_x_caja;
-            total_combo_tallos += piezas * ramos_x_caja * tallos_x_ramos;
+            ramos_var = piezas * ramos_x_caja;
+            tallos_var = piezas * ramos_x_caja * tallos_x_ramos;
+            disponibles_var = parseInt(inventario / tallos_x_ramos);
+            disponibles_var = disponibles_var >= ramos_var ? ramos_var : disponibles_var;
+
+            $('#form_combos_ramos_var_' + pos_combo).val(ramos_var);
+            $('#form_combos_tallos_var_' + pos_combo).val(tallos_var);
+            $('#form_combos_disponibles_var_' + pos_combo).val(disponibles_var);
+
+            total_combo_ramos += ramos_var;
+            total_combo_tallos += tallos_var;
         }
 
         $('#form_combos_total_ramos').val(total_combo_ramos);
