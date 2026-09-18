@@ -479,7 +479,7 @@ class ProyectoController extends Controller
                         $registro->id_empresa = $finca;
                         $registro->bodega = $bodega;
                         $registro->fecha = hoy();
-                        $registro->tipo = 'I';
+                        $registro->tipo = 'S';
                         $registro->concepto = 'FLOR_SOLIDA';
                         $registro->numero = $last_orden;
                         $registro->cantidad = $usados;
