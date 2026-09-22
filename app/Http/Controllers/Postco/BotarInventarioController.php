@@ -259,35 +259,41 @@ class BotarInventarioController extends Controller
     {
         try {
             DB::beginTransaction();
-            foreach (json_decode($request->data) as $data) {
-                $model = InventarioRecepcion::find($data->id_inv);
-                if ($model2026-09-17 < $data->botar) {
-                    DB::rollBack();
-                    $success = false;
-                    $msg = 'No se pueden botar mas tallos de los disponibles, flor: ' . $model->variedad->nombre;
+            if ($request->fecha >= '2026-09-17') {
+                foreach (json_decode($request->data) as $data) {
+                    $model = InventarioRecepcion::find($data->id_inv);
+                    if ($model->disponibles < $data->botar) {
+                        DB::rollBack();
+                        $success = false;
+                        $msg = 'No se pueden botar mas tallos de los disponibles, flor: ' . $model->variedad->nombre;
 
-                    return [
-                        'success' => $success,
-                        'mensaje' => $msg,
-                    ];
-                } else {
-                    $salidas = new SalidasRecepcion();
-                    $salidas->id_inventario_recepcion = $model->id_inventario_recepcion;
-                    $salidas->id_variedad = $model->id_variedad;
-                    $salidas->id_motivo_baja = $data->motivo;
-                    $salidas->cantidad = 0;
-                    $salidas->basura = $data->botar;
-                    $salidas->fecha = $request->fecha;
-                    $salidas->orden_basura = $request->orden;
-                    $salidas->estado_orden_basura = 0;
-                    $salidas->save();
-
-                    $success = true;
-                    $msg = 'Se ha <strong>CREADO la ORDEN de FLOR de BAJA</strong> correctamente';
+                        return [
+                            'success' => $success,
+                            'mensaje' => $msg,
+                        ];
+                    } else {
+                        $salidas = new SalidasRecepcion();
+                        $salidas->id_inventario_recepcion = $model->id_inventario_recepcion;
+                        $salidas->id_variedad = $model->id_variedad;
+                        $salidas->id_motivo_baja = $data->motivo;
+                        $salidas->cantidad = 0;
+                        $salidas->basura = $data->botar;
+                        $salidas->fecha = $request->fecha;
+                        $salidas->orden_basura = $request->orden;
+                        $salidas->estado_orden_basura = 0;
+                        $salidas->save();
+                    }
                 }
+                $success = true;
+                $msg = 'Se ha <strong>CREADO la ORDEN de FLOR de BAJA</strong> correctamente';
+                DB::commit();
+            } else {
+                DB::rollBack();
+                $success = false;
+                $msg = '<div class="alert alert-danger text-center">' .
+                    '<h3>La fecha debe ser superior al 17 de Sept 2026</h3>' .
+                    '</div>';
             }
-
-            DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
             $success = false;
