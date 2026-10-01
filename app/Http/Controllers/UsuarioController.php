@@ -21,7 +21,9 @@ use PHPExcel_Style_Fill;
 use PHPExcel_Style_Border;
 use PHPExcel_Style_Color;
 use PHPExcel_Style_Alignment;
+use yura\Modelos\FincaProveedor;
 use yura\Modelos\UsuarioFinca;
+use yura\Modelos\UsuarioProveedor;
 
 class UsuarioController extends Controller
 {
@@ -637,6 +639,53 @@ class UsuarioController extends Controller
         return [
             'success' => true,
             'mensaje' => '<div class="alert alert-success text-center">Se ha guardado la información satisfactoriamente</div>'
+        ];
+    }
+
+    public function config_user_proveedor(Request $request)
+    {
+        $fincas = FincaProveedor::where('estado', 1)
+            ->orderBy('nombre')
+            ->get();
+        $mis_fincas = DB::table('usuario_proveedor')
+            ->where('id_usuario', $request->user)
+            ->get()->pluck('id_finca_proveedor')->toArray();
+        return view('adminlte.gestion.usuarios.forms.config_user_proveedor', [
+            'usuario' => $request->user,
+            'mis_fincas' => $mis_fincas,
+            'fincas' => $fincas
+        ]);
+    }
+
+    public function store_user_proveedor(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            UsuarioProveedor::where('id_usuario', $request->user)
+                ->delete();
+
+            foreach (json_decode($request->data) as $data) {
+                $model = new UsuarioProveedor();
+                $model->id_usuario = $request->user;
+                $model->id_finca_proveedor = $data;
+                $model->save();
+            }
+
+            DB::commit();
+            $success = true;
+            $msg = 'Se ha <strong>GRABADO</strong> la informacion correctamente';
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $success = false;
+            $msg = '<div class="alert alert-danger text-center">' .
+                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
+                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
+                . '</div>';
+        }
+
+        return [
+            'success' => $success,
+            'mensaje' => $msg,
         ];
     }
 }

@@ -23,10 +23,19 @@
                 <th class="padding_lateral_5 bg-yura_dark" style="width: 90px">
                     Tallos Disponibles
                 </th>
-                <th class="text-center bg-yura_dark" style="width: 130px">
-                    <button type="button" class="btn btn-xs btn-yura_default" onclick="modal_add()">
-                        <i class="fa fa-fw fa-plus"></i> Agregar
-                    </button>
+                <th class="text-center bg-yura_dark" style="width: 90px">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-xs btn-yura_default" onclick="modal_add()"
+                            title="Ingresar Compras">
+                            <i class="fa fa-fw fa-plus"></i>
+                        </button>
+                        @if ($finca == 2)
+                            <button type="button" class="btn btn-xs btn-yura_warning" onclick="alert('EN DESARROLLO')"
+                                title="Recibir flor interna">
+                                <i class="fa fa-fw fa-download"></i>
+                            </button>
+                        @endif
+                    </div>
                 </th>
             </tr>
         </thead>

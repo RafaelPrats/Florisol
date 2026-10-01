@@ -15,3 +15,5 @@ Route::get('ingreso_inventario/admin_bodegas', 'Postco\InventarioRecepcionContro
 Route::post('ingreso_inventario/update_bodega', 'Postco\InventarioRecepcionController@update_bodega');
 Route::post('ingreso_inventario/seleccionar_proveedor', 'Postco\InventarioRecepcionController@seleccionar_proveedor');
 Route::post('ingreso_inventario/seleccionar_planta', 'Postco\InventarioRecepcionController@seleccionar_planta');
+Route::post('ingreso_inventario/seleccionar_orden_compra', 'Postco\InventarioRecepcionController@seleccionar_orden_compra');
+Route::get('ingreso_inventario/get_orden_compra', 'Postco\InventarioRecepcionController@get_orden_compra');

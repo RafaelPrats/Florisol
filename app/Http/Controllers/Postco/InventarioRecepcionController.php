@@ -10,6 +10,7 @@ use yura\Modelos\ConfiguracionEmpresa;
 use yura\Modelos\DetalleApiStoreCajas;
 use yura\Modelos\IngresoRecepcion;
 use yura\Modelos\InventarioRecepcion;
+use yura\Modelos\OrdenCompra;
 use yura\Modelos\Planta;
 use yura\Modelos\RegistroMovimientos;
 use yura\Modelos\SalidasRecepcion;
@@ -95,6 +96,7 @@ class InventarioRecepcionController extends Controller
         }
 
         return view('adminlte.gestion.postco.ingreso_inventario.partials.listado', [
+            'finca' => $finca,
             'listado' => $listado,
             'documento' => $request->documento,
         ]);
@@ -118,10 +120,50 @@ class InventarioRecepcionController extends Controller
             )
             ->where('id_empresa', $finca)
             ->get()[0];
+        $ordenes_compra = [];
+        if ($finca == 2) {
+            $ordenes_compra = OrdenCompra::where('estado', '!=', 'F')
+                ->get();
+        }
         return view('adminlte.gestion.postco.ingreso_inventario.forms.modal_add', [
             'proveedores' => $proveedores,
             'last_invoices' => $last_invoices,
+            'finca' => $finca,
+            'ordenes_compra' => $ordenes_compra,
         ]);
+    }
+
+    public function seleccionar_orden_compra(Request $request)
+    {
+        $finca = getFincaActiva();
+        if ($request->orden_compra != '') {
+            $proveedores = DB::table('proveedor_detalle_orden_compra as pdet')
+                ->join('configuracion_empresa as p', 'p.id_configuracion_empresa', '=', 'pdet.id_proveedor')
+                ->join('detalle_orden_compra as det', 'det.id_detalle_orden_compra', '=', 'pdet.id_detalle_orden_compra')
+                ->select(
+                    'pdet.id_proveedor as id_configuracion_empresa',
+                    'p.nombre'
+                )->distinct()
+                ->where('det.id_orden_compra', $request->orden_compra)
+                ->orderBy('p.nombre')
+                ->get();
+        } else {
+            $proveedores = ConfiguracionEmpresa::where('proveedor', 1)
+                ->where(function ($query) use ($finca) {
+                    $query->where('id_empresa', $finca)
+                        ->orWhere('id_configuracion_empresa', -1);
+                })
+                ->orderBy('id_configuracion_empresa')
+                ->orderBy('nombre')
+                ->get();
+        }
+        $options = '';
+        foreach ($proveedores as $p) {
+            $options .= '<option value="' . $p->id_configuracion_empresa . '">' . $p->nombre . '</option>';
+        }
+        return [
+            'options' => $options
+        ];
     }
 
     public function seleccionar_proveedor(Request $request)
@@ -228,6 +270,7 @@ class InventarioRecepcionController extends Controller
                 $ingreso->longitud = $data->longitud;
                 $ingreso->id_empresa = $finca;
                 $ingreso->tallos = $data->tallos_x_ramo * $data->ramos;
+                $ingreso->id_orden_compra = $request->orden_compra;
                 $ingreso->save();
 
                 $registro = new RegistroMovimientos();
@@ -247,8 +290,12 @@ class InventarioRecepcionController extends Controller
                 $registro->save();
             }
 
+            $orden_compra = OrdenCompra::find($request->orden_compra);
+            $orden_compra->estado = 'F';    // Finalizada
+            $orden_compra->save();
+
             $success = true;
-            $msg = 'Se ha <strong>GRABADO</strong> la informacion correctamente';
+            $msg = 'Se ha <strong>GRABADO</strong> la compra correctamente';
 
             DB::commit();
         } catch (\Exception $e) {
@@ -696,5 +743,40 @@ class InventarioRecepcionController extends Controller
             'success' => $success,
             'mensaje' => $msg,
         ];
+    }
+
+    public function get_orden_compra(Request $request)
+    {
+        $finca = getFincaActiva();
+        $listado = DB::table('proveedor_detalle_orden_compra as pdet')
+            ->join('detalle_orden_compra as det', 'det.id_detalle_orden_compra', '=', 'pdet.id_detalle_orden_compra')
+            ->join('variedad as v', 'v.id_variedad', '=', 'det.id_variedad')
+            ->select(
+                'det.id_variedad',
+                'v.nombre as var_nombre',
+                'v.id_planta',
+                DB::raw('sum(pdet.cantidad) as cantidad'),
+            )
+            ->where('det.id_orden_compra', $request->orden_compra)
+            ->where('pdet.id_proveedor', $request->id_proveedor)
+            ->groupBy(
+                'det.id_variedad',
+                'v.nombre',
+                'v.id_planta'
+            )
+            ->orderBy('v.nombre')
+            ->get();
+        $plantas = DB::table('planta as p')
+            ->join('variedad as v', 'v.id_planta', '=', 'p.id_planta')
+            ->join('variedad_proveedor as vp', 'vp.id_variedad', '=', 'v.id_variedad')
+            ->select('p.*')->distinct()
+            ->where('p.id_empresa', $finca)
+            ->where('vp.id_proveedor', $request->id_proveedor)
+            ->orderBy('p.nombre')
+            ->get();
+        return view('adminlte.gestion.postco.ingreso_inventario.forms.get_orden_compra', [
+            'listado' => $listado,
+            'plantas' => $plantas,
+        ]);
     }
 }

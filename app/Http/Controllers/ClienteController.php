@@ -44,6 +44,7 @@ class ClienteController extends Controller
         $segmentos = DB::table('detalle_cliente as dc')
             ->where('dc.estado', 1)
             ->join('cliente as c', 'c.id_cliente', '=', 'dc.id_cliente')
+            ->where('c.id_empresa', getFincaActiva())
             ->select('dc.segmento')
             ->distinct()
             ->get()->pluck('segmento')->toArray();
@@ -246,7 +247,13 @@ class ClienteController extends Controller
         isset($dataCliente->codigo_porcentaje_impuesto)
             ? $tipoImpuesto = TipoImpuesto::where('codigo_impuesto', $dataCliente->codigo_porcentaje_impuesto)->get()
             : $tipoImpuesto = [];
-        $segmentos = Segmento::get();
+        $segmentos = DB::table('detalle_cliente as dc')
+            ->where('dc.estado', 1)
+            ->join('cliente as c', 'c.id_cliente', '=', 'dc.id_cliente')
+            //->where('c.id_empresa', getFincaActiva())
+            ->select('dc.segmento')
+            ->distinct()
+            ->get()->pluck('segmento')->toArray();
 
         return view('adminlte.gestion.postcocecha.clientes.forms.add_cliente', [
             'dataPais' => Pais::orderBy('nombre', 'asc')->get(),
@@ -273,19 +280,18 @@ class ClienteController extends Controller
         ]);
 
         if (!$valida->fails()) {
-
+            $finca = getFincaActiva();
             if (empty($request->id_cliente)) { //Guardar
 
                 $objCliente = new Cliente;
+                $objCliente->id_empresa  = $finca;
                 $objCliente->estado  = 1;
                 $objCliente->fc = $request->factura_cliente == "true";
                 $objCliente->csv = $request->csv_etiqueta == "true";
                 $objCliente->le = $request->packing_list == "true";
                 $objCliente->dc = $request->dist_cajas == "true";
                 $objCliente->fc_sri = $request->factura_sri == "true";
-
                 if ($objCliente->save()) {
-
                     $model = Cliente::all()->last();
                     $objDetalleCliente = new DetalleCliente;
                     $objDetalleCliente->id_cliente                    = $model->id_cliente;
@@ -313,12 +319,6 @@ class ClienteController extends Controller
                             '<p> Se ha guardado el cliente ' . $objDetalleCliente->nombre . '  exitosamente</p>'
                             . '</div>';
                         bitacora('cliente|detalle_cliente', $model->id_detalle_cliente, 'I', 'Inserción satisfactoria de un nuevo cliente con sus detalles(ID guardado tabla detalle_cliente)');
-
-                        $semana = Semana::select(
-                            DB::raw('MIN(codigo) as primera_semana'),
-                            DB::raw('MAX(codigo) as ultima_semana')
-                        )->first();
-                        //ProyeccionVentaSemanalUpdate::dispatch($semana->primera_semana,$semana->ultima_semana,0,$model->id_cliente)->onQueue('update_venta_semanal_real');
                     } else {
                         $success = false;
                         $msg .= '<div class="alert alert-warning text-center">' .

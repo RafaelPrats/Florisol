@@ -40,6 +40,11 @@ class Usuario extends Model
         return $this->hasMany('\yura\Modelos\UsuarioFinca', 'id_usuario');
     }
 
+    public function fincas_proveedoras()
+    {
+        return $this->hasMany('\yura\Modelos\UsuarioProveedor', 'id_usuario');
+    }
+
     public function getIdSubmenusAccesoDirecto()
     {
         $r = [];

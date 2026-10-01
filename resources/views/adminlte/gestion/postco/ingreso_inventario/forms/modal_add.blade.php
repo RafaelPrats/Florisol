@@ -1,10 +1,24 @@
-<div class="text-center">
+<div class="text-center" style="overflow-x: scroll">
     <div class="input-group">
         <div class="input-group-addon bg-yura_dark span-input-group-yura-fixed">
             Fecha
         </div>
         <input type="date" name="new_fecha" id="new_fecha" class="form-control input-yura_default"
             value="{{ hoy() }}">
+        <div class="input-group-addon bg-yura_dark {{ $finca == 1 ? 'hidden' : '' }}">
+            Orden Compra
+        </div>
+        <select name="new_orden_compra" id="new_orden_compra"
+            class="form-control input-yura_default {{ $finca == 1 ? 'hidden' : '' }}"
+            onchange="seleccionar_orden_compra()">
+            <option value="">Seleccione...</option>
+            @foreach ($ordenes_compra as $oc)
+                <option value="{{ $oc->id_orden_compra }}">
+                    #{{ $oc->id_orden_compra }}
+                    {{ $oc->proyecto->cliente->detalle()->nombre }}
+                </option>
+            @endforeach
+        </select>
         <div class="input-group-addon bg-yura_dark">
             Proveedor
         </div>
@@ -54,36 +68,40 @@
             </button>
         </th>
     </tr>
-    <tr id="new_tr_1">
-        <th class="text-center" style="border-color: #9d9d9d">
-            <select id="new_planta_1" style="width: 100%; height: 26px;" onchange="seleccionar_planta(1)"
-                class="new_planta">
-                <option value="">Seleccione</option>
-            </select>
-        </th>
-        <th class="text-center" style="border-color: #9d9d9d">
-            <select id="new_variedad_1" style="width: 100%; height: 26px;" class="new_variedad">
-                <option value="">Seleccione</option>
-            </select>
-        </th>
-        <th class="text-center" style="border-color: #9d9d9d">
-            <input type="text" style="width: 100%; height: 34px;" class="padding_lateral_5" id="new_longitud_1">
-        </th>
-        <th class="text-center" style="border-color: #9d9d9d">
-            <input type="number" style="width: 100%; height: 34px;" class="padding_lateral_5" id="new_tallos_x_ramo_1">
-        </th>
-        <th class="text-center" style="border-color: #9d9d9d">
-            <input type="number" style="width: 100%; height: 34px;" class="padding_lateral_5" id="new_ramos_1">
-        </th>
-        <th class="text-center" style="border-color: #9d9d9d">
-            <select id="new_bodega_1" style="width: 100%; height: 34px;">
-                <option value="V">Ventas</option>
-                <option value="P">Producción</option>
-            </select>
-        </th>
-        <th class="text-center" style="border-color: #9d9d9d">
-        </th>
-    </tr>
+    <tbody id="tbody_add_inventario">
+        <tr id="new_tr_1">
+            <th class="text-center" style="border-color: #9d9d9d">
+                <select id="new_planta_1" style="width: 100%; height: 26px;" onchange="seleccionar_planta(1)"
+                    class="new_planta">
+                    <option value="">Seleccione</option>
+                </select>
+            </th>
+            <th class="text-center" style="border-color: #9d9d9d">
+                <select id="new_variedad_1" style="width: 100%; height: 26px;" class="new_variedad">
+                    <option value="">Seleccione</option>
+                </select>
+            </th>
+            <th class="text-center" style="border-color: #9d9d9d">
+                <input type="text" style="width: 100%; height: 34px;" class="padding_lateral_5" id="new_longitud_1"
+                    value="60">
+            </th>
+            <th class="text-center" style="border-color: #9d9d9d">
+                <input type="number" style="width: 100%; height: 34px;" class="padding_lateral_5"
+                    id="new_tallos_x_ramo_1">
+            </th>
+            <th class="text-center" style="border-color: #9d9d9d">
+                <input type="number" style="width: 100%; height: 34px;" class="padding_lateral_5" id="new_ramos_1">
+            </th>
+            <th class="text-center" style="border-color: #9d9d9d">
+                <select id="new_bodega_1" style="width: 100%; height: 34px;">
+                    <option value="V">Ventas</option>
+                    <option value="P">Producción</option>
+                </select>
+            </th>
+            <th class="text-center" style="border-color: #9d9d9d">
+            </th>
+        </tr>
+    </tbody>
 </table>
 
 <div class="text-center" style="margin-top: 5px">
@@ -91,6 +109,8 @@
         <i class="fa fa-fw fa-save"></i> GRABAR INGRESO
     </button>
 </div>
+
+<input type="hidden" id="finca_selected" value="{{ $finca }}">
 
 <script>
     setTimeout(() => {
@@ -107,7 +127,7 @@
     function add_inventario() {
         num_row++;
         select_planta = $('#new_planta_1').html();
-        $('#table_add_inventario').append('<tr id="new_tr_' + num_row + '">' +
+        $('#tbody_add_inventario').append('<tr id="new_tr_' + num_row + '">' +
             '<th class="text-center" style="border-color: #9d9d9d">' +
             '<select id="new_planta_' + num_row + '" style="width: 100%; height: 26px;" ' +
             'onchange="seleccionar_planta(' + num_row + ')" class="new_planta">' +
@@ -151,6 +171,7 @@
         });
         $('.select2-container').css('width', '100%');
         $('.select2-selection').css('height', '34px');
+        $('#new_planta_' + num_row).val('');
         //seleccionar_proveedor();
     }
 
@@ -182,6 +203,7 @@
             datos = {
                 _token: '{{ csrf_token() }}',
                 id_proveedor: $('#new_proveedor').val(),
+                orden_compra: $('#new_orden_compra').val(),
                 fecha: $('#new_fecha').val(),
                 factura: $('#new_factura').val(),
                 packing: $('#new_packing').val(),
@@ -195,17 +217,37 @@
     }
 
     function seleccionar_proveedor() {
-        datos = {
-            _token: '{{ csrf_token() }}',
-            id_proveedor: $('#new_proveedor').val(),
+        finca = $('#finca_selected').val();
+        orden_compra = $('#new_orden_compra').val();
+        if (finca == 1 || orden_compra == '') {
+            datos = {
+                _token: '{{ csrf_token() }}',
+                id_proveedor: $('#new_proveedor').val(),
+            }
+            $.post('{{ url('ingreso_inventario/seleccionar_proveedor') }}', datos, function(retorno) {
+                $('.new_planta').html(retorno.plantas);
+                $('.new_variedad').html('<option value="">Seleccione</option>');
+            }, 'json').fail(function(retorno) {
+                console.log(retorno);
+                alerta_errores(retorno.responseText);
+            });
+        } else { // GET orden de compra
+            datos = {
+                orden_compra: $('#new_orden_compra').val(),
+                id_proveedor: $('#new_proveedor').val(),
+            }
+            get_jquery('{{ url('ingreso_inventario/get_orden_compra') }}', datos, function(retorno) {
+                $('#tbody_add_inventario').html(retorno);
+
+                setTimeout(() => {
+                    $(".new_planta, .new_variedad").select2({
+                        dropdownParent: $('#div_modal-modal_modal_add')
+                    });
+                    $('.select2-container').css('width', '100%');
+                    $('.select2-selection').css('height', '34px');
+                }, 500);
+            });
         }
-        $.post('{{ url('ingreso_inventario/seleccionar_proveedor') }}', datos, function(retorno) {
-            $('.new_planta').html(retorno.plantas);
-            $('.new_variedad').html('<option value="">Seleccione</option>');
-        }, 'json').fail(function(retorno) {
-            console.log(retorno);
-            alerta_errores(retorno.responseText);
-        });
     }
 
     function seleccionar_planta(row) {
@@ -216,6 +258,20 @@
         }
         $.post('{{ url('ingreso_inventario/seleccionar_planta') }}', datos, function(retorno) {
             $('#new_variedad_' + row).html(retorno.variedades);
+        }, 'json').fail(function(retorno) {
+            console.log(retorno);
+            alerta_errores(retorno.responseText);
+        });
+    }
+
+    function seleccionar_orden_compra() {
+        datos = {
+            _token: '{{ csrf_token() }}',
+            orden_compra: $('#new_orden_compra').val(),
+        }
+        $.post('{{ url('ingreso_inventario/seleccionar_orden_compra') }}', datos, function(retorno) {
+            $('#new_proveedor').html(retorno.options);
+            seleccionar_proveedor();
         }, 'json').fail(function(retorno) {
             console.log(retorno);
             alerta_errores(retorno.responseText);

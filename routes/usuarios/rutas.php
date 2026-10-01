@@ -12,3 +12,5 @@ Route::post('usuarios/update_password', 'UsuarioController@update_password');
 Route::get('usuarios/exportar', 'UsuarioController@exportar_usuarios');
 Route::get('usuarios/config_user_finca', 'UsuarioController@config_user_finca');
 Route::post('usuarios/store_finca_user', 'UsuarioController@store_finca_user');
+Route::get('usuarios/config_user_proveedor', 'UsuarioController@config_user_proveedor');
+Route::post('usuarios/store_user_proveedor', 'UsuarioController@store_user_proveedor');

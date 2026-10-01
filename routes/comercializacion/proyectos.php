@@ -15,3 +15,9 @@ Route::get('proyectos/copiar_pedido', 'Comercializacion\ProyectoController@copia
 Route::post('proyectos/store_copiar_pedido', 'Comercializacion\ProyectoController@store_copiar_pedido');
 Route::post('proyectos/delete_pedido', 'Comercializacion\ProyectoController@delete_pedido');
 Route::get('proyectos/descargar_despachos', 'Comercializacion\ProyectoController@descargar_despachos');
+Route::post('proyectos/enviar_notificacion', 'Comercializacion\ProyectoController@enviar_notificacion');
+Route::get('proyectos/modal_confirmaciones', 'Comercializacion\ProyectoController@modal_confirmaciones');
+Route::post('proyectos/confirmar_finca', 'Comercializacion\ProyectoController@confirmar_finca');
+Route::post('proyectos/store_orden_compra', 'Comercializacion\ProyectoController@store_orden_compra');
+Route::get('proyectos/modal_orden_compra', 'Comercializacion\ProyectoController@modal_orden_compra');
+Route::post('proyectos/update_orden_compra', 'Comercializacion\ProyectoController@update_orden_compra');

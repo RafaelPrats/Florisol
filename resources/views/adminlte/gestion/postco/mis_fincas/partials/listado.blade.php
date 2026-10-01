@@ -5,9 +5,13 @@
                 <th class="padding_lateral_5 th_yura_green">
                     Finca
                 </th>
+                <th class="padding_lateral_5 th_yura_green" style="width: 90px">
+                    Margen %
+                </th>
                 <th class="padding_lateral_5 th_yura_green" style="width: 220px">
                     Telefonos
-                    <button type="button" class="btn btn-xs btn-yura_default tr_new hidden" onclick="agregarTelefono()">
+                    <button type="button" class="btn btn-xs btn-yura_default tr_new hidden"
+                        onclick="agregarTelefono()">
                         <i class="fa fa-plus"></i>
                     </button>
                 </th>
@@ -22,11 +26,14 @@
         <tbody>
             <tr class="tr_new hidden">
                 <th class="text-center" style="border-color: #9d9d9d">
-                    <input type="text" class="text-center" style="width: 100%" id="new_nombre">
+                    <input type="text" class="padding_lateral_5" style="width: 100%" id="new_nombre">
+                </th>
+                <th class="text-center" style="border-color: #9d9d9d">
+                    <input type="number" class="padding_lateral_5" style="width: 100%" id="new_margen">
                 </th>
                 <th class="text-center" style="border-color: #9d9d9d" id="contenedor_telefonos">
                     <div class="telefono_item" style="display: flex;">
-                        <input type="text" class="text-center telefono_input" style="width: 100%"
+                        <input type="text" class="padding_lateral_5 telefono_input" style="width: 100%"
                             placeholder="0991234567" maxlength="10">
                         <button type="button" class="btn btn-xs btn-yura_danger" style=""
                             onclick="$(this).parent().remove();">
@@ -48,11 +55,18 @@
                             onchange="update_finca('{{ $item->id_finca_proveedor }}')"
                             id="nombre_{{ $item->id_finca_proveedor }}">
                     </th>
+                    <th class="text-center" style="border-color: #9d9d9d;">
+                        <input type="text" style="width: 100%"
+                            class="padding_lateral_5 {{ !$item->estado ? 'error' : '' }}" value="{{ $item->margen }}"
+                            onchange="update_finca('{{ $item->id_finca_proveedor }}')"
+                            id="margen_{{ $item->id_finca_proveedor }}">
+                    </th>
                     <th class="text-center" style="border-color: #9d9d9d">
                         @foreach (explode('|', $item->telefonos) as $pos_t => $t)
                             <input type="text" style="width: 100%"
                                 class="padding_lateral_5 telefono_{{ $item->id_finca_proveedor }} {{ !$item->estado ? 'error' : '' }}"
-                                value="{{ $t }}" onchange="update_finca('{{ $item->id_finca_proveedor }}')">
+                                value="{{ $t }}"
+                                onchange="update_finca('{{ $item->id_finca_proveedor }}')">
                         @endforeach
                         @if ($item->estado)
                             <input type="text" style="width: 100%"
@@ -61,10 +75,16 @@
                         @endif
                     </th>
                     <th class="text-center" style="border-color: #9d9d9d">
-                        <button type="button" class="btn btn-yura_danger"
-                            onclick="cambiar_estado('{{ $item->id_finca_proveedor }}')">
-                            <i class="fa fa-fw fa-lock"></i>
-                        </button>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-xs btn-yura_default" title="Asignar plantas"
+                                onclick="modal_plantas('{{ $item->id_finca_proveedor }}')">
+                                <i class="fa fa-fw fa-leaf"></i>
+                            </button>
+                            <button type="button" class="btn btn-xs btn-yura_danger"
+                                onclick="cambiar_estado('{{ $item->id_finca_proveedor }}')">
+                                <i class="fa fa-fw fa-lock"></i>
+                            </button>
+                        </div>
                     </th>
                 </tr>
             @endforeach
@@ -77,7 +97,7 @@
         $('#contenedor_telefonos').append(`
         <div class="telefono_item" style="display: flex;">
             <input type="text"
-                   class="text-center telefono_input"
+                   class="padding_lateral_5 telefono_input"
                    placeholder="0991234567"
                    maxlength="10" style="width: 100%">
             <button type="button"
@@ -140,6 +160,7 @@
                     datos = {
                         _token: '{{ csrf_token() }}',
                         nombre: $('#new_nombre').val(),
+                        margen: $('#new_margen').val(),
                         telefonos: obtenerTelefonos(),
                     }
                     post_jquery_m('{{ url('mis_fincas/store_finca') }}', datos, function() {
@@ -169,6 +190,7 @@
                 _token: '{{ csrf_token() }}',
                 id: id,
                 nombre: $('#nombre_' + id).val(),
+                margen: $('#margen_' + id).val(),
                 telefonos: telefonos,
             }
             post_jquery_m('{{ url('mis_fincas/update_finca') }}', datos, function() {
@@ -199,5 +221,17 @@
                     }, 1000);
                 });
             });
+    }
+
+    function modal_plantas(id) {
+        datos = {
+            id: id
+        }
+        get_jquery('{{ url('mis_fincas/modal_plantas') }}', datos, function(retorno) {
+            modal_view('modal_modal_plantas', retorno,
+                '<i class="fa fa-fw fa-plus"></i> Asignar Plantas',
+                true, false, '{{ isPC() ? '50%' : '' }}',
+                function() {});
+        })
     }
 </script>

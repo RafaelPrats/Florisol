@@ -208,12 +208,28 @@
                                             </a>
                                         </li>
                                         <li>
-                                            <a target="_blank" style="color: black" href="javascript:void(0)"
+                                            <a style="color: black" href="javascript:void(0)"
                                                 onclick="descargar_despachos('{{ $proyecto->id_proyecto }}')">
                                                 <i class="fa fa-cubes fa-fw"></i>
                                                 Despachos
                                             </a>
                                         </li>
+                                        @if ($proyecto->id_empresa == 2)
+                                            <li>
+                                                <a style="color: black" href="javascript:void(0)"
+                                                    onclick="enviar_notificacion('{{ $proyecto->id_proyecto }}')">
+                                                    <i class="fa fa-send fa-fw"></i>
+                                                    Notificar a fincas
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a style="color: black" href="javascript:void(0)"
+                                                    onclick="modal_confirmaciones('{{ $proyecto->id_proyecto }}')">
+                                                    <i class="fa fa-gift fa-fw"></i>
+                                                    Ver Confirmaciones
+                                                </a>
+                                            </li>
+                                        @endif
                                     </ul>
                                 </div>
                             </th>
@@ -228,115 +244,109 @@
 <legend class="text-center" style="margin-bottom: 5px; font-size: 1.1em">
     RESUMEN
 </legend>
-<div style="overflow-x: scroll">
+<div style="overflow-x: scroll; overflow-y: scroll; max-height: 350px">
     <table style="width: 100%; font-size: 0.9em">
-        <tbody>
-            <tr>
-                <td style="vertical-align: top; width: 85%; min-width: 420px" class="padding_lateral_5">
-                    <table class="table-bordered" style="width: 100%; border: 1px solid #9d9d9d">
-                        <tbody>
-                            <tr>
-                                <th class="padding_lateral_5 th_yura_green" colspan="2">
-                                    VARIEDAD-LONGNITUD
-                                </th>
-                                <th class="padding_lateral_5 th_yura_green padding_lateral_5">
-                                    TALLOS
-                                </th>
-                                <th class="padding_lateral_5 th_yura_green padding_lateral_5">
-                                    RAMOS
-                                </th>
-                                <th class="padding_lateral_5 th_yura_green padding_lateral_5">
-                                    MONTO
-                                </th>
-                            </tr>
-                            @php
-                                $total_tallos = 0;
-                                $total_ramos = 0;
-                                $total_monto = 0;
-                            @endphp
-                            @foreach ($resumen_variedad_longitud as $item)
-                                @php
-                                    $total_tallos += $item['tallos'];
-                                    $total_ramos += $item['ramos'];
-                                    $total_monto += $item['venta'];
-                                @endphp
-                                <tr onmouseover="$(this).addClass('bg-yura_dark')"
-                                    onmouseleave="$(this).removeClass('bg-yura_dark')" class="">
-                                    <th class="padding_lateral_5" style="border-color: #9d9d9d;">
-                                        {{ $item['nombre_planta'] }}
-                                    </th>
-                                    <th class="padding_lateral_5" style="border-color: #9d9d9d; width: 25%">
-                                        {{ $item['nombre_variedad'] }} {{ $item['longitud'] }}cm
-                                    </th>
-                                    <th class="padding_lateral_5" style="border-color: #9d9d9d">
-                                        {{ $item['tallos'] }}
-                                    </th>
-                                    <th class="padding_lateral_5" style="border-color: #9d9d9d">
-                                        {{ $item['ramos'] }}
-                                    </th>
-                                    <th class="padding_lateral_5" style="border-color: #9d9d9d">
-                                        ${{ round($item['venta'], 2) }}
-                                    </th>
-                                </tr>
-                            @endforeach
-                            <tr>
-                                <th class="padding_lateral_5 th_yura_green" colspan="2">
-                                    TOTALES
-                                </th>
-                                <th class="padding_lateral_5 th_yura_green padding_lateral_5">
-                                    {{ $total_tallos }}
-                                </th>
-                                <th class="padding_lateral_5 th_yura_green padding_lateral_5">
-                                    {{ $total_ramos }}
-                                </th>
-                                <th class="padding_lateral_5 th_yura_green padding_lateral_5">
-                                    ${{ round($total_monto, 2) }}
-                                </th>
-                            </tr>
-                        </tbody>
-                    </table>
-                </td>
-                <td style="vertical-align: top;" class="padding_lateral_5">
-                    <table class="table-bordered" style="width: 100%; border: 1px solid #9d9d9d">
-                        <tbody>
-                            <tr>
-                                <th class="text-center th_yura_green">
-                                    PIEZAS
-                                </th>
-                                <th class="text-center th_yura_green padding_lateral_5">
-                                    FULL
-                                </th>
-                            </tr>
-                            @php
-                                $total_piezas = 0;
-                            @endphp
-                            @foreach ($resumen_piezas as $item)
-                                @php
-                                    $total_piezas += $item['cantidad'];
-                                @endphp
-                                <tr onmouseover="$(this).addClass('bg-yura_dark')"
-                                    onmouseleave="$(this).removeClass('bg-yura_dark')" class="">
-                                    <th class="text-center" style="border-color: #9d9d9d">
-                                        {{ $item['tipo_caja'] }}
-                                    </th>
-                                    <th class="text-center" style="border-color: #9d9d9d">
-                                        {{ $item['cantidad'] }}
-                                    </th>
-                                </tr>
-                            @endforeach
-                            <tr>
-                                <th class="text-center th_yura_green">
-                                    TOTALES
-                                </th>
-                                <th class="text-center th_yura_green padding_lateral_5">
-                                    {{ $total_piezas }}
-                                </th>
-                            </tr>
-                        </tbody>
-                    </table>
-                </td>
-            </tr>
-        </tbody>
+        <tr>
+            <td style="vertical-align: top; width: 85%; min-width: 420px" class="padding_lateral_5">
+                <table class="table-bordered" style="width: 100%; border: 1px solid #9d9d9d">
+                    <tr class="tr_fija_top_0">
+                        <th class="padding_lateral_5 th_yura_green" colspan="2">
+                            VARIEDAD-LONGNITUD
+                        </th>
+                        <th class="padding_lateral_5 th_yura_green padding_lateral_5">
+                            TALLOS
+                        </th>
+                        <th class="padding_lateral_5 th_yura_green padding_lateral_5">
+                            RAMOS
+                        </th>
+                        <th class="padding_lateral_5 th_yura_green padding_lateral_5">
+                            MONTO
+                        </th>
+                    </tr>
+                    @php
+                        $total_tallos = 0;
+                        $total_ramos = 0;
+                        $total_monto = 0;
+                    @endphp
+                    @foreach ($resumen_variedad_longitud as $item)
+                        @php
+                            $total_tallos += $item['tallos'];
+                            $total_ramos += $item['ramos'];
+                            $total_monto += $item['venta'];
+                        @endphp
+                        <tr onmouseover="$(this).addClass('bg-yura_dark')"
+                            onmouseleave="$(this).removeClass('bg-yura_dark')" class="">
+                            <th class="padding_lateral_5" style="border-color: #9d9d9d;">
+                                {{ $item['nombre_planta'] }}
+                            </th>
+                            <th class="padding_lateral_5" style="border-color: #9d9d9d;">
+                                {{ $item['nombre_variedad'] }} {{ $item['longitud'] }}cm
+                            </th>
+                            <th class="padding_lateral_5" style="border-color: #9d9d9d; width: 70px">
+                                {{ $item['tallos'] }}
+                            </th>
+                            <th class="padding_lateral_5" style="border-color: #9d9d9d; width: 70px">
+                                {{ $item['ramos'] }}
+                            </th>
+                            <th class="padding_lateral_5" style="border-color: #9d9d9d; width: 70px">
+                                ${{ round($item['venta'], 2) }}
+                            </th>
+                        </tr>
+                    @endforeach
+                    <tr>
+                        <th class="padding_lateral_5 th_yura_green" colspan="2">
+                            TOTALES
+                        </th>
+                        <th class="padding_lateral_5 th_yura_green padding_lateral_5">
+                            {{ $total_tallos }}
+                        </th>
+                        <th class="padding_lateral_5 th_yura_green padding_lateral_5">
+                            {{ $total_ramos }}
+                        </th>
+                        <th class="padding_lateral_5 th_yura_green padding_lateral_5">
+                            ${{ round($total_monto, 2) }}
+                        </th>
+                    </tr>
+                </table>
+            </td>
+            <td style="vertical-align: top;" class="padding_lateral_5">
+                <table class="table-bordered" style="width: 100%; border: 1px solid #9d9d9d">
+                    <tr class="tr_fija_top_0">
+                        <th class="text-center th_yura_green">
+                            PIEZAS
+                        </th>
+                        <th class="text-center th_yura_green padding_lateral_5">
+                            FULL
+                        </th>
+                    </tr>
+                    @php
+                        $total_piezas = 0;
+                    @endphp
+                    @foreach ($resumen_piezas as $item)
+                        @php
+                            $total_piezas += $item['cantidad'];
+                        @endphp
+                        <tr onmouseover="$(this).addClass('bg-yura_dark')"
+                            onmouseleave="$(this).removeClass('bg-yura_dark')" class="">
+                            <th class="text-center" style="border-color: #9d9d9d">
+                                {{ $item['tipo_caja'] }}
+                            </th>
+                            <th class="text-center" style="border-color: #9d9d9d">
+                                {{ $item['cantidad'] }}
+                            </th>
+                        </tr>
+                    @endforeach
+                    <tr>
+                        <th class="text-center th_yura_green">
+                            TOTALES
+                        </th>
+                        <th class="text-center th_yura_green padding_lateral_5">
+                            {{ $total_piezas }}
+                        </th>
+                    </tr>
+                </table>
+            </td>
+        </tr>
     </table>
 </div>
 
@@ -346,7 +356,7 @@
             id: id
         }
         get_jquery('{{ url('proyectos/editar_proyecto') }}', datos, function(retorno) {
-            modal_view('modal_add_proyecto', retorno, '<i class="fa fa-fw fa-plus"></i> Editar Pedido',
+            modal_view('modal_editar_proyecto', retorno, '<i class="fa fa-fw fa-plus"></i> Editar Pedido',
                 true, false, '{{ isPC() ? '95%' : '' }}',
                 function() {});
         })
@@ -368,7 +378,7 @@
             title: '<i class="fa fa-fw fa-save"></i> Cancelar Pedido',
             mensaje: '<div class="alert alert-warning text-center"><i class="fa fa-fw fa-exclamation-triangle"></i> ¿Está seguro de <b>CANCELAR</b> este pedido?</div>',
         };
-        modal_quest('modal_update_especificaciones', mensaje['mensaje'], mensaje['title'], true, false,
+        modal_quest('modal_delete_pedido', mensaje['mensaje'], mensaje['title'], true, false,
             '{{ isPC() ? '35%' : '' }}',
             function() {
                 datos = {
@@ -381,9 +391,39 @@
             });
     }
 
+    function enviar_notificacion(id) {
+        mensaje = {
+            title: '<i class="fa fa-fw fa-save"></i> Notificar Pedido',
+            mensaje: '<div class="alert alert-warning text-center"><i class="fa fa-fw fa-exclamation-triangle"></i> ¿Está seguro de <b>NOTIFICAR</b> a las fincas sobre este pedido?</div>',
+        };
+        modal_quest('modal_enviar_notificacion', mensaje['mensaje'], mensaje['title'], true, false,
+            '{{ isPC() ? '35%' : '' }}',
+            function() {
+                datos = {
+                    _token: '{{ csrf_token() }}',
+                    id: id
+                };
+                post_jquery_m('{{ url('proyectos/enviar_notificacion') }}', datos, function() {
+                    listar_reporte();
+                });
+            });
+    }
+
     function descargar_despachos(id) {
         $.LoadingOverlay('show');
         window.open('{{ url('proyectos/descargar_despachos') }}?id=' + id, '_blank');
         $.LoadingOverlay('hide');
+    }
+
+    function modal_confirmaciones(id) {
+        datos = {
+            id: id
+        }
+        get_jquery('{{ url('proyectos/modal_confirmaciones') }}', datos, function(retorno) {
+            modal_view('modal_modal_confirmaciones', retorno,
+                '<i class="fa fa-fw fa-plus"></i> Flor del Pedido',
+                true, false, '{{ isPC() ? '90%' : '' }}',
+                function() {});
+        })
     }
 </script>

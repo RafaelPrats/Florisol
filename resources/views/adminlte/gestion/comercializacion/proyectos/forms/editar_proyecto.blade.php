@@ -327,7 +327,7 @@
     setTimeout(() => {
         $(".select_variedades")
             .select2({
-                dropdownParent: $('#div_modal-modal_add_proyecto')
+                dropdownParent: $('#div_modal-modal_editar_proyecto')
             });
         $('.select2-container').css('width', '100%');
         $('.select2-selection').css('height', '34px');

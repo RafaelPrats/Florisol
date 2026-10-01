@@ -2,6 +2,7 @@
     $('#vista_actual').val('ingreso_inventario');
     $('#planta_filtro').select2();
     $('#variedad_filtro').select2();
+    $('#documento_filtro').select2();
     listar_reporte();
 
     function listar_reporte() {

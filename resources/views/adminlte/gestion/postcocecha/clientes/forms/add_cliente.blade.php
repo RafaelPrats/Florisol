@@ -152,8 +152,8 @@
                 <label for="segmento">Segmento</label>
                 <select id="segmento" name="segmento" class="form-control" style="width: 100%">
                     @foreach ($segmentos as $segmento)
-                        <option value="{{ $segmento->nombre }}" {!! !empty($dataCliente) ? ($dataCliente->segmento === $segmento->nombre ? 'selected' : '') : '' !!}>
-                            {{ $segmento->nombre }}
+                        <option value="{{ $segmento }}" {!! !empty($dataCliente) ? ($dataCliente->segmento === $segmento ? 'selected' : '') : '' !!}>
+                            {{ $segmento }}
                         </option>
                     @endforeach
                 </select>

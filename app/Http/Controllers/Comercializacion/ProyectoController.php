@@ -14,11 +14,16 @@ use yura\Modelos\CajaProyectoMarcacion;
 use yura\Modelos\Cliente;
 use yura\Modelos\DatosExportacion;
 use yura\Modelos\DetalleCajaProyecto;
+use yura\Modelos\DetalleOrdenCompra;
 use yura\Modelos\DistribucionReceta;
+use yura\Modelos\FincaProveedor;
 use yura\Modelos\InventarioRecepcion;
+use yura\Modelos\OrdenCompra;
 use yura\Modelos\OrdenTrabajo;
 use yura\Modelos\OtNacional;
+use yura\Modelos\ProveedorDetalleOrdenCompra;
 use yura\Modelos\Proyecto;
+use yura\Modelos\ProyectoConfirmacion;
 use yura\Modelos\RegistroMovimientos;
 use yura\Modelos\RenovarOrdenFija;
 use yura\Modelos\SalidasRecepcion;
@@ -395,6 +400,21 @@ class ProyectoController extends Controller
             \Request::ip(),
             $finca
         )->onQueue('store_proyecto')->onConnection('database');*/
+
+            if ($finca == 2) {
+                // GENERAR ENLACES PARA LA CONFIRMACION a las FINCAS PROVEEDORAS
+                $fincas = FincaProveedor::where('estado', 1)
+                    ->get();
+                foreach ($fincas as $f) {
+                    $enlace = url('confirmar_proyecto') . '/?p=' . $proyecto->id_proyecto . '&f=' . $f->id_finca_proveedor;
+                    $telefonos = explode('|', $f->telefonos);
+
+                    foreach ($telefonos as $telefono) {
+                        // enviar notificación WhatsApp
+                        dump('enlace: ' . $enlace . ' a: ' . $telefono);
+                    }
+                }
+            }
 
             $success = true;
             DB::commit();
@@ -775,11 +795,27 @@ class ProyectoController extends Controller
         try {
             DB::beginTransaction();
             $proyecto = Proyecto::find($request->id);
-            $proyecto->delete();
+            if (count($proyecto->confirmaciones) == 0) {
+                if (count($proyecto->ordenes_compra) == 0) {
+                    $proyecto->delete();
 
-            DB::commit();
-            $success = true;
-            $msg = 'Se ha <b>CANCELADO</b> el pedido correctamente';
+                    DB::commit();
+                    $success = true;
+                    $msg = 'Se ha <b>CANCELADO</b> el pedido correctamente';
+                } else {
+                    DB::rollBack();
+                    $success = false;
+                    $msg = '<div class="alert alert-danger text-center">' .
+                        '<h3>No se puede eliminar este pedido porque tiene una <b>ORDEN DE COMPRA</b> generada</h3>' .
+                        '</div>';
+                }
+            } else {
+                DB::rollBack();
+                $success = false;
+                $msg = '<div class="alert alert-danger text-center">' .
+                    '<h3>No se puede eliminar este pedido porque tiene <b>DOCUMENTOS</b> confirmados por las fincas</h3>' .
+                    '</div>';
+            }
         } catch (\Exception $e) {
             DB::rollBack();
             $success = false;
@@ -1390,5 +1426,395 @@ class ProyectoController extends Controller
 
             $row_ini = $row + 2;
         }
+    }
+
+    public function enviar_notificacion(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $finca = getFincaActiva();
+            $proyecto = Proyecto::find($request->id);
+            if ($finca == 2) {
+                // GENERAR ENLACES PARA LA CONFIRMACION a las FINCAS PROVEEDORAS
+                $fincas = FincaProveedor::where('estado', 1)
+                    ->get();
+                foreach ($fincas as $f) {
+                    $enlace = url('confirmar_proyecto') . '/?p=' . $proyecto->id_proyecto . '&f=' . $f->id_finca_proveedor;
+                    $telefonos = explode('|', $f->telefonos);
+
+                    foreach ($telefonos as $telefono) {
+                        // enviar notificación WhatsApp
+                        dump('enviar enlace: ' . $enlace . ' a: ' . $f->nombre . ' por ' . $telefono);
+                    }
+                }
+            }
+
+            $success = true;
+            $msg = 'Se ha <b>NOTIFICADO</b> a las fincas correctamente';
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $success = false;
+            $msg = '<div class="alert alert-danger text-center">' .
+                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
+                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
+                . '</div>';
+        }
+
+        return [
+            'success' => $success,
+            'mensaje' => $msg,
+        ];
+    }
+
+    public function modal_confirmaciones(Request $request)
+    {
+        $proyecto = Proyecto::find($request->id);
+
+        $variedades_pedido = DB::table('caja_proyecto as cp')
+            ->join('detalle_caja_proyecto as dc', 'dc.id_caja_proyecto', '=', 'cp.id_caja_proyecto')
+            ->join('variedad as v', 'v.id_variedad', '=', 'dc.id_variedad')
+
+            ->leftJoin('planta as p', 'p.id_planta', '=', 'v.id_planta')
+
+            ->leftJoin('distribucion_receta as dr', function ($join) {
+                $join->on(
+                    'dr.id_detalle_caja_proyecto',
+                    '=',
+                    'dc.id_detalle_caja_proyecto'
+                );
+            })
+
+            ->leftJoin('variedad as vr', 'vr.id_variedad', '=', 'dr.id_variedad')
+            ->leftJoin('planta as pr', 'pr.id_planta', '=', 'vr.id_planta')
+
+            ->where('cp.id_proyecto', $proyecto->id_proyecto)
+
+            ->select(
+                DB::raw("
+            CASE
+                WHEN v.receta = 1 THEN dr.id_variedad
+                ELSE dc.id_variedad
+            END as id_variedad
+        "),
+
+                // ID DE PLANTA DE LA VARIEDAD
+                DB::raw("
+            CASE
+                WHEN v.receta = 1 THEN vr.id_planta
+                ELSE v.id_planta
+            END as id_planta
+        "),
+
+                DB::raw("
+            CASE
+                WHEN v.receta = 1 THEN vr.nombre
+                ELSE v.nombre
+            END as var_nombre
+        "),
+
+                DB::raw("
+            CASE
+                WHEN v.receta = 1 THEN pr.nombre
+                ELSE p.nombre
+            END as pta_nombre
+        "),
+
+                DB::raw("
+            SUM(
+                cp.cantidad
+                * dc.ramos_x_caja
+                * CASE
+                    WHEN v.receta = 1 THEN dr.unidades
+                    ELSE dc.tallos_x_ramo
+                  END
+            ) as tallos
+        "),
+
+                DB::raw("'PEDIDO' as tipo_variedad")
+            )
+
+            ->groupBy(
+                DB::raw("
+            CASE
+                WHEN v.receta = 1 THEN dr.id_variedad
+                ELSE dc.id_variedad
+            END
+        "),
+
+                // ID DE PLANTA
+                DB::raw("
+            CASE
+                WHEN v.receta = 1 THEN vr.id_planta
+                ELSE v.id_planta
+            END
+        "),
+
+                DB::raw("
+            CASE
+                WHEN v.receta = 1 THEN vr.nombre
+                ELSE v.nombre
+            END
+        "),
+
+                DB::raw("
+            CASE
+                WHEN v.receta = 1 THEN pr.nombre
+                ELSE p.nombre
+            END
+        ")
+            );
+
+        $variedades_confirmacion = DB::table('detalle_proyecto_confirmacion as det')
+            ->join(
+                'proyecto_confirmacion as pc',
+                'pc.id_proyecto_confirmacion',
+                '=',
+                'det.id_proyecto_confirmacion'
+            )
+            ->join('variedad as v', 'v.id_variedad', '=', 'det.id_variedad')
+            ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
+
+            ->where('pc.id_proyecto', $proyecto->id_proyecto)
+
+            // Solamente variedades que NO están en el pedido
+            ->whereNotExists(function ($query) use ($proyecto) {
+
+                $query->select(DB::raw(1))
+                    ->from('caja_proyecto as cp2')
+                    ->join(
+                        'detalle_caja_proyecto as dc2',
+                        'dc2.id_caja_proyecto',
+                        '=',
+                        'cp2.id_caja_proyecto'
+                    )
+                    ->leftJoin(
+                        'distribucion_receta as dr2',
+                        'dr2.id_detalle_caja_proyecto',
+                        '=',
+                        'dc2.id_detalle_caja_proyecto'
+                    )
+                    ->where('cp2.id_proyecto', $proyecto->id_proyecto)
+
+                    ->whereRaw("
+                CASE
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM variedad v2
+                        WHERE v2.id_variedad = dc2.id_variedad
+                        AND v2.receta = 1
+                    )
+                    THEN dr2.id_variedad
+                    ELSE dc2.id_variedad
+                END = det.id_variedad
+            ");
+            })
+
+            ->select(
+                'det.id_variedad',
+
+                // ID DE PLANTA
+                'v.id_planta as id_planta',
+
+                'v.nombre as var_nombre',
+                'p.nombre as pta_nombre',
+                'det.tallos_pedido as tallos',
+
+                DB::raw("'CONFIRMACION' as tipo_variedad")
+            );
+
+        $listado = $variedades_pedido
+            ->unionAll($variedades_confirmacion)
+            ->orderBy('pta_nombre')
+            ->orderBy('var_nombre')
+            ->get();
+
+        foreach ($listado as $item) {
+            $confirmaciones = DB::table('detalle_proyecto_confirmacion as det')
+                ->join('proyecto_confirmacion as pc', 'pc.id_proyecto_confirmacion', '=', 'det.id_proyecto_confirmacion')
+                ->join('finca_proveedor as f', 'f.id_finca_proveedor', '=', 'pc.id_finca_proveedor')
+                ->select(
+                    'pc.id_finca_proveedor',
+                    'f.nombre',
+                    DB::raw('sum(det.confirmados) as cantidad')
+                )
+                ->where('pc.id_proyecto', $proyecto->id_proyecto)
+                ->where('det.id_variedad', $item->id_variedad)
+                ->groupBy(
+                    'pc.id_finca_proveedor',
+                    'f.nombre'
+                )
+                ->orderBy('f.nombre')
+                ->get();
+            $item->confirmaciones = $confirmaciones;
+            $mi_finca = DB::table('planta_finca as pf')
+                ->join('finca_proveedor as f', 'f.id_finca_proveedor', '=', 'pf.id_finca_proveedor')
+                ->select('f.*')->distinct()
+                ->where('pf.id_planta', '=', $item->id_planta)
+                ->first();
+            $item->mi_finca = $mi_finca;
+            if ($mi_finca != '' && $mi_finca->margen > 0) {
+                $item->tallos_margen = $item->tallos + intval(porcentaje($mi_finca->margen, $item->tallos, 2));
+            }
+        }
+        $fincas = FincaProveedor::where('estado', 1)
+            ->orderBy('nombre')
+            ->get();
+        foreach ($fincas as $f) {
+            $confirmacion = ProyectoConfirmacion::where('id_proyecto', $proyecto->id_proyecto)
+                ->where('id_finca_proveedor', $f->id_finca_proveedor)
+                ->first();
+            $f->confirmacion = $confirmacion;
+        }
+
+        $orden_compra = OrdenCompra::where('id_proyecto', $proyecto->id_proyecto)->first();
+        return view('adminlte.gestion.comercializacion.proyectos.forms.modal_confirmaciones', [
+            'proyecto' => $proyecto,
+            'listado' => $listado,
+            'fincas' => $fincas,
+            'orden_compra' => $orden_compra,
+        ]);
+    }
+
+    public function confirmar_finca(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $proyecto = Proyecto::find($request->proy);
+            $confirmacion = ProyectoConfirmacion::where('id_proyecto', $proyecto->id_proyecto)
+                ->where('id_finca_proveedor', $request->finca)
+                ->first();
+            if ($confirmacion != '' && $confirmacion->estado == 'P') {
+                $confirmacion->estado = 'C';
+                $confirmacion->save();
+
+                DB::commit();
+                $success = true;
+                $msg = 'Se ha <b>CONFIRMADO</b> el pedido de flor <b style="font-size: 1.3em">#' . $confirmacion->id_proyecto_confirmacion . '</b> correctamente';
+            } else {
+                DB::rollBack();
+                $success = false;
+                $msg = '<div class="alert alert-danger text-center">' .
+                    '<h3>Ya se encuentra <b>CONFIRMADO</b> el pedido de flor para esta finca</h3>' .
+                    '</div>';
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $success = false;
+            $msg = '<div class="alert alert-danger text-center">' .
+                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
+                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
+                . '</div>';
+        }
+
+        return [
+            'success' => $success,
+            'mensaje' => $msg,
+        ];
+    }
+
+    public function store_orden_compra(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $compra = OrdenCompra::where('id_proyecto', $request->id)
+                ->first();
+            if ($compra == '') {
+                $compra = new OrdenCompra();
+                $compra->id_proyecto = $request->id;
+                $compra->estado = 'P';
+                $compra->fecha = hoy();
+                $compra->id_usuario = session('id_usuario');
+                $compra->save();
+                $compra->id_orden_compra = DB::table('orden_compra')
+                    ->select(DB::raw('max(id_orden_compra) as id'))
+                    ->get()[0]->id;
+
+                foreach (json_decode($request->data) as $data) {
+                    $detalle = new DetalleOrdenCompra();
+                    $detalle->id_orden_compra = $compra->id_orden_compra;
+                    $detalle->id_variedad = $data->variedad;
+                    $detalle->tallos = abs($data->tallos);
+                    $detalle->save();
+                }
+
+                DB::commit();
+                $success = true;
+                $msg = 'Se ha creado la <b>ORDEN de COMPRA</b> para el pedido con numero: <b style="font-size: 1.3em">#' . $compra->id_orden_compra . '</b> correctamente';
+            } else {
+                DB::rollBack();
+                $success = false;
+                $msg = '<div class="alert alert-danger text-center">' .
+                    '<h3>Ya existe una <b>ORDEN de COMPRA</b> para este pedido</h3>' .
+                    '</div>';
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $success = false;
+            $msg = '<div class="alert alert-danger text-center">' .
+                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
+                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
+                . '</div>';
+        }
+
+        return [
+            'success' => $success,
+            'mensaje' => $msg,
+        ];
+    }
+
+    public function modal_orden_compra(Request $request)
+    {
+        $compra = OrdenCompra::find($request->id);
+        $detalles = $compra->detalles;
+        foreach ($detalles as $det) {
+            $proveedores = DB::table('variedad_proveedor as vp')
+                ->join('configuracion_empresa as p', 'p.id_configuracion_empresa', '=', 'vp.id_proveedor')
+                ->select('vp.id_proveedor', 'p.nombre')->distinct()
+                ->where('p.id_empresa', getFincaActiva())
+                ->where('p.proveedor', 1)
+                ->where('vp.id_variedad', $det->id_variedad)
+                ->get();
+            $det->all_proveedores = $proveedores;
+        }
+        return view('adminlte.gestion.comercializacion.proyectos.forms.modal_orden_compra', [
+            'compra' => $compra,
+            'detalles' => $detalles,
+        ]);
+    }
+
+    public function update_orden_compra(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            foreach (json_decode($request->data) as $data) {
+                ProveedorDetalleOrdenCompra::where('id_detalle_orden_compra', $data->id_det)
+                    ->delete();
+                foreach ($data->proveedores as $prov) {
+                    $model = new ProveedorDetalleOrdenCompra();
+                    $model->id_detalle_orden_compra = $data->id_det;
+                    $model->id_proveedor = $prov->proveedor;
+                    $model->cantidad = $prov->comprar;
+                    $model->id_usuario = session('id_usuario');
+                    $model->save();
+                }
+            }
+
+            DB::commit();
+            $success = true;
+            $msg = 'Se ha actualizado la <b>ORDEN de COMPRA</b> correctamente';
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $success = false;
+            $msg = '<div class="alert alert-danger text-center">' .
+                '<p> Ha ocurrido un problema al guardar la informacion al sistema</p>' .
+                '<p>' . $e->getMessage() . ' ' . $e->getFile() . ' ' . $e->getLine() . '</p>'
+                . '</div>';
+        }
+
+        return [
+            'success' => $success,
+            'mensaje' => $msg,
+        ];
     }
 }

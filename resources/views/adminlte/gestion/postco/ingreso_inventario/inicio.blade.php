@@ -32,75 +32,77 @@
 
     <!-- Main content -->
     <section class="content">
-        <table style="width: 100%">
-            <tr>
-                <td>
-                    <div class="input-group">
-                        <div class="input-group-addon bg-yura_dark span-input-group-yura-fixed">
-                            Planta
+        <div style="overflow-x: scroll">
+            <table style="width: 100%">
+                <tr>
+                    <td>
+                        <div class="input-group">
+                            <div class="input-group-addon bg-yura_dark span-input-group-yura-fixed">
+                                Planta
+                            </div>
+                            <select name="planta_filtro" id="planta_filtro" class="form-control" style="width: 100%"
+                                onchange="select_planta_global($(this).val(), 'variedad_filtro', 'div_filtro_variedad', '<option value=>Todas las Varidades</option>')">
+                                <option value="">Todas las Plantas</option>
+                                @foreach ($plantas as $p)
+                                    <option value="{{ $p->id_planta }}">{{ $p->nombre }}</option>
+                                @endforeach
+                            </select>
                         </div>
-                        <select name="planta_filtro" id="planta_filtro" class="form-control" style="width: 100%"
-                            onchange="select_planta_global($(this).val(), 'variedad_filtro', 'div_filtro_variedad', '<option value=>Todas las Varidades</option>')">
-                            <option value="">Todas las Plantas</option>
-                            @foreach ($plantas as $p)
-                                <option value="{{ $p->id_planta }}">{{ $p->nombre }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </td>
-                <td id="div_filtro_variedad">
-                    <div class="input-group">
-                        <div class="input-group-addon bg-yura_dark">
-                            Variedad
+                    </td>
+                    <td id="div_filtro_variedad">
+                        <div class="input-group">
+                            <div class="input-group-addon bg-yura_dark">
+                                Variedad
+                            </div>
+                            <select name="variedad_filtro" id="variedad_filtro" class="form-control" style="width: 100%">
+                                <option value="">Todas las Varidades</option>
+                            </select>
                         </div>
-                        <select name="variedad_filtro" id="variedad_filtro" class="form-control" style="width: 100%">
-                            <option value="">Todas las Varidades</option>
-                        </select>
-                    </div>
-                </td>
-                <td>
-                    <div class="input-group">
-                        <div class="input-group-addon bg-yura_dark">
-                            Documento
+                    </td>
+                    <td>
+                        <div class="input-group">
+                            <div class="input-group-addon bg-yura_dark">
+                                Documento
+                            </div>
+                            <select name="documento_filtro" id="documento_filtro" class="form-control" style="width: 100%">
+                                <option value="">Todos los Documentos</option>
+                                @foreach ($documentos as $d)
+                                    <option value="{{ $d->id_api_store_cajas }}">{{ $d->documento }}</option>
+                                @endforeach
+                            </select>
                         </div>
-                        <select name="documento_filtro" id="documento_filtro" class="form-control" style="width: 100%">
-                            <option value="">Todos los Documentos</option>
-                            @foreach ($documentos as $d)
-                                <option value="{{ $d->id_api_store_cajas }}">{{ $d->documento }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </td>
-                <td>
-                    <div class="input-group">
-                        <div class="input-group-addon bg-yura_dark">
-                            Bodega
+                    </td>
+                    <td>
+                        <div class="input-group">
+                            <div class="input-group-addon bg-yura_dark">
+                                Bodega
+                            </div>
+                            <select name="bodega_filtro" id="bodega_filtro" class="form-control" style="width: 100%">
+                                <option value="V">Ventas</option>
+                                <option value="P">Producción</option>
+                            </select>
                         </div>
-                        <select name="bodega_filtro" id="bodega_filtro" class="form-control" style="width: 100%">
-                            <option value="V">Ventas</option>
-                            <option value="P">Producción</option>
-                        </select>
-                    </div>
-                </td>
-                <td>
-                    <div class="input-group">
-                        <div class="input-group-addon bg-yura_dark">
-                            Fecha
+                    </td>
+                    <td>
+                        <div class="input-group">
+                            <div class="input-group-addon bg-yura_dark">
+                                Fecha
+                            </div>
+                            <input type="date" name="fecha_filtro" id="fecha_filtro" class="form-control"
+                                value="{{ hoy() }}" max="{{ hoy() }}">
+                            <div class="input-group-btn">
+                                <button type="button" class="btn btn-yura_primary" onclick="listar_reporte()">
+                                    <i class="fa fa-fw fa-search"></i>
+                                </button>
+                                <button type="button" class="btn btn-yura_dark" onclick="admin_bodegas()">
+                                    <i class="fa fa-fw fa-cogs"></i>
+                                </button>
+                            </div>
                         </div>
-                        <input type="date" name="fecha_filtro" id="fecha_filtro" class="form-control"
-                            value="{{ hoy() }}" max="{{ hoy() }}">
-                        <div class="input-group-btn">
-                            <button type="button" class="btn btn-yura_primary" onclick="listar_reporte()">
-                                <i class="fa fa-fw fa-search"></i>
-                            </button>
-                            <button type="button" class="btn btn-yura_dark" onclick="admin_bodegas()">
-                                <i class="fa fa-fw fa-cogs"></i>
-                            </button>
-                        </div>
-                    </div>
-                </td>
-            </tr>
-        </table>
+                    </td>
+                </tr>
+            </table>
+        </div>
 
         <div style="margin-top: 5px;" id="div_listado"></div>
     </section>

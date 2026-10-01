@@ -59,4 +59,14 @@ class Proyecto extends Model
     {
         return $this->hasMany('\yura\Modelos\CajaProyecto', 'id_proyecto');
     }
+
+    public function confirmaciones()
+    {
+        return $this->hasMany('\yura\Modelos\ProyectoConfirmacion', 'id_proyecto');
+    }
+
+    public function ordenes_compra()
+    {
+        return $this->hasMany('\yura\Modelos\OrdenCompra', 'id_proyecto');
+    }
 }

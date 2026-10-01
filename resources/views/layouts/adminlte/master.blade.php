@@ -473,11 +473,11 @@
             });
         }
 
-        function post_jquery_m(url, datos, success, div = false) {
+        function post_jquery_m(url, datos, success, div = false, tiempo_alert = 5000) {
             div == false ? $.LoadingOverlay('show') : $('#' + div).LoadingOverlay('show');
             $.post(url, datos, function(retorno) {
                 if (retorno.success) {
-                    mini_alerta('success', retorno.mensaje, 5000);
+                    mini_alerta('success', retorno.mensaje, tiempo_alert);
                     success();
                 } else {
                     alerta(retorno.mensaje);
