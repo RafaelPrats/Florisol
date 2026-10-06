@@ -1,46 +1,66 @@
-<div class="nav-tabs-custom">
-    <ul class="nav nav-pills nav-justified">
+<div class="report-tabs-card">
+    <ul class="nav nav-tabs report-tabs">
         <li class="active">
-            <a href="#listado_compras" data-toggle="tab" aria-expanded="false">
-                Compras
+            <a href="#listado_compras" data-toggle="tab">
+                <span><i class="fa fa-truck"></i> Compras</span>
+                <span class="report-tab-count">{{ count($listado_compras) }}</span>
             </a>
         </li>
-        <li class="">
-            <a href="#documentos" data-toggle="tab" aria-expanded="true">
-                Internos
+        <li>
+            <a href="#documentos" data-toggle="tab">
+                <span><i class="fa fa-file-text-o"></i> Internos</span>
+                <span class="report-tab-count">{{ count($listado_documentos) }}</span>
             </a>
         </li>
-        <li class="">
-            <a href="#movimientos" data-toggle="tab" aria-expanded="true">
-                Movimientos
+        <li>
+            <a href="#movimientos" data-toggle="tab">
+                <span><i class="fa fa-exchange"></i> Movimientos</span>
+                <span class="report-tab-count">{{ count($listado_movimientos) }}</span>
             </a>
         </li>
-        <li class="">
-            <a href="#correcciones" data-toggle="tab" aria-expanded="true">
-                Correcciones
+        <li>
+            <a href="#correcciones" data-toggle="tab">
+                <span><i class="fa fa-pencil-square-o"></i> Correcciones</span>
+                <span class="report-tab-count">{{ count($listado_corregir) }}</span>
             </a>
         </li>
     </ul>
     <div class="tab-content no-padding">
-        <div class="tab-pane active" id="listado_compras" style="position: relative">
-            <div style="overflow-y: scroll; overflow-x: scroll; max-height: 700px;">
-                @include('adminlte/gestion/postco/reporte_ingresos/partials/_compras')
-            </div>
+        <div class="tab-pane active" id="listado_compras">
+            @if (count($listado_compras))
+                <div class="report-table-scroll">
+                    @include('adminlte/gestion/postco/reporte_ingresos/partials/_compras')
+                </div>
+            @else
+                <div class="report-empty"><i class="fa fa-inbox"></i> No hay compras para los filtros seleccionados.</div>
+            @endif
         </div>
-        <div class="tab-pane" id="documentos" style="position: relative">
-            <div style="overflow-y: scroll; overflow-x: scroll; max-height: 700px;">
-                @include('adminlte/gestion/postco/reporte_ingresos/partials/_documentos')
-            </div>
+        <div class="tab-pane" id="documentos">
+            @if (count($listado_documentos))
+                <div class="report-table-scroll">
+                    @include('adminlte/gestion/postco/reporte_ingresos/partials/_documentos')
+                </div>
+            @else
+                <div class="report-empty"><i class="fa fa-inbox"></i> No hay ingresos internos para los filtros seleccionados.</div>
+            @endif
         </div>
-        <div class="tab-pane" id="movimientos" style="position: relative">
-            <div style="overflow-y: scroll; overflow-x: scroll; max-height: 700px;">
-                @include('adminlte/gestion/postco/reporte_ingresos/partials/_movimientos')
-            </div>
+        <div class="tab-pane" id="movimientos">
+            @if (count($listado_movimientos))
+                <div class="report-table-scroll">
+                    @include('adminlte/gestion/postco/reporte_ingresos/partials/_movimientos')
+                </div>
+            @else
+                <div class="report-empty"><i class="fa fa-inbox"></i> No hay movimientos para los filtros seleccionados.</div>
+            @endif
         </div>
-        <div class="tab-pane" id="correcciones" style="position: relative">
-            <div style="overflow-y: scroll; overflow-x: scroll; max-height: 700px;">
-                @include('adminlte/gestion/postco/reporte_ingresos/partials/_correcciones')
-            </div>
+        <div class="tab-pane" id="correcciones">
+            @if (count($listado_corregir))
+                <div class="report-table-scroll">
+                    @include('adminlte/gestion/postco/reporte_ingresos/partials/_correcciones')
+                </div>
+            @else
+                <div class="report-empty"><i class="fa fa-inbox"></i> No hay correcciones para los filtros seleccionados.</div>
+            @endif
         </div>
     </div>
 </div>

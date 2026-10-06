@@ -1,98 +1,131 @@
-<legend class="text-center" style="margin-bottom: 5px; font-size: 1.3em">
-    Kardex de <b>{{ $variedad->nombre }}</b>
-    desde <b>{{ explode(' del ', convertDateToText($desde))[0] }}</b>
-    al <b>{{ explode(' del ', convertDateToText($hasta))[0] }}</b> en <b>{{ $bodega }}</b>
-</legend>
-@if (count($listado) > 0)
-    <div style="overflow-y: scroll; overflow-x: scroll; max-height: 700px">
-        <table class="table-bordered" style="width: 100%; border: 1px solid #9d9d9d" id="table_listado">
-            <thead>
-                <tr class="tr_fija_top_0">
-                    <th class="padding_lateral_5 bg-yura_dark" style="width: 150px">
-                        Fecha
-                    </th>
-                    <th class="padding_lateral_5 bg-yura_dark" style="width: 100px">
-                        Tipo
-                    </th>
-                    <th class="padding_lateral_5 bg-yura_dark">
-                        Documento
-                    </th>
-                    <th class="padding_lateral_5 bg-yura_dark">
-                        Detalle
-                    </th>
-                    <th class="padding_lateral_5 th_yura_green" style="width: 90px">
-                        Entrada
-                    </th>
-                    <th class="padding_lateral_5 bg-yura_danger" style="width: 90px">
-                        Salida
-                    </th>
-                    <th class="padding_lateral_5 bg-yura_dark" style="width: 90px">
-                        Saldo <i class="fa fa-fw fa-caret-right"></i>{{ $saldo }}
-                    </th>
-                </tr>
-            </thead>
-            <tbody>
-                @php
-                    $list_bg = [
-                        0 => '#ffffff',
-                        1 => '#dddddd',
-                    ];
-                    $bg_selected = 0;
-                    $fecha_anterior = $listado[0]->fecha;
-                @endphp
-                @foreach ($listado as $pos => $item)
-                    @php
-                        if ($fecha_anterior != $item->fecha) {
-                            $fecha_anterior = $item->fecha;
-                            $bg_selected = !$bg_selected;
-                        }
-                    @endphp
-                    <tr onmouseover="$(this).css('background-color', '#fff8d7')"
-                        onmouseleave="$(this).css('background-color', '{{ $list_bg[$bg_selected] }}')"
-                        style="background-color: {{ $list_bg[$bg_selected] }}">
-                        <th class="padding_lateral_5" style="border-color: #9d9d9d">
-                            {{ explode(' del ', convertDateToText($item->fecha))[0] }}
-                        </th>
-                        <th class="text-center text-sm" style="border-color: #9d9d9d">
-                            @if ($item->tipo == 'INGRESO')
-                                <span class="badge bg-yura_primary">
-                                    {{ $item->tipo }}
-                                </span>
-                            @else
-                                <span class="badge bg-yura_danger">
-                                    {{ $item->tipo }}
-                                </span>
-                            @endif
-                        </th>
-                        <th class="padding_lateral_5" style="border-color: #9d9d9d">
-                            {{ $item->concepto }}
-                            - {{ $item->documento }}
-                        </th>
-                        <th class="padding_lateral_5 text-sm" style="border-color: #9d9d9d">
-                            {{ $item->detalle }}
-                        </th>
-                        <th class="padding_lateral_5 text-color_yura" style="border-color: #9d9d9d">
-                            @if ($item->tipo == 'INGRESO')
-                                {{ number_format($item->cantidad) }}
-                                @php
-                                    $saldo += $item->cantidad;
-                                @endphp
-                            @endif
-                        </th>
-                        <th class="padding_lateral_5 color_text-yura_danger" style="border-color: #9d9d9d">
-                            @if ($item->tipo == 'SALIDA')
-                                {{ number_format($item->cantidad) }}
-                                @php
-                                    $saldo -= $item->cantidad;
-                                @endphp
-                            @endif
-                        </th>
-                        <th class="padding_lateral_5" style="border-color: #9d9d9d">
-                            {{ number_format($saldo) }}
-                        </th>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
+@php
+    $total_ingresos = 0;
+    $total_salidas = 0;
+    $saldo_final = $saldo;
+    foreach ($listado as $movimiento) {
+        if ($movimiento->tipo == 'INGRESO') {
+            $total_ingresos += $movimiento->cantidad;
+            $saldo_final += $movimiento->cantidad;
+        } else {
+            $total_salidas += $movimiento->cantidad;
+            $saldo_final -= $movimiento->cantidad;
+        }
+    }
+@endphp
+
+<div class="kardex-results-card">
+    <div class="kardex-result-heading">
+        <div class="kardex-result-title">
+            <span class="kardex-icon"><i class="fa fa-line-chart"></i></span>
+            <div>
+                <h3>Kardex · {{ $variedad->nombre }}</h3>
+                <p>Movimientos desde {{ explode(' del ', convertDateToText($desde))[0] }}
+                    hasta {{ explode(' del ', convertDateToText($hasta))[0] }}</p>
+            </div>
+        </div>
+        <div class="kardex-result-meta">
+            <span class="kardex-chip"><i class="fa fa-archive"></i> Bodega <strong>{{ $bodega }}</strong></span>
+            <span class="kardex-chip"><i class="fa fa-list"></i> <strong>{{ count($listado) }}</strong>
+                movimientos</span>
+        </div>
     </div>
-@endif
+
+    <div class="kardex-summary">
+        <div class="kardex-summary-item">
+            <span>Saldo inicial</span>
+            <strong>{{ number_format($saldo) }}</strong>
+        </div>
+        <div class="kardex-summary-item kardex-in">
+            <span>Entradas del periodo</span>
+            <strong>+{{ number_format($total_ingresos) }}</strong>
+        </div>
+        <div class="kardex-summary-item kardex-out">
+            <span>Salidas del periodo</span>
+            <strong>-{{ number_format($total_salidas) }}</strong>
+        </div>
+        <div class="kardex-summary-item">
+            <span>Saldo al cierre</span>
+            <strong>{{ number_format($saldo_final) }}</strong>
+        </div>
+    </div>
+
+    @if (count($listado) > 0)
+        <div class="kardex-table-wrap">
+            <table class="kardex-table" id="table_listado">
+                <colgroup>
+                    <col style="width: 13%">
+                    <col style="width: 11%">
+                    <col style="width: 18%">
+                    <col style="width: 28%">
+                    <col style="width: 10%">
+                    <col style="width: 10%">
+                    <col style="width: 10%">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Tipo</th>
+                        <th>Documento</th>
+                        <th>Detalle</th>
+                        <th class="text-right kardex-in-head">Entrada</th>
+                        <th class="text-right kardex-out-head">Salida</th>
+                        <th class="text-right">Saldo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @php
+                        $fecha_anterior = null;
+                        $grupo_fecha = 0;
+                    @endphp
+                    @foreach ($listado as $item)
+                        @php
+                            $fecha_inicio = $fecha_anterior != $item->fecha;
+                            if ($fecha_inicio && $fecha_anterior !== null) {
+                                $grupo_fecha = !$grupo_fecha;
+                            }
+                            $fecha_anterior = $item->fecha;
+                        @endphp
+                        <tr class="kardex-day-{{ $grupo_fecha }} {{ $fecha_inicio ? 'kardex-date-start' : '' }}">
+                            <td>
+                                {{ explode(' del ', convertDateToText($item->fecha))[0] }}
+                            </td>
+                            <td class="text-center">
+                                <span class="kardex-type {{ $item->tipo == 'INGRESO' ? 'kardex-type-in' : 'kardex-type-out' }}">
+                                    {{ $item->tipo }}
+                                </span>
+                            </td>
+                            <td>
+                                <strong>{{ $item->concepto }}</strong>
+                                <span class="text-muted">#{{ $item->documento }}</span>
+                            </td>
+                            <td class="kardex-detail">{{ $item->detalle ?: '—' }}</td>
+                            <td class="kardex-number">
+                                @if ($item->tipo == 'INGRESO')
+                                    <span class="text-color_yura">+{{ number_format($item->cantidad) }}</span>
+                                    @php
+                                        $saldo += $item->cantidad;
+                                    @endphp
+                                @endif
+                            </td>
+                            <td class="kardex-number">
+                                @if ($item->tipo == 'SALIDA')
+                                    <span class="color_text-yura_danger">-{{ number_format($item->cantidad) }}</span>
+                                    @php
+                                        $saldo -= $item->cantidad;
+                                    @endphp
+                                @endif
+                            </td>
+                            <td class="kardex-number kardex-balance">{{ number_format($saldo) }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @else
+        <div class="kardex-empty-state" style="border: 0; border-radius: 0">
+            <span class="kardex-empty-icon"><i class="fa fa-inbox"></i></span>
+            <strong>Sin movimientos en este periodo</strong>
+            <span>El saldo inicial se mantiene hasta que se registre un movimiento.</span>
+        </div>
+    @endif
+</div>

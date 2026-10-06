@@ -986,5 +986,63 @@ class ReporteSalidasController extends Controller
 
         for ($i = 0; $i <= $col; $i++)
             $sheet->getColumnDimension($columnas[$i])->setAutoSize(true);
+
+        foreach ($spread->getAllSheets() as $sheet) {
+            $lastColumn = $sheet->getHighestColumn();
+            $lastRow = $sheet->getHighestRow();
+            $range = 'A1:' . $lastColumn . $lastRow;
+
+            $sheet->setShowGridlines(false);
+            $sheet->getStyle($range)->applyFromArray([
+                'alignment' => [
+                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                    'wrapText' => true,
+                ],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_HAIR,
+                        'color' => ['rgb' => 'DCE9E4'],
+                    ],
+                ],
+            ]);
+            $sheet->getStyle('A1:' . $lastColumn . '1')->applyFromArray([
+                'font' => [
+                    'bold' => true,
+                    'color' => ['rgb' => 'FFFFFF'],
+                    'size' => 11,
+                ],
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => '003729'],
+                ],
+                'alignment' => [
+                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                    'wrapText' => true,
+                ],
+            ]);
+            $sheet->getRowDimension(1)->setRowHeight(30);
+
+            for ($row = 2; $row <= $lastRow; $row++) {
+                if ($row % 2 == 0) {
+                    $sheet->getStyle('A' . $row . ':' . $lastColumn . $row)
+                        ->getFill()
+                        ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID);
+                    $sheet->getStyle('A' . $row . ':' . $lastColumn . $row)
+                        ->getFill()
+                        ->getStartColor()
+                        ->setRGB('F4FAF7');
+                }
+            }
+
+            $sheet->freezePane('A2');
+            $sheet->getPageSetup()
+                ->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE)
+                ->setFitToPage(true)
+                ->setFitToWidth(1)
+                ->setFitToHeight(0);
+            $sheet->getPageSetup()->setRowsToRepeatAtTopByStartAndEnd(1, 1);
+            $sheet->getPageSetup()->setPrintArea($range);
+        }
     }
 }

@@ -730,57 +730,247 @@ class KardexController extends Controller
         $sheet = $spread->getActiveSheet();
         $sheet->setTitle('KARDEX');
 
-        $row = 1;
-        $col = 0;
-        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Kardex de ' . $variedad->nombre . ' desde ' . explode(' del ', convertDateToText($desde))[0] . ' al ' . explode(' del ', convertDateToText($hasta))[0] . ' en ' . $bodega);
-        $sheet->mergeCells($columnas[$col] . $row . ':' . $columnas[$col + 6] . $row);
+        $saldo_inicial = $saldo;
+        $total_ingresos = 0;
+        $total_salidas = 0;
+        foreach ($listado as $item) {
+            if ($item->tipo == 'INGRESO') {
+                $total_ingresos += $item->cantidad;
+            } else {
+                $total_salidas += $item->cantidad;
+            }
+        }
+        $saldo_final = $saldo_inicial + $total_ingresos - $total_salidas;
 
-        $row++;
-        $col = 0;
-        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Fecha');
-        $col++;
-        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Tipo');
-        $col++;
-        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Documento');
-        $col++;
-        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Detalle');
-        $col++;
-        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Entrada');
-        $col++;
-        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Salida');
-        $col++;
-        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Saldo: ' . $saldo);
-        setBgToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, '00b388');
-        setColorTextToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, 'ffffff');
+        $sheet->mergeCells('A1:G1');
+        setValueToCeldaExcel($sheet, 'A1', 'KARDEX DE ' . mb_strtoupper($variedad->nombre));
+        $sheet->getRowDimension(1)->setRowHeight(30);
+        $sheet->getStyle('A1:G1')->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'size' => 16,
+                'color' => ['rgb' => 'FFFFFF'],
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '003729'],
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                'indent' => 1,
+            ],
+        ]);
 
-        foreach ($listado as $pos => $item) {
+        $sheet->mergeCells('A2:G2');
+        setValueToCeldaExcel(
+            $sheet,
+            'A2',
+            'Variedad: ' . $variedad->nombre .
+                '    |    Periodo: ' . explode(' del ', convertDateToText($desde))[0] .
+                ' al ' . explode(' del ', convertDateToText($hasta))[0] .
+                '    |    Bodega: ' . $bodega
+        );
+        $sheet->getRowDimension(2)->setRowHeight(22);
+        $sheet->getStyle('A2:G2')->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'size' => 11,
+                'color' => ['rgb' => '003729'],
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'E8F6F1'],
+            ],
+            'alignment' => [
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                'indent' => 1,
+            ],
+        ]);
+
+        $sheet->mergeCells('A3:G3');
+        setValueToCeldaExcel(
+            $sheet,
+            'A3',
+            'SALDO INICIAL: ' . number_format($saldo_inicial) .
+                '     |     ENTRADAS: +' . number_format($total_ingresos) .
+                '     |     SALIDAS: -' . number_format($total_salidas) .
+                '     |     SALDO AL CIERRE: ' . number_format($saldo_final)
+        );
+        $sheet->getRowDimension(3)->setRowHeight(24);
+        $sheet->getStyle('A3:G3')->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'size' => 11,
+                'color' => ['rgb' => '003729'],
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'F2F7F5'],
+            ],
+            'alignment' => [
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                'indent' => 1,
+            ],
+        ]);
+
+        $headers = ['Fecha', 'Tipo', 'Documento', 'Detalle', 'Entrada', 'Salida', 'Saldo'];
+        foreach ($headers as $col => $header) {
+            setValueToCeldaExcel($sheet, $columnas[$col] . '5', $header);
+        }
+        $sheet->getRowDimension(5)->setRowHeight(23);
+        $sheet->getStyle('A5:G5')->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'size' => 11,
+                'color' => ['rgb' => 'FFFFFF'],
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '5A7177'],
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ],
+        ]);
+        $sheet->getStyle('E5')->getFill()->getStartColor()->setRGB('00B388');
+        $sheet->getStyle('F5')->getFill()->getStartColor()->setRGB('D01C62');
+
+        $row = 5;
+        $fecha_anterior = null;
+        $grupo_fecha = 0;
+        foreach ($listado as $item) {
             if ($item->tipo == 'INGRESO') {
                 $saldo += $item->cantidad;
-            }
-            if ($item->tipo == 'SALIDA') {
+            } else {
                 $saldo -= $item->cantidad;
             }
+
+            $fecha_inicio = $fecha_anterior != $item->fecha;
+            if ($fecha_inicio && $fecha_anterior !== null) {
+                $grupo_fecha = !$grupo_fecha;
+            }
+            $fecha_anterior = $item->fecha;
+
             $row++;
-            $col = 0;
-            setValueToCeldaExcel($sheet, $columnas[$col] . $row, explode(' del ', convertDateToText($item->fecha))[0]);
-            $col++;
-            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->tipo);
-            $col++;
-            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->concepto . '-' . $item->documento);
-            $col++;
-            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->detalle);
-            $col++;
-            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->tipo == 'INGRESO' ? $item->cantidad : '');
-            $col++;
-            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->tipo == 'SALIDA' ? $item->cantidad : '');
-            $col++;
-            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $saldo);
+            setValueToCeldaExcel($sheet, 'A' . $row, explode(' del ', convertDateToText($item->fecha))[0]);
+            setValueToCeldaExcel($sheet, 'B' . $row, $item->tipo);
+            setValueToCeldaExcel($sheet, 'C' . $row, $item->concepto . '-' . $item->documento);
+            setValueToCeldaExcel($sheet, 'D' . $row, $item->detalle ?: '—');
+            setValueToCeldaExcel($sheet, 'E' . $row, $item->tipo == 'INGRESO' ? $item->cantidad : '');
+            setValueToCeldaExcel($sheet, 'F' . $row, $item->tipo == 'SALIDA' ? $item->cantidad : '');
+            setValueToCeldaExcel($sheet, 'G' . $row, $saldo);
+
+            $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray([
+                'alignment' => [
+                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                    'wrapText' => true,
+                ],
+                'borders' => [
+                    'bottom' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_HAIR,
+                        'color' => ['rgb' => 'DCE6E2'],
+                    ],
+                ],
+            ]);
+            if ($grupo_fecha) {
+                $sheet->getStyle('A' . $row . ':G' . $row)->getFill()
+                    ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                    ->getStartColor()->setRGB('F0F7F4');
+            }
+            if ($fecha_inicio) {
+                $sheet->getStyle('A' . $row . ':G' . $row)->getBorders()->getTop()
+                    ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM)
+                    ->getColor()->setRGB('00B388');
+            }
+
+            $sheet->getStyle('B' . $row)->applyFromArray([
+                'font' => [
+                    'bold' => true,
+                    'color' => ['rgb' => 'FFFFFF'],
+                ],
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => $item->tipo == 'INGRESO' ? '00B388' : 'D01C62'],
+                ],
+                'alignment' => [
+                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                ],
+            ]);
+            $sheet->getStyle('E' . $row)->applyFromArray([
+                'font' => [
+                    'bold' => $item->tipo == 'INGRESO',
+                    'color' => ['rgb' => '009874'],
+                ],
+                'alignment' => [
+                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT,
+                ],
+                'numberFormat' => [
+                    'formatCode' => '#,##0;[Red]-#,##0',
+                ],
+            ]);
+            $sheet->getStyle('F' . $row)->applyFromArray([
+                'font' => [
+                    'bold' => $item->tipo == 'SALIDA',
+                    'color' => ['rgb' => 'D01C62'],
+                ],
+                'alignment' => [
+                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT,
+                ],
+                'numberFormat' => [
+                    'formatCode' => '#,##0;[Red]-#,##0',
+                ],
+            ]);
+            $sheet->getStyle('G' . $row)->applyFromArray([
+                'font' => [
+                    'bold' => true,
+                    'color' => ['rgb' => '003729'],
+                ],
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => 'E8F6F1'],
+                ],
+                'alignment' => [
+                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT,
+                ],
+                'numberFormat' => [
+                    'formatCode' => '#,##0;[Red]-#,##0',
+                ],
+            ]);
+            $sheet->getRowDimension($row)->setRowHeight(20);
         }
 
-        setTextCenterToCeldaExcel($sheet, 'A1:' . $columnas[$col] . $row);
-        setBorderToCeldaExcel($sheet, 'A1:' . $columnas[$col] . $row);
+        $last_row = $row;
+        $sheet->getStyle('A5:G' . $last_row)->getBorders()->getVertical()
+            ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_HAIR)
+            ->getColor()->setRGB('E6ECE9');
+        $sheet->setAutoFilter('A5:G' . $last_row);
+        $sheet->freezePane('A6');
+        $sheet->setShowGridlines(false);
+        $sheet->getPageSetup()
+            ->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE)
+            ->setFitToPage(true)
+            ->setFitToWidth(1)
+            ->setFitToHeight(0);
+        $sheet->getPageSetup()->setRowsToRepeatAtTopByStartAndEnd(1, 5);
 
-        for ($i = 0; $i <= $col; $i++)
-            $sheet->getColumnDimension($columnas[$i])->setAutoSize(true);
+        $anchos = [
+            'A' => 16,
+            'B' => 14,
+            'C' => 24,
+            'D' => 52,
+            'E' => 15,
+            'F' => 15,
+            'G' => 16,
+        ];
+        foreach ($anchos as $columna => $ancho) {
+            $sheet->getColumnDimension($columna)->setWidth($ancho);
+        }
+        if ($last_row > 5) {
+            $sheet->getStyle('E6:G' . $last_row)->getNumberFormat()
+                ->setFormatCode('#,##0;[Red]-#,##0');
+        }
     }
 }
