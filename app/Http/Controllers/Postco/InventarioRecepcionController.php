@@ -292,25 +292,29 @@ class InventarioRecepcionController extends Controller
                 $registro->save();
             }
 
-            $prov_det = ProveedorDetalleOrdenCompra::join('detalle_orden_compra as det', 'det.id_detalle_orden_compra', '=', 'proveedor_detalle_orden_compra.id_detalle_orden_compra')
-                ->select('proveedor_detalle_orden_compra.*')->distinct()
-                ->where('det.id_orden_compra', $request->orden_compra)
-                ->get();
+            if ($request->orden_compra != '') {
+                $prov_det = ProveedorDetalleOrdenCompra::join('detalle_orden_compra as det', 'det.id_detalle_orden_compra', '=', 'proveedor_detalle_orden_compra.id_detalle_orden_compra')
+                    ->select('proveedor_detalle_orden_compra.*')->distinct()
+                    ->where('det.id_orden_compra', $request->orden_compra)
+                    ->get();
 
-            $orden_terminada = true;
-            foreach ($prov_det as $pd) {
-                if ($pd->id_proveedor == $request->id_proveedor) {
-                    $pd->estado = 'F';
-                    $pd->save();
+                $orden_terminada = true;
+                foreach ($prov_det as $pd) {
+                    if ($pd->id_proveedor == $request->id_proveedor) {
+                        $pd->estado = 'F';
+                        $pd->save();
+                    }
+                    if ($pd->estado == 'P') {
+                        $orden_terminada = false;
+                    }
                 }
-                if ($pd->estado == 'P') {
-                    $orden_terminada = false;
+                if ($orden_terminada) {
+                    $orden_compra = OrdenCompra::find($request->orden_compra);
+                    if ($orden_compra) {
+                        $orden_compra->estado = 'F';    // Finalizada
+                        $orden_compra->save();
+                    }
                 }
-            }
-            if ($orden_terminada) {
-                $orden_compra = OrdenCompra::find($request->orden_compra);
-                $orden_compra->estado = 'F';    // Finalizada
-                $orden_compra->save();
             }
 
             $success = true;
