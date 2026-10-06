@@ -5,6 +5,10 @@ namespace yura\Http\Controllers\Postco;
 use DB;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use yura\Http\Controllers\Controller;
 use yura\Modelos\Planta;
@@ -19,6 +23,7 @@ class InventarioDiarioController extends Controller
             ->where('id_empresa', $finca)
             ->orderBy('nombre')
             ->get();
+
         return view('adminlte.gestion.postco.inventario_recepcion.inicio', [
             'url' => $request->getRequestUri(),
             'submenu' => Submenu::Where('url', '=', substr($request->getRequestUri(), 1))->get()[0],
@@ -28,202 +33,230 @@ class InventarioDiarioController extends Controller
 
     public function listar_reporte(Request $request)
     {
-        $finca = getFincaActiva();
+        $reporte = $this->obtener_reporte($request);
 
-        $variedades = DB::table('inventario_recepcion as i')
-            ->join('variedad as v', 'v.id_variedad', '=', 'i.id_variedad')
-            ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
-            ->select(
-                'i.id_variedad',
-                'v.nombre as var_nombre',
-                'p.nombre as pta_nombre'
-            )
-            ->where('i.disponibles', '>', 0)
-            ->where('i.id_empresa', $finca)
-            ->where('i.bodega', $request->bodega)
-            ->when($request->planta != '', function ($q) use ($request) {
-                $q->where('v.id_planta', $request->planta);
-            })
-            ->when($request->variedad != '', function ($q) use ($request) {
-                $q->where('i.id_variedad', $request->variedad);
-            })
-            ->groupBy(
-                'i.id_variedad',
-                'v.nombre',
-                'p.nombre'
-            )
-            ->orderBy('p.nombre')
-            ->orderBy('v.nombre')
-            ->get();
-
-        $idsVariedad = $variedades->pluck('id_variedad')->toArray();
-
-        $valores = DB::table('inventario_recepcion')
-            ->select(
-                'id_variedad',
-                'fecha',
-                DB::raw('SUM(disponibles) as tallos')
-            )
-            ->where('disponibles', '>', 0)
-            ->where('id_empresa', $finca)
-            ->where('bodega', $request->bodega)
-            ->whereIn('id_variedad', $idsVariedad)
-            ->groupBy('id_variedad', 'fecha')
-            ->orderBy('fecha')
-            ->get()
-            ->groupBy('id_variedad');
-
-        foreach ($variedades as $var) {
-            $var->valores = $valores[$var->id_variedad] ?? collect();
-        }
-
-        return view('adminlte.gestion.postco.inventario_recepcion.partials.listado', [
-            'variedades' => $variedades
-        ]);
+        return view('adminlte.gestion.postco.inventario_recepcion.partials.listado', $reporte);
     }
 
     public function exportar_reporte(Request $request)
     {
         $spread = new Spreadsheet();
         $this->excel_reporte($spread, $request);
-        $fileName = "Inventario.xlsx";
+        $fileName = 'Inventario.xlsx';
         $writer = new Xlsx($spread);
-
-        //--------------------------- GUARDAR EL EXCEL -----------------------
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="' . urlencode($fileName) . '"');
         $writer->save('php://output');
-
-        //$writer->save('/var/www/html/Dasalflor/storage/storage/excel/excel_prueba.xlsx');
     }
 
     public function excel_reporte($spread, $request)
     {
-        $finca = getFincaActiva();
-
-        $variedades = DB::table('inventario_recepcion as i')
-            ->join('variedad as v', 'v.id_variedad', '=', 'i.id_variedad')
-            ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
-            ->select(
-                'i.id_variedad',
-                'v.nombre as var_nombre',
-                'p.nombre as pta_nombre'
-            )
-            ->where('i.disponibles', '>', 0)
-            ->where('i.id_empresa', $finca)
-            ->where('i.bodega', $request->bodega)
-            ->when($request->planta != '', function ($q) use ($request) {
-                $q->where('v.id_planta', $request->planta);
-            })
-            ->when($request->variedad != '', function ($q) use ($request) {
-                $q->where('i.id_variedad', $request->variedad);
-            })
-            ->groupBy(
-                'i.id_variedad',
-                'v.nombre',
-                'p.nombre'
-            )
-            ->orderBy('p.nombre')
-            ->orderBy('v.nombre')
-            ->get();
-
-        $idsVariedad = $variedades->pluck('id_variedad')->toArray();
-
-        $valores = DB::table('inventario_recepcion')
-            ->select(
-                'id_variedad',
-                'fecha',
-                DB::raw('SUM(disponibles) as tallos')
-            )
-            ->where('disponibles', '>', 0)
-            ->where('id_empresa', $finca)
-            ->where('bodega', $request->bodega)
-            ->whereIn('id_variedad', $idsVariedad)
-            ->groupBy('id_variedad', 'fecha')
-            ->orderBy('fecha')
-            ->get()
-            ->groupBy('id_variedad');
-
-        foreach ($variedades as $var) {
-            $var->valores = $valores[$var->id_variedad] ?? collect();
-        }
-
+        $reporte = $this->obtener_reporte($request);
+        $variedades = $reporte['variedades'];
+        $totales = $reporte['totales'];
         $columnas = getColumnasExcel();
         $sheet = $spread->getActiveSheet();
         $sheet->setTitle('INVENTARIO');
 
-        $row = 1;
-        $col = 0;
-        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Planta');
-        $col++;
-        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Variedad');
-        $total_fechas = [];
-        $total_tallos = 0;
-        for ($i = 0; $i <= 9; $i++) {
-            $col++;
-            setValueToCeldaExcel($sheet, $columnas[$col] . $row, opDiasFecha('-', $i, hoy()) . ' ' . ($i == 9 ? '...' : ''));
-            $total_fechas[] = 0;
+        $headers = ['Planta', 'Variedad'];
+        foreach ($reporte['periodos'] as $periodo) {
+            $headers[] = $periodo['excel_label'];
         }
-        $col++;
-        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Total');
-        setBgToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, '00b388');
-        setColorTextToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, 'ffffff');
+        $headers[] = 'Total';
 
-        foreach ($variedades as $var) {
-            $total_variedad = 0;
-            $row++;
-            $col = 0;
-            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $var->pta_nombre);
-            $col++;
-            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $var->var_nombre);
-            for ($i = 0; $i <= 9; $i++) {
-                $fecha = opDiasFecha('-', $i, hoy());
-                $valor = 0;
-                foreach ($var->valores as $val) {
-                    if ($i < 9) {
-                        if ($val->fecha == $fecha) {
-                            $valor += $val->tallos;
-                        }
-                    } else {
-                        if ($val->fecha <= $fecha) {
-                            $valor += $val->tallos;
-                        }
-                    }
-                }
-                $total_variedad += $valor;
-                $total_tallos += $valor;
-                $total_fechas[$i] += $valor;
+        foreach ($headers as $index => $header) {
+            setValueToCeldaExcel($sheet, $columnas[$index] . '1', $header);
+        }
 
-                $col++;
-                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $valor > 0 ? $valor : '');
+        $lastColumn = $columnas[count($headers) - 1];
+        $row = 2;
+        foreach ($variedades as $variedad) {
+            setValueToCeldaExcel($sheet, 'A' . $row, $variedad->pta_nombre);
+            setValueToCeldaExcel($sheet, 'B' . $row, $variedad->var_nombre);
+            foreach ($variedad->valores as $index => $valor) {
+                setValueToCeldaExcel($sheet, $columnas[$index + 2] . $row, $valor > 0 ? $valor : '');
             }
-            $col++;
-            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $total_variedad);
+            setValueToCeldaExcel($sheet, $lastColumn . $row, $variedad->total_tallos);
+            $row++;
         }
-        $row++;
-        $col = 0;
-        setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'Totales');
-        setBgToCeldaExcel($sheet, $columnas[$col] . $row, '00b388');
-        setColorTextToCeldaExcel($sheet, $columnas[$col] . $row, 'ffffff');
-        $col++;
-        setBgToCeldaExcel($sheet, $columnas[$col] . $row, '00b388');
-        setColorTextToCeldaExcel($sheet, $columnas[$col] . $row, 'ffffff');
-        foreach ($total_fechas as $pos => $val) {
-            $col++;
-            setValueToCeldaExcel($sheet, $columnas[$col] . $row, $val);
-            setBgToCeldaExcel($sheet, $columnas[$col] . $row, '5a7177');
-            setColorTextToCeldaExcel($sheet, $columnas[$col] . $row, 'ffffff');
+
+        $totalRow = $row;
+        setValueToCeldaExcel($sheet, 'A' . $totalRow, 'Totales');
+        foreach ($totales as $index => $total) {
+            setValueToCeldaExcel($sheet, $columnas[$index + 2] . $totalRow, $total);
         }
-        $col++;
-        setValueToCeldaExcel($sheet, $columnas[$col] . $row, $total_tallos);
-        setBgToCeldaExcel($sheet, $columnas[$col] . $row, '00b388');
-        setColorTextToCeldaExcel($sheet, $columnas[$col] . $row, 'ffffff');
+        setValueToCeldaExcel($sheet, $lastColumn . $totalRow, array_sum($totales));
 
-        setTextCenterToCeldaExcel($sheet, 'A1:' . $columnas[$col] . $row);
-        setBorderToCeldaExcel($sheet, 'A1:' . $columnas[$col] . $row);
+        $lastRow = max($totalRow, 1);
+        $range = 'A1:' . $lastColumn . $lastRow;
+        $sheet->setShowGridlines(false);
+        $sheet->getStyle($range)->applyFromArray([
+            'alignment' => [
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true,
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_HAIR,
+                    'color' => ['rgb' => 'DCE9E4'],
+                ],
+            ],
+        ]);
+        $sheet->getStyle('A1:' . $lastColumn . '1')->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF'],
+                'size' => 11,
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '003729'],
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true,
+            ],
+        ]);
+        $sheet->getRowDimension(1)->setRowHeight(36);
 
-        for ($i = 0; $i <= $col; $i++)
-            $sheet->getColumnDimension($columnas[$i])->setAutoSize(true);
+        for ($dataRow = 2; $dataRow < $totalRow; $dataRow++) {
+            if ($dataRow % 2 == 0) {
+                $sheet->getStyle('A' . $dataRow . ':' . $lastColumn . $dataRow)
+                    ->getFill()
+                    ->setFillType(Fill::FILL_SOLID);
+                $sheet->getStyle('A' . $dataRow . ':' . $lastColumn . $dataRow)
+                    ->getFill()
+                    ->getStartColor()
+                    ->setRGB('F4FAF7');
+            }
+            $sheet->getStyle('C' . $dataRow . ':' . $lastColumn . $dataRow)
+                ->getAlignment()
+                ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        }
+
+        $sheet->getStyle('A' . $totalRow . ':' . $lastColumn . $totalRow)->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF'],
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '5A7177'],
+            ],
+        ]);
+        $sheet->getColumnDimension('A')->setWidth(24);
+        $sheet->getColumnDimension('B')->setWidth(28);
+        for ($index = 2; $index < count($headers) - 1; $index++) {
+            $sheet->getColumnDimension($columnas[$index])->setWidth(15);
+            $sheet->getStyle($columnas[$index] . '1:' . $columnas[$index] . $lastRow)
+                ->getBorders()
+                ->getLeft()
+                ->setBorderStyle(Border::BORDER_THIN)
+                ->getColor()
+                ->setRGB('B8D8CC');
+        }
+        $sheet->getColumnDimension($lastColumn)->setWidth(16);
+        $sheet->freezePane('C2');
+        if ($variedades->isNotEmpty()) {
+            $sheet->setAutoFilter('A1:' . $lastColumn . ($totalRow - 1));
+        }
+        $sheet->getPageSetup()
+            ->setOrientation(PageSetup::ORIENTATION_LANDSCAPE)
+            ->setFitToPage(true)
+            ->setFitToWidth(1)
+            ->setFitToHeight(0);
+        $sheet->getPageSetup()->setRowsToRepeatAtTopByStartAndEnd(1, 1);
+        $sheet->getPageSetup()->setPrintArea($range);
+    }
+
+    private function obtener_reporte(Request $request)
+    {
+        $finca = getFincaActiva();
+        $hoy = hoy();
+        $periodos = [];
+        $indices_fecha = [];
+
+        for ($i = 0; $i < 9; $i++) {
+            $fecha = opDiasFecha('-', $i, $hoy);
+            $periodos[] = [
+                'fecha' => $fecha,
+                'label' => ($i == 0 ? 'Hoy ' : '') . date('d/m', strtotime($fecha)),
+                'excel_label' => $fecha,
+                'title' => convertDateToText($fecha),
+            ];
+            $indices_fecha[$fecha] = $i;
+        }
+        $fecha_limite_acumulado = opDiasFecha('-', 9, $hoy);
+        $periodos[] = [
+            'fecha' => $fecha_limite_acumulado,
+            'label' => '9+ días',
+            'excel_label' => 'Hasta ' . $fecha_limite_acumulado,
+            'title' => 'Inventario con fecha hasta ' . convertDateToText($fecha_limite_acumulado),
+        ];
+
+        $variedades = DB::table('inventario_recepcion as i')
+            ->join('variedad as v', 'v.id_variedad', '=', 'i.id_variedad')
+            ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
+            ->select('i.id_variedad', 'v.nombre as var_nombre', 'p.nombre as pta_nombre')
+            ->where('i.disponibles', '>', 0)
+            ->where('i.id_empresa', $finca)
+            ->where('i.bodega', $request->bodega)
+            ->when($request->planta != '', function ($query) use ($request) {
+                $query->where('v.id_planta', $request->planta);
+            })
+            ->when($request->variedad != '', function ($query) use ($request) {
+                $query->where('i.id_variedad', $request->variedad);
+            })
+            ->groupBy('i.id_variedad', 'v.nombre', 'p.nombre')
+            ->orderBy('p.nombre')
+            ->orderBy('v.nombre')
+            ->get();
+
+        $totales = array_fill(0, 10, 0);
+        foreach ($variedades as $variedad) {
+            $variedad->valores = array_fill(0, 10, 0);
+            $variedad->total_tallos = 0;
+        }
+
+        if ($variedades->isNotEmpty()) {
+            $ids_variedades = $variedades->pluck('id_variedad')->all();
+            $inventario_diario = DB::table('inventario_recepcion')
+                ->select('id_variedad', 'fecha')
+                ->selectRaw('SUM(disponibles) as tallos')
+                ->where('disponibles', '>', 0)
+                ->where('id_empresa', $finca)
+                ->where('bodega', $request->bodega)
+                ->whereIn('id_variedad', $ids_variedades)
+                ->where('fecha', '<=', $hoy)
+                ->groupBy('id_variedad', 'fecha')
+                ->orderBy('fecha')
+                ->get();
+
+            $variedades_por_id = $variedades->keyBy('id_variedad');
+            foreach ($inventario_diario as $registro) {
+                if (isset($indices_fecha[$registro->fecha])) {
+                    $indice = $indices_fecha[$registro->fecha];
+                } elseif ($registro->fecha <= $fecha_limite_acumulado) {
+                    $indice = 9;
+                } else {
+                    continue;
+                }
+
+                $cantidad = (float) $registro->tallos;
+                $variedad = $variedades_por_id->get($registro->id_variedad);
+                $variedad->valores[$indice] += $cantidad;
+                $variedad->total_tallos += $cantidad;
+                $totales[$indice] += $cantidad;
+            }
+        }
+
+        return [
+            'variedades' => $variedades,
+            'periodos' => $periodos,
+            'totales' => $totales,
+            'total_tallos' => array_sum($totales),
+        ];
     }
 }

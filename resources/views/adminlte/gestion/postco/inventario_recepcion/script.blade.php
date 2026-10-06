@@ -5,7 +5,7 @@
     listar_reporte();
 
     function listar_reporte() {
-        datos = {
+        var datos = {
             planta: $('#planta_filtro').val(),
             variedad: $('#variedad_filtro').val(),
             bodega: $('#bodega_filtro').val(),
@@ -17,9 +17,11 @@
 
     function exportar_reporte() {
         $.LoadingOverlay('show');
-        window.open('{{ url('inventario_recepcion/exportar_reporte') }}?planta=' + $("#planta_filtro").val() +
-            '&variedad=' + $("#variedad_filtro").val() +
-            '&bodega=' + $("#bodega_filtro").val(), '_blank');
+        window.open('{{ url('inventario_recepcion/exportar_reporte') }}?' + $.param({
+            planta: $('#planta_filtro').val(),
+            variedad: $('#variedad_filtro').val(),
+            bodega: $('#bodega_filtro').val(),
+        }), '_blank');
         $.LoadingOverlay('hide');
     }
 </script>
