@@ -1,9 +1,38 @@
 <script>
     $('#vista_actual').val('plantas_variedades');
-    estructura_tabla('table_content_proveedores');
-    $('#table_content_proveedores_filter label').addClass('hidden');
-    estructura_tabla('table_content_plantas');
-    $('#table_content_plantas_filter label').addClass('hidden');
+
+    function ordenar_listado_pv(button, columna) {
+        var $button = $(button);
+        var $table = $button.closest('table');
+        var $headers = $table.find('thead th');
+        var $header = $button.closest('th');
+        var direccion = $header.attr('data-sort-direction') === 'asc' ? 'desc' : 'asc';
+        var filas = $table.children('tbody').children('tr').filter(function() {
+            return !$(this).find('.pv-vacio').length;
+        }).get();
+
+        filas.sort(function(a, b) {
+            var valorA = $(a).children('td, th').eq(columna).text().trim();
+            var valorB = $(b).children('td, th').eq(columna).text().trim();
+            var comparacion = valorA.localeCompare(valorB, undefined, {
+                sensitivity: 'base',
+                numeric: true
+            });
+
+            return direccion === 'asc' ? comparacion : -comparacion;
+        });
+
+        $table.children('tbody').append(filas);
+        $headers.removeAttr('data-sort-direction aria-sort');
+        $headers.find('.pv-sort-button i')
+            .removeClass('fa-sort-up fa-sort-down')
+            .addClass('fa-sort');
+        $header.attr('data-sort-direction', direccion)
+            .attr('aria-sort', direccion === 'asc' ? 'ascending' : 'descending');
+        $button.find('i')
+            .removeClass('fa-sort')
+            .addClass(direccion === 'asc' ? 'fa-sort-up' : 'fa-sort-down');
+    }
 
     function select_planta(p) {
         proveedor = $('#proveedor_seleccionada').val();
@@ -13,14 +42,13 @@
             id_proveedor: proveedor,
         };
         get_jquery('{{ url('plantas_variedades/select_planta') }}', datos, function(retorno) {
-            $('#div_content_menus').html(retorno);
+            $('#div_content_variedades').html(retorno);
             $('.row_variedad').remove();
             $('.icon_hidden_p').addClass('hidden');
             $('#icon_planta_' + p).removeClass('hidden');
-            estructura_tabla('table_content_variedades');
-            $('#table_content_variedades_filter label input').addClass('input-yura_default').css('width',
-                '40%');
-        }, 'div_content_menus');
+            $('#table_content_plantas tr').removeClass('pv-fila-seleccionada');
+            $('#row_planta_' + p).addClass('pv-fila-seleccionada');
+        }, 'div_content_variedades');
     }
 
     function select_proveedor(p) {
@@ -31,15 +59,12 @@
             id_proveedor: p,
         };
         get_jquery('{{ url('plantas_variedades/select_planta') }}', datos, function(retorno) {
-            $('#div_content_menus').html(retorno);
+            $('#div_content_variedades').html(retorno);
             $('.icon_hidden_proveedor').addClass('hidden');
             $('#icon_proveedor_' + p).removeClass('hidden');
-            if (planta != '') {
-                estructura_tabla('table_content_variedades');
-                $('#table_content_variedades_filter label input').addClass('input-yura_default').css('width',
-                    '40%');
-            }
-        }, 'div_content_menus');
+            $('#table_content_proveedores tr').removeClass('pv-fila-seleccionada');
+            $('#row_proveedor_' + p).addClass('pv-fila-seleccionada');
+        }, 'div_content_variedades');
     }
 
     /* ===================================================== */
@@ -55,8 +80,8 @@
     function add_planta() {
         $.LoadingOverlay('show');
         $.get('{{ url('plantas_variedades/add_planta') }}', {}, function(retorno) {
-            modal_form('modal_add_planta', retorno, '<i class="fa fa-fw fa-plus"></i> Añadir Planta', true,
-                false, '{{ isPC() ? '65%' : '' }}',
+            modal_form('modal_add_planta', retorno, '<i class="fa fa-fw fa-leaf"></i> Añadir Planta', true,
+                false, '{{ isPC() ? '60%' : '' }}',
                 function() {
                     store_planta();
                 });
@@ -122,8 +147,8 @@
 
     function add_proveedor() {
         get_jquery('{{ url('plantas_variedades/add_proveedor') }}', {}, function(retorno) {
-            modal_form('modal_add_proveedor', retorno, '<i class="fa fa-fw fa-plus"></i> Añadir Proveedor',
-                true, false, '{{ isPC() ? '65%' : '' }}',
+            modal_form('modal_add_proveedor', retorno, '<i class="fa fa-fw fa-truck"></i> Añadir Proveedor',
+                true, false, '{{ isPC() ? '50%' : '' }}',
                 function() {
                     store_proveedor();
                 });
@@ -148,8 +173,8 @@
             id_proveedor: p,
         };
         get_jquery('{{ url('plantas_variedades/edit_proveedor') }}', datos, function(retorno) {
-            modal_form('modal_edit_proveedor', retorno, '<i class="fa fa-fw fa-plus"></i> Editar Proveedor',
-                true, false, '{{ isPC() ? '65%' : '' }}',
+            modal_form('modal_edit_proveedor', retorno, '<i class="fa fa-fw fa-truck"></i> Editar Proveedor',
+                true, false, '{{ isPC() ? '60%' : '' }}',
                 function() {
                     update_proveedor();
                 });
@@ -184,8 +209,8 @@
             id_planta: p,
         };
         $.get('{{ url('plantas_variedades/edit_planta') }}', datos, function(retorno) {
-            modal_form('modal_edit_planta', retorno, '<i class="fa fa-fw fa-plus"></i> Editar Planta', true,
-                false, '{{ isPC() ? '65%' : '' }}',
+            modal_form('modal_edit_planta', retorno, '<i class="fa fa-fw fa-leaf"></i> Editar Planta', true,
+                false, '{{ isPC() ? '60%' : '' }}',
                 function() {
                     update_planta();
                 });

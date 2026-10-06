@@ -411,7 +411,7 @@ class ProyectoController extends Controller
 
                     foreach ($telefonos as $telefono) {
                         // enviar notificación WhatsApp
-                        dump('enlace: ' . $enlace . ' a: ' . $telefono);
+                        //dump('enlace: ' . $enlace . ' a: ' . $telefono);
                     }
                 }
             }
@@ -1655,6 +1655,8 @@ class ProyectoController extends Controller
             $item->mi_finca = $mi_finca;
             if ($mi_finca != '' && $mi_finca->margen > 0) {
                 $item->tallos_margen = $item->tallos + intval(porcentaje($mi_finca->margen, $item->tallos, 2));
+            } else {
+                $item->tallos_margen = $item->tallos;
             }
         }
         $fincas = FincaProveedor::where('estado', 1)
@@ -1816,5 +1818,92 @@ class ProyectoController extends Controller
             'success' => $success,
             'mensaje' => $msg,
         ];
+    }
+
+    public function exportar_orden_compra(Request $request)
+    {
+        $compra = OrdenCompra::find($request->id);
+        $proyecto = $compra->proyecto;
+        $spread = new Spreadsheet();
+        $this->excel_orden_compra($spread, $request);
+        $fileName = "Orden_de_Compra_#" . $compra->id_orden_compra . "_para_" . $proyecto->fecha . "_" . $proyecto->cliente->detalle()->nombre . ".xlsx";
+        $writer = new Xlsx($spread);
+
+        //--------------------------- GUARDAR EL EXCEL -----------------------
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . urlencode($fileName) . '"');
+        $writer->save('php://output');
+
+        //$writer->save('/var/www/html/Dasalflor/storage/storage/excel/excel_prueba.xlsx');
+    }
+
+    public function excel_orden_compra($spread, $request)
+    {
+        $orden_compra = OrdenCompra::find($request->id);
+        $proveedores = DB::table('proveedor_detalle_orden_compra as pd')
+            ->join('configuracion_empresa as p', 'p.id_configuracion_empresa', '=', 'pd.id_proveedor')
+            ->join('detalle_orden_compra as d', 'd.id_detalle_orden_compra', '=', 'pd.id_detalle_orden_compra')
+            ->select('pd.id_proveedor', 'p.nombre')->distinct()
+            ->where('d.id_orden_compra', $orden_compra->id_orden_compra)
+            ->get();
+
+        $columnas = getColumnasExcel();
+        foreach ($proveedores as $pos => $prov) {
+            $listado = DB::table('proveedor_detalle_orden_compra as pdet')
+                ->join('detalle_orden_compra as det', 'det.id_detalle_orden_compra', '=', 'pdet.id_detalle_orden_compra')
+                ->join('variedad as v', 'v.id_variedad', '=', 'det.id_variedad')
+                ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
+                ->select(
+                    'det.id_variedad',
+                    'v.nombre as var_nombre',
+                    'v.id_planta',
+                    'p.nombre as pta_nombre',
+                    DB::raw('sum(pdet.cantidad) as cantidad'),
+                )
+                ->where('det.id_orden_compra', $orden_compra->id_orden_compra)
+                ->where('pdet.id_proveedor', $prov->id_proveedor)
+                ->groupBy(
+                    'det.id_variedad',
+                    'v.nombre',
+                    'v.id_planta',
+                    'p.nombre'
+                )
+                ->orderBy('p.nombre')
+                ->orderBy('v.nombre')
+                ->get();
+
+            if ($pos == 0) {
+                $sheet = $spread->getActiveSheet()->setTitle($prov->nombre);
+            } else {
+                $sheet = $spread->createSheet()->setTitle($prov->nombre);
+            }
+
+            $row = 1;
+            $col = 0;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'PLANTA');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'VARIEDAD');
+            $col++;
+            setValueToCeldaExcel($sheet, $columnas[$col] . $row, 'TALLOS');
+            setBgToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, '00b388');
+            setColorTextToCeldaExcel($sheet, $columnas[0] . $row . ':' . $columnas[$col] . $row, 'ffffff');
+
+            foreach ($listado as $item) {
+                $row++;
+                $col = 0;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->pta_nombre);
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->var_nombre);
+                $col++;
+                setValueToCeldaExcel($sheet, $columnas[$col] . $row, $item->cantidad);
+            }
+
+            setTextCenterToCeldaExcel($sheet, 'A1:' . $columnas[$col] . $row);
+            setBorderToCeldaExcel($sheet, 'A1:' . $columnas[$col] . $row);
+
+            for ($i = 0; $i <= $col; $i++)
+                $sheet->getColumnDimension($columnas[$i])->setAutoSize(true);
+        }
     }
 }

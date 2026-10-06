@@ -1,176 +1,134 @@
-<div style="overflow-x: scroll">
-    <table style="width: 100%" class="form_fecha hidden">
-        <td style="vertical-align: top; width: 15%">
-            <div class="list-group" style="font-size: 0.9em">
-                <li class="list-group-item list-group-item-action th_yura_green" style="color: white;">
-                    OPCIONES DE ENTREGA
-                </li>
-                <a href="javascript:void(0)" class="list-group-item list-group-item-action"
-                    onclick="cargar_opciones_orden_fija(1)">
-                    DÍA SEMANA <i class="fa fa-fw fa-arrow-right pull-right"></i>
-                </a>
-                <a href="javascript:void(0)" class="list-group-item list-group-item-action"
-                    onclick="cargar_opciones_orden_fija(2)">
-                    DÍA MES <i class="fa fa-fw fa-arrow-right pull-right"></i>
-                </a>
-                <a href="javascript:void(0)" class="list-group-item list-group-item-action"
-                    onclick="cargar_opciones_orden_fija(3)">
-                    PERSONALIZADO <i class="fa fa-fw fa-arrow-right pull-right"></i>
-                </a>
+<div class="proyecto-form">
+    @include('adminlte.gestion.comercializacion.proyectos.forms._estilos_proyecto')
+
+    <section class="proyecto-card">
+        <div class="proyecto-card-heading">
+            <span class="proyecto-card-icon"><i class="fa fa-fw fa-file-text-o"></i></span>
+            <div>
+                <h4>Datos del pedido</h4>
+                <small>Fecha, cliente y condiciones de entrega</small>
             </div>
-        </td>
-        <td style="vertical-align: top; padding-left: 5px" id="div_opciones_orden_fija"></td>
-    </table>
-    <table style="width: 100%;">
-        <tr>
-            <th class="form_fecha">
-                <div class="input-group">
-                    <span class="input-group-addon bg-yura_dark">
-                        Fecha
-                    </span>
+        </div>
+        <div class="proyecto-card-body">
+            <div class="proyecto-fields">
+                <div class="proyecto-field form_fecha">
+                    <label for="form_fecha">Fecha de entrega</label>
                     <input type="date" id="form_fecha" class="form-control" value="{{ hoy() }}">
                 </div>
-            </th>
-            <th>
-                <div class="input-group">
-                    <span class="input-group-addon bg-yura_dark">
-                        Segmento
-                    </span>
+                <div class="proyecto-field">
+                    <label for="form_segmento">Segmento</label>
                     <select id="form_segmento" class="form-control" onchange="seleccionar_segmento()">
                         <option value="">Seleccione</option>
                         @foreach ($segmentos as $seg)
-                            <option value="{{ $seg }}">
-                                {{ $seg }}
-                            </option>
+                            <option value="{{ $seg }}">{{ $seg }}</option>
                         @endforeach
                     </select>
                 </div>
-            </th>
-            <th>
-                <div class="input-group">
-                    <span class="input-group-addon bg-yura_dark">
-                        Cliente
-                    </span>
-                    <select id="form_cliente" class="form-control" onchange="seleccionar_cliente()">
-                    </select>
-                    <div class="input-group-btn">
-                        <button class="btn btn-yura_dark" onclick="cambiar_especificaciones()"
+                <div class="proyecto-field">
+                    <label for="form_cliente">Cliente</label>
+                    <div class="proyecto-field-inline">
+                        <select id="form_cliente" class="form-control" onchange="seleccionar_cliente()"></select>
+                        <button type="button" class="btn proyecto-spec-button" onclick="cambiar_especificaciones()"
                             title="Usar especificaciones" id="btn_especificaciones">
-                            <i class="fa fa-fw fa-refresh"></i> <sup>SI</sup>
+                            <i class="fa fa-fw fa-refresh"></i><sup>SI</sup>
                         </button>
                     </div>
                 </div>
-            </th>
-        </tr>
-        <tr>
-            <th>
-                <div class="input-group">
-                    <span class="input-group-addon bg-yura_dark">
-                        Consignatario
-                    </span>
-                    <select id="form_consignatario" class="form-control">
-                    </select>
+                <div class="proyecto-field">
+                    <label for="form_consignatario">Consignatario</label>
+                    <select id="form_consignatario" class="form-control"></select>
                 </div>
-            </th>
-            <th>
-                <div class="input-group">
-                    <span class="input-group-addon bg-yura_dark">
-                        Agencia
-                    </span>
-                    <select id="form_agencia" class="form-control">
-                    </select>
+                <div class="proyecto-field">
+                    <label for="form_agencia">Agencia</label>
+                    <select id="form_agencia" class="form-control"></select>
                 </div>
-            </th>
-            <th>
-                <div class="input-group">
-                    <span class="input-group-addon bg-yura_dark">
-                        Tipo
-                    </span>
+                <div class="proyecto-field">
+                    <label for="form_tipo_pedido">Tipo de pedido</label>
                     <select id="form_tipo_pedido" class="form-control"
                         onchange="$('.form_fecha').toggleClass('hidden')">
                         <option value="OM">OPEN MARKET</option>
                         <option value="SO">STANDING ORDER</option>
                     </select>
                 </div>
-            </th>
-        </tr>
-    </table>
-</div>
+            </div>
 
-<ul class="nav nav-pills nav-justified" style="margin-top: 5px">
-    <li class="active">
-        <a data-toggle="tab" href="#tab-combos">
-            <i class="fa fa-fw fa-gift"></i> Armado de Cajas
-        </a>
-    </li>
-    <li>
-        <a data-toggle="tab" href="#tab-contenido_pedido">
-            <i class="fa fa-fw fa-shopping-cart"></i> Contenido del Pedido
-            <sup><span class="badge" id="span_total_piezas_pedido">0 cajas</span></sup>
-        </a>
-    </li>
-</ul>
-<div class="tab-content" style="margin-top: 5px;">
-    <div id="tab-combos" class="tab-pane fade in active">
-        @include('adminlte.gestion.comercializacion.proyectos.forms._pedidos_combos')
-    </div>
-    <div id="tab-contenido_pedido" class="tab-pane fade" style="overflow-x: scroll; overflow-y: scroll">
-        @include('adminlte.gestion.comercializacion.proyectos.forms._contenido_pedido')
-    </div>
-</div>
+            <div class="proyecto-schedule proyecto-field form_fecha hidden" style="margin: 12px 6px 0">
+                <ul class="list-group proyecto-schedule-menu">
+                    <li class="list-group-item">OPCIONES DE ENTREGA</li>
+                    <a href="javascript:void(0)" class="list-group-item"
+                        onclick="cargar_opciones_orden_fija(1)">
+                        Día de la semana <i class="fa fa-fw fa-arrow-right pull-right"></i>
+                    </a>
+                    <a href="javascript:void(0)" class="list-group-item"
+                        onclick="cargar_opciones_orden_fija(2)">
+                        Día del mes <i class="fa fa-fw fa-arrow-right pull-right"></i>
+                    </a>
+                    <a href="javascript:void(0)" class="list-group-item"
+                        onclick="cargar_opciones_orden_fija(3)">
+                        Personalizado <i class="fa fa-fw fa-arrow-right pull-right"></i>
+                    </a>
+                </ul>
+                <div class="proyecto-schedule-options" id="div_opciones_orden_fija"></div>
+            </div>
+        </div>
+    </section>
 
-<div style="overflow-x: scroll">
-    <table style="margin-top: 0; width: 100%">
-        <tbody>
-            <tr>
-                <td rowspan="4" style="text-align: right; padding-right: 20px; min-width: 320px">
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-yura_primary" onclick="store_proyecto(0)">
-                            <i class="fa fa-fw fa-save"></i> Grabar Pedido
-                        </button>
-                        <button type="button" class="btn btn-yura_default" onclick="cerrar_modals(); add_proyecto()">
-                            <span class="badge bg-yura_dark" id="span_total_monto_pedido">$0</span>
-                            <i class="fa fa-fw fa-refresh"></i> Reiniciar Formulario
-                        </button>
-                        <button type="button" class="btn btn-yura_warning" onclick="store_proyecto(1)">
-                            <i class="fa fa-fw fa-gift"></i> GRABAR Y DESPACHAR
-                        </button>
-                    </div>
-                </td>
-                <th style="width: 25%; text-align: right; min-width: 120px">
-                    PIEZAS TOTALES:
-                </th>
-                <th id="th_total_piezas_pedido" style="text-align: right; padding-right: 5px; width: 10%">
-                    0
-                </th>
-            </tr>
-            <tr>
-                <th style="width: 25%; text-align: right; min-width: 120px">
-                    RAMOS TOTALES:
-                </th>
-                <th id="th_total_ramos_pedido" style="text-align: right; padding-right: 5px; width: 10%">
-                    0
-                </th>
-                <td colspan="13"></td>
-            </tr>
-            <tr>
-                <th style="width: 25%; text-align: right; min-width: 120px">
-                    TALLOS TOTALES:
-                </th>
-                <th id="th_total_tallos_pedido" style="text-align: right; padding-right: 5px; width: 10%">
-                    0
-                </th>
-            </tr>
-            <tr>
-                <th style="width: 25%; text-align: right; min-width: 120px">
-                    MONTO TOTAL:
-                </th>
-                <th id="th_total_monto_pedido" style="text-align: right; padding-right: 5px; width: 10%">
-                    $0
-                </th>
-            </tr>
-        </tbody>
-    </table>
+    <section class="proyecto-card">
+        <ul class="nav nav-tabs nav-justified proyecto-tabs">
+            <li class="active">
+                <a data-toggle="tab" href="#tab-combos">
+                    <i class="fa fa-fw fa-gift"></i> Armado de Cajas
+                </a>
+            </li>
+            <li>
+                <a data-toggle="tab" href="#tab-contenido_pedido">
+                    <i class="fa fa-fw fa-shopping-cart"></i> Contenido del Pedido
+                    <sup><span class="badge" id="span_total_piezas_pedido">0 cajas</span></sup>
+                </a>
+            </li>
+        </ul>
+        <div class="tab-content proyecto-tab-content">
+            <div id="tab-combos" class="tab-pane fade in active">
+                @include('adminlte.gestion.comercializacion.proyectos.forms._pedidos_combos')
+            </div>
+            <div id="tab-contenido_pedido" class="tab-pane fade">
+                @include('adminlte.gestion.comercializacion.proyectos.forms._contenido_pedido')
+            </div>
+        </div>
+    </section>
+
+    <div class="proyecto-summary">
+        <div class="proyecto-summary-metrics">
+            <div class="proyecto-summary-metric">
+                <span>Piezas totales</span>
+                <strong id="th_total_piezas_pedido">0</strong>
+            </div>
+            <div class="proyecto-summary-metric">
+                <span>Ramos totales</span>
+                <strong id="th_total_ramos_pedido">0</strong>
+            </div>
+            <div class="proyecto-summary-metric">
+                <span>Tallos totales</span>
+                <strong id="th_total_tallos_pedido">0</strong>
+            </div>
+            <div class="proyecto-summary-metric proyecto-summary-money">
+                <span>Monto total</span>
+                <strong id="th_total_monto_pedido">$0</strong>
+            </div>
+        </div>
+        <div class="proyecto-summary-actions">
+            <button type="button" class="btn btn-yura_primary" onclick="store_proyecto(0)">
+                <i class="fa fa-fw fa-save"></i> Grabar Pedido
+            </button>
+            <button type="button" class="btn btn-yura_default" onclick="cerrar_modals(); add_proyecto()">
+                <i class="fa fa-fw fa-refresh"></i> Reiniciar
+                <span class="badge bg-yura_dark" id="span_total_monto_pedido">$0</span>
+            </button>
+            <button type="button" class="btn btn-yura_warning" onclick="store_proyecto(1)">
+                <i class="fa fa-fw fa-gift"></i> Grabar y despachar
+            </button>
+        </div>
+    </div>
 </div>
 
 <script>

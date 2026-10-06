@@ -1,88 +1,100 @@
-<legend class="text-center" style="font-size: 1em; margin-bottom: 5px">
-    <div class="input-group">
-        <span class="input-group-addon bg-yura_dark span-input-group-yura-fixed">
-            Distribucion de "<b>{{ $caja->cantidad * $det_caja->ramos_x_caja }}</b>" ramos de "<b>{{ $det_caja->longitud_ramo }}cm</b>" en
-            la receta
-            "<b>{{ $det_caja->variedad->nombre }}</b>"
-            para "<b>{{ convertDateToText($proyecto->fecha) }}</b>"
-        </span>
+@include('adminlte.gestion.postco.preproduccion.forms._estilos_receta')
+<div class="receta-ui">
+<div class="receta-hero">
+    <div class="receta-hero-title">
+        <span class="receta-hero-icon"><i class="fa fa-fw fa-sliders"></i></span>
+        <div>
+            <h4>Administrar distribución · {{ $det_caja->variedad->nombre }}</h4>
+            <small>{{ convertDateToText($proyecto->fecha) }} · {{ $det_caja->longitud_ramo }} cm</small>
+        </div>
+    </div>
+    <div class="receta-hero-metrics">
+        <span class="receta-metric">Ramos del pedido
+            <strong>{{ $caja->cantidad * $det_caja->ramos_x_caja }}</strong></span>
+    </div>
+</div>
+<div class="receta-toolbar">
+    <div class="receta-toolbar-field">
+        <label for="select_numero_receta">Distribución guardada</label>
         <select id="select_numero_receta" class="form-control">
             @foreach ($numeros_receta as $n)
                 <option value="{{ $n }}">{{ $n }}</option>
             @endforeach
         </select>
-        <span class="input-group-btn">
-            <button type="button" class="btn btn-yura_primary" onclick="cargar_receta()">
-                <i class="fa fa-fw fa-refresh"></i> Cargar esta receta
-            </button>
-        </span>
     </div>
-</legend>
+    <button type="button" class="btn btn-yura_primary" onclick="cargar_receta()">
+        <i class="fa fa-fw fa-refresh"></i> Cargar distribución
+    </button>
+</div>
 <input type="hidden" id="id_detalle_seleccionado" value="{{ $det_caja->id_detalle_caja_proyecto }}">
 <input type="hidden" id="ramos_pedido" value="{{ $caja->cantidad * $det_caja->ramos_x_caja }}">
 <input type="hidden" id="longitud_pedido" value="{{ $det_caja->longitud_ramo }}">
 <input type="hidden" id="postco_fecha" value="{{ $proyecto->fecha }}">
-<table style="width: 100%;">
-    <tr>
-        <td id="listado_productos" style="vertical-align: top; width: 45%">
-            <table style="width: 100%">
-                <tr>
-                    <td class="text-center padding_lateral_5" style="border-color: #9d9d9d" id="td_cargar_longitudes">
-                        <div class="input-group">
-                            <span class="input-group-addon bg-yura_dark span-input-group-yura-fixed">
-                                Plantas
-                            </span>
-                            <select id="receta_planta_filtro" class="form-control" style="width: 100%"
-                                onchange="buscar_variedades()">
-                                <option value="">Seleccione una flor</option>
-                                @foreach ($plantas as $p)
-                                    <option value="{{ $p->id_planta }}">{{ $p->nombre }}</option>
-                                @endforeach
-                            </select>
-                            <span class="input-group-btn">
-                                <button type="button" class="btn btn-yura_dark" onclick="buscar_variedades()">
-                                    <i class="fa fa-fw fa-search"></i>
-                                </button>
-                            </span>
-                        </div>
-                    </td>
-                </tr>
-            </table>
-
-            <div id="div_listado_variedades" style="margin-top: 5px">
+<div class="receta-editor-layout">
+    <section id="listado_productos" class="receta-editor-panel">
+        <div class="receta-editor-panel-header">
+            <span><i class="fa fa-fw fa-search"></i> Catálogo de variedades</span>
+            <span>1 · Seleccionar</span>
+        </div>
+        <div class="receta-editor-panel-body">
+            <div class="receta-catalog-filter" id="td_cargar_longitudes">
+                <div class="receta-catalog-filter-field">
+                    <label for="receta_planta_filtro">Filtrar por planta</label>
+                    <select id="receta_planta_filtro" class="form-control"
+                        onchange="buscar_variedades()">
+                        <option value="">Seleccione una flor</option>
+                        @foreach ($plantas as $p)
+                            <option value="{{ $p->id_planta }}">{{ $p->nombre }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <button type="button" class="btn btn-yura_dark" title="Buscar variedades"
+                    aria-label="Buscar variedades" onclick="buscar_variedades()">
+                    <i class="fa fa-fw fa-search"></i>
+                </button>
             </div>
-        </td>
+            <div id="div_listado_variedades">
+            </div>
+        </div>
+    </section>
 
-        <td>
-            <button type="button" class="btn btn-block btn-yura_dark" onclick="agregar_variedades()">
-                <i class="fa fa-fw fa-arrow-right"></i> Agregar
-            </button>
-            <button type="button" class="btn btn-block btn-yura_primary" style="margin-top: 0"
-                onclick="store_distribucion_receta()">
-                <i class="fa fa-fw fa-save"></i> Grabar
-            </button>
-        </td>
+    <div class="receta-editor-actions">
+        <button type="button" class="btn btn-yura_dark" onclick="agregar_variedades()">
+            <i class="fa fa-fw fa-arrow-right"></i> Agregar
+        </button>
+        <button type="button" class="btn btn-yura_primary receta-save-action"
+            onclick="store_distribucion_receta()">
+            <i class="fa fa-fw fa-save"></i> Grabar receta
+        </button>
+    </div>
 
-        <td id="listado_seleccionados" style="vertical-align: top; width: 45%">
-            <div style="overflow-y: scroll; overflow-x: scroll; max-height: 500px;">
-                <table class="table-striped table-bordered" style="width: 100%; border: 1px solid #9d9d9d"
+    <section id="listado_seleccionados" class="receta-editor-panel">
+        <div class="receta-editor-panel-header">
+            <span><i class="fa fa-fw fa-list-ul"></i> Distribución seleccionada</span>
+            <span>2 · Ajustar unidades</span>
+        </div>
+        <div class="receta-editor-panel-body">
+            <div class="receta-table-scroll" style="max-height: 500px">
+                <table class="table-striped table-bordered receta-table" style="width: 100%; border: 1px solid #9d9d9d"
                     id="table_variedades_seleccionados">
-                    <tr class="tr_fija_top_0">
-                        <th class="text-center th_yura_green" style="width: 25%">
-                            FLOR
-                        </th>
-                        <th class="text-center th_yura_green" style="width: 25%">
-                            VARIEDAD
-                        </th>
-                        <th class="text-center th_yura_green">
-                            LONGITUD
-                        </th>
-                        <th class="text-center th_yura_green">
-                            UNIDADES
-                        </th>
-                        <th class="text-center th_yura_green">
-                        </th>
-                    </tr>
+                    <thead>
+                        <tr class="tr_fija_top_0">
+                            <th class="text-center th_yura_green" style="width: 25%">
+                                FLOR
+                            </th>
+                            <th class="text-center th_yura_green" style="width: 25%">
+                                VARIEDAD
+                            </th>
+                            <th class="text-center th_yura_green">
+                                LONGITUD
+                            </th>
+                            <th class="text-center th_yura_green">
+                                UNIDADES
+                            </th>
+                            <th class="text-center th_yura_green">
+                            </th>
+                        </tr>
+                    </thead>
                     @php
                         $pos = 0;
                     @endphp
@@ -120,9 +132,9 @@
                     </tbody>
                 </table>
             </div>
-        </td>
-    </tr>
-</table>
+        </div>
+    </section>
+</div>
 
 <script>
     cant_variedad_seleccionado = {{ $pos + 1 }};
@@ -150,7 +162,7 @@
                 nombre_planta = $('#nombre_planta_' + id).val();
                 longitud = $('#longitud_' + id).val();
                 cantidad = $('#cantidad_' + id).val();
-                $('#table_variedades_seleccionados').append('<tr id="tr_variedad_seleccionado_' +
+                $('#tbody_variedades_seleccionados').append('<tr id="tr_variedad_seleccionado_' +
                     cant_variedad_seleccionado + '">' +
                     '<td class="text-center" style="border-color: #9d9d9d">' +
                     nombre_planta +
@@ -219,9 +231,13 @@
         datos = {
             id_detalle: id_detalle,
             numero_receta: $('#select_numero_receta').val(),
+            ramos_pedido: $('#ramos_pedido').val(),
+            modo: 'admin',
         };
         get_jquery('{{ url('preproduccion/cargar_receta') }}', datos, function(retorno) {
             $('#tbody_variedades_seleccionados').html(retorno);
+            cant_variedad_seleccionado = $('#tbody_variedades_seleccionados .cant_variedad_seleccionado').length;
         }, 'tbody_variedades_seleccionados');
     }
 </script>
+</div>

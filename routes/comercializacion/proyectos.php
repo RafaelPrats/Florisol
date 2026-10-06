@@ -21,3 +21,4 @@ Route::post('proyectos/confirmar_finca', 'Comercializacion\ProyectoController@co
 Route::post('proyectos/store_orden_compra', 'Comercializacion\ProyectoController@store_orden_compra');
 Route::get('proyectos/modal_orden_compra', 'Comercializacion\ProyectoController@modal_orden_compra');
 Route::post('proyectos/update_orden_compra', 'Comercializacion\ProyectoController@update_orden_compra');
+Route::get('proyectos/exportar_orden_compra', 'Comercializacion\ProyectoController@exportar_orden_compra');

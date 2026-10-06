@@ -1,5 +1,5 @@
-<div style="overflow-x: scroll; overflow-y: scroll; width: 100%; max-height: 700px;">
-    <table class="table-bordered" style="border: 1px solid #9d9d9d; width: 100%;" id="table_listado">
+<div class="preproduccion-table-wrap">
+    <table class="table-bordered preproduccion-table" id="table_listado">
         <thead>
             <tr class="tr_fija_top_0">
                 <th class="padding_lateral_5 th_yura_green">
@@ -41,12 +41,12 @@
                     $total_despachados_receta = 0;
                     $total_armados_receta = 0;
                 @endphp
-                <tr onmouseover="$(this).addClass('bg-yura_dark')" onmouseleave="$(this).removeClass('bg-yura_dark')">
-                    <th class="padding_lateral_5 mouse-hand" style="border-color: #9d9d9d;"
+                <tr>
+                    <th class="padding_lateral_5 mouse-hand" title="Ver detalle de receta"
                         onclick="modal_receta('{{ $item['receta']->id_variedad }}', '{{ $item['receta']->longitud_ramo }}')">
                         {{ $item['receta']->nombre }}
                     </th>
-                    <th class="text-center" style="border-color: #9d9d9d;">
+                    <th class="text-center">
                         {{ $item['receta']->longitud_ramo }}cm
                     </th>
                     @foreach ($fechas as $pos_f => $fecha)
@@ -63,8 +63,7 @@
                                 $totales[$pos_f]['armados'] += $valor->armados;
                             }
                         @endphp
-                        <td class="text-center"
-                            style="border-color: #9d9d9d; background-color: {{ $pos_f % 2 == 0 ? '#dddddd' : '' }};">
+                        <td class="text-center preproduccion-cell-date {{ $pos_f % 2 == 0 ? 'preproduccion-date-even' : '' }}">
                             @if ($valor != '')
                                 @php
                                     $despachos = $valor->despachados - $valor->armados;
@@ -98,16 +97,17 @@
                             @endif
                         </td>
                     @endforeach
-                    <th class="text-center" style="border-color: #9d9d9d;">
+                    <th class="text-center preproduccion-inventory">
                         {{ $total_despachados_receta > 0 ? $total_despachados_receta : 0 }}
                     </th>
-                    <th class="text-center" style="border-color: #9d9d9d;">
+                    <th class="text-center preproduccion-inventory">
                         {{ $total_armados_receta }}
                     </th>
                 </tr>
             @endforeach
         </tbody>
-        <tr class="tr_fija_bottom_0">
+        <tfoot>
+        <tr class="tr_fija_bottom_0 preproduccion-row-total">
             <th class="padding_lateral_5 th_yura_green" colspan="2">
                 Totales
             </th>
@@ -120,7 +120,7 @@
                     $total_despachados += $v['despachados'];
                     $total_armados += $v['armados'];
                 @endphp
-                <th class="text-center" style="background-color: #eeeeee; border-color: #9d9d9d;">
+                <th class="text-center preproduccion-cell-date">
                     <div class="btn-group">
                         <button class="btn btn-xs btn-yura_dark">
                             {{ $v['pedidos'] }}
@@ -146,22 +146,9 @@
                 {{ $total_armados }}
             </th>
         </tr>
+        </tfoot>
     </table>
 </div>
-
-<style type="text/css">
-    .tr_fija_top_1 {
-        position: sticky;
-        top: 23px;
-        z-index: 8;
-    }
-
-    .tr_fija_bottom_0 {
-        position: sticky;
-        bottom: 0;
-        z-index: 9;
-    }
-</style>
 
 <script type="text/javascript">
     //estructura_tabla('table_listado')

@@ -1,58 +1,41 @@
-<div style="overflow-x: scroll">
-    <table style="width: 100%;">
-        <tr>
-            <th class="form_fecha">
-                <div class="input-group">
-                    <span class="input-group-addon bg-yura_dark">
-                        Fecha
-                    </span>
+<div class="proyecto-form">
+    @include('adminlte.gestion.comercializacion.proyectos.forms._estilos_proyecto')
+
+    <section class="proyecto-card">
+        <div class="proyecto-card-heading">
+            <span class="proyecto-card-icon"><i class="fa fa-fw fa-file-text-o"></i></span>
+            <div>
+                <h4>Datos del pedido</h4>
+                <small>Revisa la fecha, el cliente y las condiciones de entrega</small>
+            </div>
+        </div>
+        <div class="proyecto-card-body">
+            <div class="proyecto-fields">
+                <div class="proyecto-field form_fecha">
+                    <label for="form_fecha">Fecha de entrega</label>
                     <input type="date" id="form_fecha" class="form-control" value="{{ $proyecto->fecha }}">
                 </div>
-            </th>
-            <th>
-                <div class="input-group">
-                    <span class="input-group-addon bg-yura_dark">
-                        Segmento
-                    </span>
+                <div class="proyecto-field">
+                    <label for="form_segmento">Segmento</label>
                     <input type="text" readonly id="form_segmento" class="form-control"
                         value="{{ $proyecto->segmento }}">
                 </div>
-            </th>
-            <th>
-                <div class="input-group">
-                    <span class="input-group-addon bg-yura_dark">
-                        Cliente
-                    </span>
+                <div class="proyecto-field">
+                    <label for="form_nombre_cliente">Cliente</label>
                     <input type="text" readonly id="form_nombre_cliente" class="form-control"
                         value="{{ $proyecto->cliente->detalle()->nombre }}">
                     <input type="hidden" id="form_cliente" value="{{ $proyecto->id_cliente }}">
                 </div>
-            </th>
-        </tr>
-        <tr>
-            <th>
-                <div class="input-group">
-                    <span class="input-group-addon bg-yura_dark">
-                        Consignatario
-                    </span>
-                    <select id="form_consignatario" class="form-control">
-                    </select>
+                <div class="proyecto-field">
+                    <label for="form_consignatario">Consignatario</label>
+                    <select id="form_consignatario" class="form-control"></select>
                 </div>
-            </th>
-            <th>
-                <div class="input-group">
-                    <span class="input-group-addon bg-yura_dark">
-                        Agencia
-                    </span>
-                    <select id="form_agencia" class="form-control">
-                    </select>
+                <div class="proyecto-field">
+                    <label for="form_agencia">Agencia</label>
+                    <select id="form_agencia" class="form-control"></select>
                 </div>
-            </th>
-            <th>
-                <div class="input-group">
-                    <span class="input-group-addon bg-yura_dark">
-                        Tipo
-                    </span>
+                <div class="proyecto-field">
+                    <label for="form_tipo_pedido">Tipo de pedido</label>
                     <select id="form_tipo_pedido" class="form-control" readonly>
                         @if ($proyecto->tipo == 'OM')
                             <option value="OM">OPEN MARKET</option>
@@ -61,29 +44,29 @@
                         @endif
                     </select>
                 </div>
-            </th>
-        </tr>
-    </table>
-</div>
+            </div>
+        </div>
+    </section>
 
-<ul class="nav nav-pills nav-justified" style="margin-top: 5px">
-    <li>
-        <a data-toggle="tab" href="#tab-combos">
-            <i class="fa fa-fw fa-gift"></i> Armado de Cajas
-        </a>
-    </li>
-    <li class="active">
-        <a data-toggle="tab" href="#tab-contenido_pedido">
-            <i class="fa fa-fw fa-shopping-cart"></i> Contenido del Pedido
-            <sup><span class="badge" id="span_total_piezas_pedido">0 cajas</span></sup>
-        </a>
-    </li>
-</ul>
-<div class="tab-content" style="margin-top: 5px;">
-    <div id="tab-combos" class="tab-pane fade">
-        @include('adminlte.gestion.comercializacion.proyectos.forms._pedidos_combos')
-    </div>
-    <div id="tab-contenido_pedido" class="tab-pane fade in active" style="overflow-x: scroll; overflow-y: scroll">
+    <section class="proyecto-card">
+        <ul class="nav nav-tabs nav-justified proyecto-tabs">
+            <li>
+                <a data-toggle="tab" href="#tab-combos">
+                    <i class="fa fa-fw fa-gift"></i> Armado de Cajas
+                </a>
+            </li>
+            <li class="active">
+                <a data-toggle="tab" href="#tab-contenido_pedido">
+                    <i class="fa fa-fw fa-shopping-cart"></i> Contenido del Pedido
+                    <sup><span class="badge" id="span_total_piezas_pedido">0 cajas</span></sup>
+                </a>
+            </li>
+        </ul>
+        <div class="tab-content proyecto-tab-content">
+            <div id="tab-combos" class="tab-pane fade">
+                @include('adminlte.gestion.comercializacion.proyectos.forms._pedidos_combos')
+            </div>
+            <div id="tab-contenido_pedido" class="tab-pane fade in active">
         <table style="width: 100%; border: 1px solid #9d9d9d; font-size: 0.9em" class="table-bordered"
             id="table_form_contenido_pedido">
             <thead>
@@ -266,61 +249,42 @@
                     @endforeach
                 @endforeach
             </tbody>
-        </table>
-    </div>
-</div>
+                </table>
+            </div>
+        </div>
+    </section>
 
-<div style="overflow-x: scroll">
-    <table style="margin-top: 0; width: 100%">
-        <tbody>
-            <tr>
-                <td rowspan="4" style="text-align: right; padding-right: 20px; min-width: 320px">
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-yura_primary"
-                            onclick="update_proyecto('{{ $proyecto->id_proyecto }}')">
-                            <i class="fa fa-fw fa-save"></i> Grabar Pedido
-                        </button>
-                        <button type="button" class="btn btn-yura_default"
-                            onclick="cerrar_modals(); editar_proyecto('{{ $proyecto->id_proyecto }}')">
-                            <span class="badge bg-yura_dark" id="span_total_monto_pedido">$0</span>
-                            <i class="fa fa-fw fa-refresh"></i> Reiniciar Formulario
-                        </button>
-                    </div>
-                </td>
-                <th style="width: 25%; text-align: right; min-width: 120px">
-                    PIEZAS TOTALES:
-                </th>
-                <th id="th_total_piezas_pedido" style="text-align: right; padding-right: 5px; width: 10%">
-                    0
-                </th>
-            </tr>
-            <tr>
-                <th style="width: 25%; text-align: right; min-width: 120px">
-                    RAMOS TOTALES:
-                </th>
-                <th id="th_total_ramos_pedido" style="text-align: right; padding-right: 5px; width: 10%">
-                    0
-                </th>
-                <td colspan="13"></td>
-            </tr>
-            <tr>
-                <th style="width: 25%; text-align: right; min-width: 120px">
-                    TALLOS TOTALES:
-                </th>
-                <th id="th_total_tallos_pedido" style="text-align: right; padding-right: 5px; width: 10%">
-                    0
-                </th>
-            </tr>
-            <tr>
-                <th style="width: 25%; text-align: right; min-width: 120px">
-                    MONTO TOTAL:
-                </th>
-                <th id="th_total_monto_pedido" style="text-align: right; padding-right: 5px; width: 10%">
-                    $0
-                </th>
-            </tr>
-        </tbody>
-    </table>
+    <div class="proyecto-summary">
+        <div class="proyecto-summary-metrics">
+            <div class="proyecto-summary-metric">
+                <span>Piezas totales</span>
+                <strong id="th_total_piezas_pedido">0</strong>
+            </div>
+            <div class="proyecto-summary-metric">
+                <span>Ramos totales</span>
+                <strong id="th_total_ramos_pedido">0</strong>
+            </div>
+            <div class="proyecto-summary-metric">
+                <span>Tallos totales</span>
+                <strong id="th_total_tallos_pedido">0</strong>
+            </div>
+            <div class="proyecto-summary-metric proyecto-summary-money">
+                <span>Monto total</span>
+                <strong id="th_total_monto_pedido">$0</strong>
+            </div>
+        </div>
+        <div class="proyecto-summary-actions">
+            <button type="button" class="btn btn-yura_primary"
+                onclick="update_proyecto('{{ $proyecto->id_proyecto }}')">
+                <i class="fa fa-fw fa-save"></i> Grabar Pedido
+            </button>
+            <button type="button" class="btn btn-yura_default"
+                onclick="cerrar_modals(); editar_proyecto('{{ $proyecto->id_proyecto }}')">
+                <i class="fa fa-fw fa-refresh"></i> Reiniciar
+                <span class="badge bg-yura_dark" id="span_total_monto_pedido">$0</span>
+            </button>
+        </div>
+    </div>
 </div>
 
 <script>

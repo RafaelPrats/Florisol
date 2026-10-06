@@ -1,5 +1,5 @@
-<div style="overflow-x: scroll; overflow-y: scroll; width: 100%; max-height: 700px;">
-    <table class="table-bordered" style="border: 1px solid #9d9d9d; width: 100%;" id="table_listado">
+<div class="preproduccion-table-wrap">
+    <table class="table-bordered preproduccion-table" id="table_listado">
         <thead>
             <tr class="tr_fija_top_0">
                 <th class="padding_lateral_5 th_yura_green">
@@ -58,8 +58,8 @@
                     $total_inventario_produccion += $inventario_produccion;
                     $total_armados_flor = 0;
                 @endphp
-                <tr onmouseover="$(this).addClass('bg-yura_dark')" onmouseleave="$(this).removeClass('bg-yura_dark')">
-                    <th class="padding_lateral_5 mouse-hand" style="border-color: #9d9d9d;"
+                <tr>
+                    <th class="padding_lateral_5 mouse-hand" title="Ver detalle de flor"
                         onclick="modal_flor('{{ $item['flor']->id_variedad }}')">
                         {{ $item['flor']->nombre }}
                     </th>
@@ -81,8 +81,7 @@
                                 $totales[$pos_f]['armados'] += $valor->armados;
                             }
                         @endphp
-                        <td class="text-center"
-                            style="border-color: #9d9d9d; background-color: {{ $pos_f % 2 == 0 ? '#dddddd' : '' }};">
+                        <td class="text-center preproduccion-cell-date {{ $pos_f % 2 == 0 ? 'preproduccion-date-even' : '' }}">
                             @if ($valor != '')
                                 @php
                                     $por_armar = $valor->tallos - $valor->armados;
@@ -118,19 +117,20 @@
                             @endif
                         </td>
                     @endforeach
-                    <th class="text-center" style="border-color: #9d9d9d;">
+                    <th class="text-center preproduccion-inventory">
                         {{ $inventario_ventas > 0 ? $inventario_ventas : 0 }}
                     </th>
-                    <th class="text-center" style="border-color: #9d9d9d;">
+                    <th class="text-center preproduccion-inventory">
                         {{ $inventario_produccion > 0 ? $inventario_produccion : 0 }}
                     </th>
-                    <th class="text-center" style="border-color: #9d9d9d;">
+                    <th class="text-center preproduccion-inventory">
                         {{ $total_armados_flor }}
                     </th>
                 </tr>
             @endforeach
         </tbody>
-        <tr class="tr_fija_bottom_0">
+        <tfoot>
+        <tr class="tr_fija_bottom_0 preproduccion-row-total">
             <th class="padding_lateral_5 th_yura_green">
                 Totales
             </th>
@@ -142,7 +142,7 @@
                     $total_armados += $v['armados'];
                     $por_armar = $v['pedidos_tallos'] - $v['armados'];
                 @endphp
-                <th class="text-center" style="background-color: #eeeeee; border-color: #9d9d9d;">
+                <th class="text-center preproduccion-cell-date">
                     <div class="btn-group">
                         <button class="btn btn-xs btn-yura_dark" title="Ramos">
                             {{ $v['pedidos_ramos'] }}
@@ -173,22 +173,9 @@
                 {{ $total_armados }}
             </th>
         </tr>
+        </tfoot>
     </table>
 </div>
-
-<style type="text/css">
-    .tr_fija_top_1 {
-        position: sticky;
-        top: 23px;
-        z-index: 8;
-    }
-
-    .tr_fija_bottom_0 {
-        position: sticky;
-        bottom: 0;
-        z-index: 9;
-    }
-</style>
 
 <script>
     function modal_flor(variedad) {
@@ -203,7 +190,7 @@
             cliente: $('#cliente_filtro').val(),
         }
         get_jquery('{{ url('preproduccion/modal_flor') }}', datos, function(retorno) {
-            modal_view('modal_modal_flor', retorno, '<i class="fa fa-fw fa-plus"></i> Pedidos de la Flor',
+            modal_view('modal_modal_flor', retorno, '<i class="fa fa-fw fa-leaf"></i> Pedidos de la Flor',
                 true, false, '{{ isPC() ? '95%' : '' }}',
                 function() {});
         })

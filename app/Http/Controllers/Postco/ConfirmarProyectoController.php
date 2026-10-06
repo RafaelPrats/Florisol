@@ -221,7 +221,7 @@ class ConfirmarProyectoController extends Controller
                     $detalle->id_proyecto_confirmacion = $confirmacion->id_proyecto_confirmacion;
                     $detalle->id_variedad = $data->variedad;
                     $detalle->tallos_pedido = $data->tallos;
-                    $detalle->confirmados = $data->confirmar;
+                    $detalle->confirmados = $data->confirmar > 0 ? $data->confirmar : 0;
                     $detalle->save();
                 }
 

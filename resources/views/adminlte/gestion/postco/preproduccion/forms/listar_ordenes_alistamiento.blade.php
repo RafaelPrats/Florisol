@@ -1,5 +1,7 @@
-<div style="overflow-y: scroll; max-height: 500px">
-    <table class="table-bordered" style="width: 100%; border: 1px solid #9d9d9d" id="table_inventario_cosecha">
+@include('adminlte.gestion.postco.preproduccion.forms._estilos_receta')
+<div class="receta-ui">
+<div class="receta-table-scroll" style="max-height: 500px">
+    <table class="table-bordered receta-table" style="width: 100%; border: 1px solid #9d9d9d" id="table_inventario_cosecha">
         <thead>
             <tr class="tr_fija_top_0">
                 <th class="text-center th_yura_green padding_lateral_5">
@@ -51,8 +53,7 @@
                             $ready = false;
                         }
                     @endphp
-                    <tr onmouseover="$(this).addClass('bg-aqua')" onmouseleave="$(this).removeClass('bg-aqua')"
-                        class="tr_ot_{{ $item->id_oa_postco }}">
+                    <tr class="tr_ot_{{ $item->id_oa_postco }}">
                         @if ($pos_d == 0)
                             <th class="text-center padding_lateral_5" style="border-color: #9d9d9d"
                                 rowspan="{{ count($item->detalles) }}">
@@ -132,6 +133,7 @@
                         $('#btn_convertir_{{ $item->id_oa_postco }}').removeClass('hidden');
                     @endif
                 </script>
+                </div>
             @endforeach
         </tbody>
     </table>

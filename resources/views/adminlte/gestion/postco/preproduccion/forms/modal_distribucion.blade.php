@@ -1,4 +1,6 @@
-<legend class="text-center" style="font-size: 1.3em">
+@include('adminlte.gestion.postco.preproduccion.forms._estilos_receta')
+<div class="receta-ui">
+<legend class="text-center receta-panel-heading" style="font-size: 1.3em">
     Distribucion de "<b>{{ $caja->cantidad * $det_caja->ramos_x_caja }}</b>" ramos de
     "<b>{{ $det_caja->longitud_ramo }}cm</b>" en
     la receta
@@ -12,11 +14,12 @@
 <input type="hidden" id="postco_fecha" value="{{ $proyecto->fecha }}">
 <input type="hidden" id="distribucion_selected">
 
-<table style="width: 100%;">
+<div class="receta-layout-scroll">
+<table class="receta-layout-table receta-distribucion-layout">
     <tr>
         <td style="width: 50%; vertical-align: top" rowspan="2">
-            <div id="listado_inventario" style="overflow-y: scroll; max-height: 650px">
-                <table class="table-bordered text-sm" style="width: 100%; border: 1px solid #9d9d9d"
+            <div id="listado_inventario" class="receta-table-scroll" style="max-height: 650px">
+                <table class="table-bordered text-sm receta-table" style="width: 100%; border: 1px solid #9d9d9d"
                     id="listado_inventarios">
                     <thead>
                         <tr class="tr_fija_top_0">
@@ -39,7 +42,7 @@
                     </thead>
                     <tbody>
                         @foreach ($inventarios as $pos_inv => $inv)
-                            <tr onmouseover="$(this).css('background-color', 'cyan')"
+                            <tr onmouseover="$(this).css('background-color', 'rgba(0, 179, 136, .12)')"
                                 onmouseleave="$(this).css('background-color', '')">
                                 <th class="padding_lateral_5" style="border-color: #9d9d9d">
                                     {{ $inv->pta_nombre }}
@@ -88,7 +91,8 @@
                     </button>
                 </span>
             </div>
-            <table class="table-bordered text-sm" style="width: 100%; border: 1px solid #9d9d9d; margin-top: 5px">
+            <div class="receta-table-scroll" style="max-height: 300px; margin-top: 5px">
+            <table class="table-bordered text-sm receta-table" style="width: 100%; border: 1px solid #9d9d9d">
                 <tr class="tr_fija_top_0">
                     <th class="text-center th_yura_green" style="width: 30px">
                         N°
@@ -126,7 +130,7 @@
                             data-var_nombre="{{ $item->variedad->nombre }}">
                             <th class="text-center mouse-hand tr_distribucion_{{ $pos + 1 }}"
                                 style="border-color: #9d9d9d"
-                                onmouseover="$('.tr_distribucion_{{ $pos + 1 }}').css('background-color', 'cyan')"
+                                onmouseover="$('.tr_distribucion_{{ $pos + 1 }}').css('background-color', 'rgba(0, 179, 136, .12)')"
                                 onmouseleave="$('.tr_distribucion_{{ $pos + 1 }}').css('background-color', '')"
                                 onclick="seleccionar_distribucion('{{ $pos + 1 }}')">
                                 <i id="icon_distribucion_{{ $pos + 1 }}"
@@ -135,14 +139,14 @@
                             </th>
                             <th class="text-center mouse-hand tr_distribucion_{{ $pos + 1 }}"
                                 style="border-color: #9d9d9d"
-                                onmouseover="$('.tr_distribucion_{{ $pos + 1 }}').css('background-color', 'cyan')"
+                                onmouseover="$('.tr_distribucion_{{ $pos + 1 }}').css('background-color', 'rgba(0, 179, 136, .12)')"
                                 onmouseleave="$('.tr_distribucion_{{ $pos + 1 }}').css('background-color', '')"
                                 onclick="seleccionar_distribucion('{{ $pos + 1 }}')">
                                 {{ $item->variedad->planta->nombre }}
                             </th>
                             <th class="text-center mouse-hand tr_distribucion_{{ $pos + 1 }}"
                                 style="border-color: #9d9d9d"
-                                onmouseover="$('.tr_distribucion_{{ $pos + 1 }}').css('background-color', 'cyan')"
+                                onmouseover="$('.tr_distribucion_{{ $pos + 1 }}').css('background-color', 'rgba(0, 179, 136, .12)')"
                                 onmouseleave="$('.tr_distribucion_{{ $pos + 1 }}').css('background-color', '')"
                                 onclick="seleccionar_distribucion('{{ $pos + 1 }}')">
                                 {{ $item->variedad->nombre }}
@@ -153,7 +157,7 @@
                             </th>
                             <th class="text-center mouse-hand tr_distribucion_{{ $pos + 1 }}"
                                 style="border-color: #9d9d9d"
-                                onmouseover="$('.tr_distribucion_{{ $pos + 1 }}').css('background-color', 'cyan')"
+                                onmouseover="$('.tr_distribucion_{{ $pos + 1 }}').css('background-color', 'rgba(0, 179, 136, .12)')"
                                 onmouseleave="$('.tr_distribucion_{{ $pos + 1 }}').css('background-color', '')"
                                 onclick="seleccionar_distribucion('{{ $pos + 1 }}')">
                                 {{ $item->longitud }}cm
@@ -163,7 +167,7 @@
                             </th>
                             <th class="text-center mouse-hand tr_distribucion_{{ $pos + 1 }}"
                                 style="border-color: #9d9d9d"
-                                onmouseover="$('.tr_distribucion_{{ $pos + 1 }}').css('background-color', 'cyan')"
+                                onmouseover="$('.tr_distribucion_{{ $pos + 1 }}').css('background-color', 'rgba(0, 179, 136, .12)')"
                                 onmouseleave="$('.tr_distribucion_{{ $pos + 1 }}').css('background-color', '')"
                                 onclick="seleccionar_distribucion('{{ $pos + 1 }}')">
                                 {{ $item->unidades }}
@@ -173,7 +177,7 @@
                             </th>
                             <th class="text-center mouse-hand tr_distribucion_{{ $pos + 1 }}"
                                 style="border-color: #9d9d9d"
-                                onmouseover="$('.tr_distribucion_{{ $pos + 1 }}').css('background-color', 'cyan')"
+                                onmouseover="$('.tr_distribucion_{{ $pos + 1 }}').css('background-color', 'rgba(0, 179, 136, .12)')"
                                 onmouseleave="$('.tr_distribucion_{{ $pos + 1 }}').css('background-color', '')"
                                 onclick="seleccionar_distribucion('{{ $pos + 1 }}')">
                                 {{ $item->unidades * $caja->cantidad * $det_caja->ramos_x_caja }}
@@ -191,8 +195,10 @@
                     @endforeach
                 </tbody>
             </table>
+            </div>
 
-            <table class="table-bordered" style="width: 100%; border: 1px solid #9d9d9d; margin-top: 15px">
+            <div class="receta-table-scroll" style="margin-top: 10px">
+            <table class="table-bordered receta-table" style="width: 100%; border: 1px solid #9d9d9d">
                 <tr>
                     <th class="text-center th_yura_green" colspan="6" style="font-size: 1.3em">
                         ORDEN TRABAJO {{ $caja->cantidad * $det_caja->ramos_x_caja }} ramos
@@ -231,6 +237,7 @@
                     </th>
                 </tr>
             </table>
+            </div>
 
             <div class="text-center" style="margin-top: 5px">
                 <button type="button" class="btn btn-yura_primary" onclick="store_ot_nacional()">
@@ -240,6 +247,7 @@
         </td>
     </tr>
 </table>
+</div>
 
 <script>
     row_ot = 0;
@@ -289,7 +297,7 @@
                 var_nombre = $('#' + id).data('var_nombre');
                 $('#tbody_orden_trabajo').append(
                     '<tr id="tr_ot_' + row_ot + '" class="tr_ot tr_ot_' + pos + '"' +
-                    'onmouseover="$(this).css(\'background-color\', \'cyan\')" ' +
+                    'onmouseover="$(this).css(\'background-color\', \'rgba(0, 179, 136, .12)\')" ' +
                     'onmouseleave="$(this).css(\'background-color\', \'\')" data-pos="' + pos +
                     '" data-id_variedad="' + id_variedad + '" data-longitud="' + longitud + '" data-row_ot="' +
                     row_ot + '">' +
@@ -339,7 +347,7 @@
                 row_ot++;
                 $('#tbody_orden_trabajo').append(
                     '<tr id="tr_ot_' + row_ot + '" class="tr_ot tr_ot_' + pos + '"' +
-                    'onmouseover="$(this).css(\'background-color\', \'cyan\')" ' +
+                    'onmouseover="$(this).css(\'background-color\', \'rgba(0, 179, 136, .12)\')" ' +
                     'onmouseleave="$(this).css(\'background-color\', \'\')" data-pos="' + pos +
                     '" data-id_variedad="' + id_variedad + '" data-longitud="' + longitud + '" data-row_ot="' +
                     row_ot + '">' +
@@ -460,3 +468,4 @@
         }
     }
 </script>
+</div>

@@ -12,6 +12,7 @@ use yura\Modelos\IngresoRecepcion;
 use yura\Modelos\InventarioRecepcion;
 use yura\Modelos\OrdenCompra;
 use yura\Modelos\Planta;
+use yura\Modelos\ProveedorDetalleOrdenCompra;
 use yura\Modelos\RegistroMovimientos;
 use yura\Modelos\SalidasRecepcion;
 use yura\Modelos\Segmento;
@@ -145,6 +146,7 @@ class InventarioRecepcionController extends Controller
                     'p.nombre'
                 )->distinct()
                 ->where('det.id_orden_compra', $request->orden_compra)
+                ->where('pdet.estado', 'P')
                 ->orderBy('p.nombre')
                 ->get();
         } else {
@@ -290,9 +292,26 @@ class InventarioRecepcionController extends Controller
                 $registro->save();
             }
 
-            $orden_compra = OrdenCompra::find($request->orden_compra);
-            $orden_compra->estado = 'F';    // Finalizada
-            $orden_compra->save();
+            $prov_det = ProveedorDetalleOrdenCompra::join('detalle_orden_compra as det', 'det.id_detalle_orden_compra', '=', 'proveedor_detalle_orden_compra.id_detalle_orden_compra')
+                ->select('proveedor_detalle_orden_compra.*')->distinct()
+                ->where('det.id_orden_compra', $request->orden_compra)
+                ->get();
+
+            $orden_terminada = true;
+            foreach ($prov_det as $pd) {
+                if ($pd->id_proveedor == $request->id_proveedor) {
+                    $pd->estado = 'F';
+                    $pd->save();
+                }
+                if ($pd->estado == 'P') {
+                    $orden_terminada = false;
+                }
+            }
+            if ($orden_terminada) {
+                $orden_compra = OrdenCompra::find($request->orden_compra);
+                $orden_compra->estado = 'F';    // Finalizada
+                $orden_compra->save();
+            }
 
             $success = true;
             $msg = 'Se ha <strong>GRABADO</strong> la compra correctamente';

@@ -1,3 +1,5 @@
+@include('adminlte.gestion.postco.preproduccion.forms._estilos_receta')
+<div class="receta-ui">
 <legend class="text-center" style="font-size: 1.3em; margin-bottom: 5px">
     OT de "<b>{{ $caja->cantidad * $detalle->ramos_x_caja }}</b>" ramos de
     "<b>{{ $detalle->longitud_ramo }}cm</b>" en
@@ -11,8 +13,8 @@
     </button>
 </legend>
 
-<div style="overflow-x: scroll">
-    <table class="table-bordered" style="width: 100%; border: 1px solid #9d9d9d">
+<div class="receta-table-scroll">
+    <table class="table-bordered receta-table" style="width: 100%; border: 1px solid #9d9d9d">
         <tr>
             <th class="padding_lateral_5 th_yura_green" rowspan="2">
                 Fecha
@@ -72,7 +74,7 @@
         @foreach ($getOtNacional as $pos_pos => $pos)
             @foreach ($pos['detalles'] as $pos_det => $det)
                 <tr class="tr_pos_{{ $pos['pos'] }} text-sm"
-                    onmouseover="$('.tr_pos_{{ $pos['pos'] }}').css('background-color', 'cyan')"
+                    onmouseover="$('.tr_pos_{{ $pos['pos'] }}').css('background-color', 'rgba(0, 179, 136, .12)')"
                     onmouseleave="$('.tr_pos_{{ $pos['pos'] }}').css('background-color', '')">
                     @if ($pos_pos == 0 && $pos_det == 0)
                         <th class="padding_lateral_5" style="border-color: #9d9d9d" rowspan="{{ $total_row }}">
@@ -123,4 +125,5 @@
             @endforeach
         @endforeach
     </table>
+</div>
 </div>

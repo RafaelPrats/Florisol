@@ -492,6 +492,7 @@ class PreproduccionController extends Controller
             'det_caja' => $det_caja,
             'detalles_receta' => $detalles_receta,
             'ramos_pedido' => $request->ramos_pedido,
+            'modo_admin' => $request->modo === 'admin',
         ]);
     }
 

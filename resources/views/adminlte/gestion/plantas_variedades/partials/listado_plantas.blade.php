@@ -1,67 +1,54 @@
-<table width="100%" class="table-responsive table-bordered" style="font-size: 0.8em; border-color: #9d9d9d"
-    id="table_content_plantas">
+<table class="table-responsive table-bordered pv-tabla" id="table_content_plantas">
     <thead>
-        <tr class="tr_fija_top_0">
-            <th class="text-center th_yura_green">PLANTA</th>
-            <th class="text-center th_yura_green">
-                <div class="btn-group">
-                    <button type="button" class="btn btn-yura_default btn-xs dropdown-toggle" data-toggle="dropdown">
-                        <i class="fa fa-fw fa-gears"></i> Opciones
+        <tr id="th_fija_top_plantas">
+            <th class="text-left">
+                <button type="button" class="pv-sort-button" onclick="ordenar_listado_pv(this, 0)">
+                    Planta <i class="fa fa-fw fa-sort" aria-hidden="true"></i>
+                </button>
+            </th>
+            <th class="text-center">
+                <div class="btn-group" role="group" aria-label="Acciones de plantas">
+                    <button type="button" class="btn btn-xs btn-yura_default" title="Añadir planta"
+                        onclick="add_planta()">
+                        <i class="fa fa-fw fa-plus"></i>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-right sombra_pequeña" role="menu"
-                        style="z-index: 10 !important">
-                        <li>
-                            <a href="javascript:void(0)" onclick="add_planta()">
-                                <i class="fa fa-fw fa-plus"></i> Agregar Planta
-                            </a>
-                        </li>
-                        <li class="hidden">
-                            <a href="javascript:void(0)" onclick="importar_variedades()">
-                                <i class="fa fa-fw fa-upload"></i> Importar Variedades
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:void(0)" onclick="form_compelto()">
-                                <i class="fa fa-fw fa-leaf"></i> Formulario completo
-                            </a>
-                        </li>
-                    </ul>
+                    <button type="button" class="btn btn-xs btn-yura_dark" title="Formulario completo"
+                        onclick="form_compelto()">
+                        <i class="fa fa-fw fa-leaf"></i>
+                    </button>
                 </div>
             </th>
         </tr>
     </thead>
     <tbody>
-        @if (count($plantas) > 0)
-            @foreach ($plantas as $p)
-                <tr onmouseover="$(this).css('background-color','#add8e6')"
-                    onmouseleave="$(this).css('background-color','')" class="{{ $p->estado == 1 ? '' : 'error' }}"
-                    id="row_planta_{{ $p->id_planta }}">
-                    <td style="border-color: #9d9d9d" class="text-center mouse-hand"
-                        onclick="select_planta('{{ $p->id_planta }}')">
-                        <i class="fa fa-fw fa-check hidden icon_hidden_p" id="icon_planta_{{ $p->id_planta }}"></i>
-                        {{ $p->nombre }}
-                    </td>
-                    <td style="border-color: #9d9d9d" class="text-center">
-                        <div class="btn-group">
-                            <button class="btn btn-xs btn-yura_default" type="button" title="Editar"
-                                onclick="edit_planta('{{ $p->id_planta }}')">
-                                <i class="fa fa-fw fa-pencil"></i>
-                            </button>
-                            <button class="btn btn-xs btn-yura_danger" type="button"
-                                title="{{ $p->estado == 1 ? 'Desactivar' : 'Activar' }}"
-                                onclick="cambiar_estado_planta('{{ $p->id_planta }}','{{ $p->estado }}')">
-                                <i class="fa fa-fw fa-{{ $p->estado == 1 ? 'trash' : 'unlock' }}"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            @endforeach
-        @else
-            <tr>
-                <td class="text-center" colspan="2" style="border-color: #9d9d9d">
-                    No hay plantas registradas
+        @forelse ($plantas as $p)
+            <tr class="{{ $p->estado == 1 ? '' : 'pv-estado-inactivo' }}" id="row_planta_{{ $p->id_planta }}">
+                <td class="text-left mouse-hand pv-nombre"
+                    onclick="select_planta('{{ $p->id_planta }}')">
+                    <i class="fa fa-fw fa-check hidden icon_hidden_p text-color_yura"
+                        id="icon_planta_{{ $p->id_planta }}"></i>
+                    {{ $p->nombre }}
+                </td>
+                <td class="text-center">
+                    <div class="btn-group">
+                        <button class="btn btn-xs btn-yura_default" type="button" title="Editar planta"
+                            onclick="edit_planta('{{ $p->id_planta }}')">
+                            <i class="fa fa-fw fa-pencil"></i>
+                        </button>
+                        <button class="btn btn-xs btn-yura_danger" type="button"
+                            title="{{ $p->estado == 1 ? 'Desactivar' : 'Activar' }} planta"
+                            onclick="cambiar_estado_planta('{{ $p->id_planta }}','{{ $p->estado }}')">
+                            <i class="fa fa-fw fa-{{ $p->estado == 1 ? 'trash' : 'unlock' }}"></i>
+                        </button>
+                    </div>
                 </td>
             </tr>
-        @endif
+        @empty
+            <tr>
+                <td class="text-center pv-vacio" colspan="2">
+                    <i class="fa fa-leaf"></i><br>No hay plantas registradas
+                </td>
+            </tr>
+        @endforelse
     </tbody>
 </table>

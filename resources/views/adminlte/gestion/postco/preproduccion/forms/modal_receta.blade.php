@@ -1,7 +1,20 @@
-<legend class="text-center" style="margin-bottom: 5px; font-size: 1.1em;">
-    Pedidos de la RECETA "<b>{{ $receta->nombre }}</b>" de "<b>{{ $longitud }}cm</b>"
-</legend>
-<table class="table-bordered" style="width: 100%; border: 1px solid #9d9d9d">
+@include('adminlte.gestion.postco.preproduccion.forms._estilos_receta')
+<div class="receta-ui">
+    <div class="receta-hero">
+        <div class="receta-hero-title">
+            <span class="receta-hero-icon"><i class="fa fa-fw fa-leaf"></i></span>
+            <div>
+                <h4>Pedidos de la receta {{ $receta->nombre }}</h4>
+                <small>Control de distribución, inventario y órdenes de trabajo</small>
+            </div>
+        </div>
+        <div class="receta-hero-metrics">
+            <span class="receta-metric">Longitud <strong>{{ $longitud }} cm</strong></span>
+            <span class="receta-metric">Pedidos <strong>{{ count($listado) }}</strong></span>
+        </div>
+    </div>
+    <div class="receta-table-scroll">
+<table class="table-bordered receta-table" style="width: 100%; border: 1px solid #9d9d9d">
     <tr>
         <th class="text-center th_yura_green" rowspan="2" style="width: 130px">
             FECHA
@@ -94,7 +107,7 @@
                     ];
                 }
             @endphp
-            <tr onmouseover="$('.row_{{ $detalle->id_detalle_caja_proyecto }}').css('background-color', '#dddddd')"
+            <tr onmouseover="$('.row_{{ $detalle->id_detalle_caja_proyecto }}').css('background-color', 'rgba(0, 179, 136, .12)')"
                 onmouseleave="$('.row_{{ $detalle->id_detalle_caja_proyecto }}').css('background-color', '')"
                 class="row_{{ $detalle->id_detalle_caja_proyecto }}">
                 @if ($pos_d == 0)
@@ -214,14 +227,17 @@
         </script>
     @endforeach
 </table>
+    </div>
 
 <div class="row">
     <div class="col-md-7 col-md-offset-5">
-        <legend class="text-center" style="font-size: 1em; margin-bottom: 1px">
-            <b>RESUMEN</b>
-        </legend>
-        <div style="overflow-y: scroll; max-height: 250px; margin-top: 5px;">
-            <table class="table-bordered pull-right" style="width: 100%; border: 1px solid #9d9d9d"
+        <div class="receta-panel">
+            <div class="receta-panel-heading">
+                <span><i class="fa fa-fw fa-bar-chart"></i> Resumen de inventario y pedidos</span>
+                <span>{{ count($resumen_variedades) }} variedades</span>
+            </div>
+            <div class="receta-panel-body receta-table-scroll" style="max-height: 250px;">
+            <table class="table-bordered receta-table" style="width: 100%; border: 1px solid #9d9d9d"
                 id="table_resumen_variedades">
                 <thead>
                     <tr class="tr_fija_top_0">
@@ -254,8 +270,7 @@
                             $total_tallos += $r['tallos'];
                             $total_inventario += $inventario;
                         @endphp
-                        <tr onmouseover="$(this).addClass('bg-yura_dark')"
-                            onmouseleave="$(this).removeClass('bg-yura_dark')">
+                        <tr>
                             <th class="text-center" style="border-color: #9d9d9d">
                                 {{ $r['variedad']->planta->nombre }}
                             </th>
@@ -297,16 +312,18 @@
                     </th>
                 </tr>
             </table>
+            </div>
         </div>
     </div>
 </div>
 
 <input type="hidden" id="segmento_selected" value="{{ $detalle->segmento }}">
+</div>
 
 <script type="text/javascript">
     function armar_ramos(id) {
         texto =
-            "<div class='alert alert-warning text-center'>¿Esta seguro de <b>ARMAR</b> los ramos manualmente?</div>";
+            "<div class='receta-confirm'><div class='receta-confirm-message'><i class='fa fa-fw fa-exclamation-circle'></i><span>¿Está seguro de <b>armar</b> los ramos manualmente?</span></div></div>";
 
         modal_quest('modal_armar_ramos', texto, 'Mensaje de confirmacion', true, false, '40%',
             function() {
@@ -325,7 +342,7 @@
 
     function store_ot(id) {
         texto =
-            "<div class='alert alert-warning text-center'>¿Esta seguro de <b>PROCESAR</b> la orden de trabajo?</div>";
+            "<div class='receta-confirm'><div class='receta-confirm-message'><i class='fa fa-fw fa-exclamation-circle'></i><span>¿Está seguro de <b>procesar</b> la orden de trabajo?</span></div></div>";
 
         modal_quest('modal_store_ot', texto, 'Mensaje de confirmacion', true, false, '40%',
             function() {

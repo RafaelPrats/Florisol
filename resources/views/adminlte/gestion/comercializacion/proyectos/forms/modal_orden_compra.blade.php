@@ -1,6 +1,7 @@
 <legend class="text-center" style="font-size: 1.3em; margin-bottom: 5px">
     Orden de Compra <b>#{{ $compra->id_orden_compra }}</b>
-    <button type="button" class="btn btn-xs btn-yura_default">
+    <button type="button" class="btn btn-xs btn-yura_default"
+        onclick="exportar_orden_compra('{{ $compra->id_orden_compra }}')">
         <i class="fa fa-fw fa-file-excel-o"></i> Exportar
     </button>
 </legend>
@@ -186,5 +187,11 @@
         } else {
             alert('Los tallos a comprar no coinciden');
         }
+    }
+
+    function exportar_orden_compra(id) {
+        $.LoadingOverlay('show');
+        window.open('{{ url('proyectos/exportar_orden_compra') }}?id=' + id, '_blank');
+        $.LoadingOverlay('hide');
     }
 </script>
