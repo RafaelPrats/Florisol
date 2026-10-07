@@ -320,7 +320,7 @@ class BotarInventarioController extends Controller
             ->where('inv.id_empresa', $finca)
             ->where('s.basura', '>', 0)
             ->get()[0]->orden_basura;
-        $motivos = MotivoBaja::orderBy('nombre')->get();
+        $motivos = MotivoBaja::where('estado', 1)->orderBy('nombre')->get();
         $plantas = Planta::where('id_empresa', $finca)
             ->orderBy('nombre')
             ->get();
@@ -333,6 +333,7 @@ class BotarInventarioController extends Controller
                 'p.nombre as pta_nombre',
                 'v.nombre as var_nombre',
             )->distinct()
+            ->where('i.id_empresa', $finca)
             ->where('i.bodega', $request->bodega)
             ->where('i.disponibles', '>', 0)
             ->orderBy('p.nombre')
