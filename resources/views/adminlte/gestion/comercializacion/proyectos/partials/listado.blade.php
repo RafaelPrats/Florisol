@@ -1,40 +1,43 @@
-<div style="overflow-x: scroll; overflow-y: scroll; max-height: 700px">
-    <table class="table-bordered" style="width: 100%; border: 1px solid #9d9d9d">
-        <tr style="font-size: 0.8em">
-            <th class="text-center th_yura_green">
-                <input type="checkbox" onchange="$('.check_proyecto').prop('checked', $(this).prop('checked'))">
-            </th>
-            <th class="text-center th_yura_green">
-                PACKING
-            </th>
-            <th class="text-center th_yura_green">
-                CLIENTE
-            </th>
-            <th class="text-center th_yura_green">
-                TIPO
-            </th>
-            <th class="text-center th_yura_green">
-                FECHA
-            </th>
-            <th class="text-center th_yura_green">
-                CAJAS
-            </th>
-            <th class="text-center th_yura_green">
-                BQT
-            </th>
-            <th class="text-center th_yura_green" colspan="2">
-                BUNCHES
-            </th>
-            <th class="text-center th_yura_green" colspan="2">
-                STEMS
-            </th>
-            <th class="text-center th_yura_green">
-                PRECIO
-            </th>
-            <th class="text-center th_yura_green">
-                OPCIONES
-            </th>
-        </tr>
+<div class="proyectos-listado-scroll">
+    <table class="table-bordered proyectos-listado-table" style="width: 100%; border: 1px solid #9d9d9d">
+        <thead>
+            <tr class="proyectos-listado-header" style="font-size: 0.8em">
+                <th class="text-center th_yura_green">
+                    <input type="checkbox" onchange="$('.check_proyecto').prop('checked', $(this).prop('checked'))">
+                </th>
+                <th class="text-center th_yura_green">
+                    PACKING
+                </th>
+                <th class="text-center th_yura_green">
+                    CLIENTE
+                </th>
+                <th class="text-center th_yura_green">
+                    TIPO
+                </th>
+                <th class="text-center th_yura_green">
+                    FECHA
+                </th>
+                <th class="text-center th_yura_green">
+                    CAJAS
+                </th>
+                <th class="text-center th_yura_green">
+                    BQT
+                </th>
+                <th class="text-center th_yura_green" colspan="2">
+                    BUNCHES
+                </th>
+                <th class="text-center th_yura_green" colspan="2">
+                    STEMS
+                </th>
+                <th class="text-center th_yura_green">
+                    PRECIO
+                </th>
+                <th class="text-center th_yura_green">
+                    OPCIONES
+                </th>
+            </tr>
+        </thead>
+        <tbody>
         @php
             $resumen_variedad_longitud = [];
             $resumen_piezas = [];
@@ -238,10 +241,29 @@
                 @endforeach
             @endforeach
         @endforeach
+        </tbody>
     </table>
 </div>
 
 <style>
+    .proyectos-listado-scroll {
+        position: relative;
+        max-height: 700px;
+        overflow: auto;
+    }
+
+    .proyectos-listado-table {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .proyectos-listado-header th {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        box-shadow: 0 1px 0 rgba(0, 55, 41, .2);
+    }
+
     .proyectos-resumen {
         --resumen-green: #176b52;
         --resumen-accent: #00a77d;
