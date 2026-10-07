@@ -1,4 +1,5 @@
-<form id="form_edit_password">
+<div class="usuarios-security-wrap">
+    <form id="form_edit_password">
     <div class="row">
         <div class="col-md-6">
             <label for="password">Contraseña</label>
@@ -24,14 +25,91 @@
         </div>
     </div>
     <input type="hidden" name="h_clave" id="h_clave" value="">
-    <div class="row">
-        <div class="col-md-3 col-md-offset-9">
-            <button type="button" class="btn btn-success btn-block" onclick="update_password()">
-                <i class="fa fa-fw fa-save"></i> Guardar
+        <div class="usuarios-security-actions">
+            <span><i class="fa fa-shield"></i> Usa una contraseña robusta para mayor seguridad.</span>
+            <button type="button" class="btn btn-usuarios-security-save" onclick="update_password()">
+                <i class="fa fa-save"></i> Actualizar contraseña
             </button>
         </div>
-    </div>
-</form>
+    </form>
+</div>
+
+<style>
+    .usuarios-security-wrap {
+        --usuarios-green: #00B388;
+        --usuarios-muted: #5A7177;
+        --usuarios-line: #dce9e4;
+    }
+
+    .usuarios-security-wrap label {
+        margin-bottom: 4px;
+        color: #35574b;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .usuarios-security-wrap .form-control {
+        min-height: 35px;
+        border-color: var(--usuarios-line);
+        border-radius: 5px;
+        box-shadow: none;
+        font-size: 12px;
+    }
+
+    .usuarios-security-wrap .form-control:focus {
+        border-color: var(--usuarios-green);
+        box-shadow: 0 0 0 2px rgba(0, 179, 136, .1);
+    }
+
+    .usuarios-security-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 4px;
+        padding-top: 8px;
+        border-top: 1px solid var(--usuarios-line);
+    }
+
+    .usuarios-security-actions > span {
+        color: var(--usuarios-muted);
+        font-size: 10px;
+    }
+
+    .usuarios-security-actions > span i {
+        margin-right: 3px;
+        color: var(--usuarios-green);
+    }
+
+    .btn-usuarios-security-save {
+        min-width: 150px;
+        min-height: 34px;
+        border: 1px solid var(--usuarios-green);
+        border-radius: 5px;
+        background: var(--usuarios-green);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .btn-usuarios-security-save:hover,
+    .btn-usuarios-security-save:focus {
+        border-color: #008f6c;
+        background: #008f6c;
+        color: #fff;
+    }
+
+    @media (max-width: 520px) {
+        .usuarios-security-actions {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .btn-usuarios-security-save {
+            width: 100%;
+        }
+    }
+</style>
 
 <script>
     $('#form_edit_password').validate({

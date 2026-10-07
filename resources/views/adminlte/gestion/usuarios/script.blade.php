@@ -16,7 +16,7 @@
 
     function exportar_usuarios() {
         $.LoadingOverlay('show');
-        window.open('{{url('usuarios/exportar')}}' + '?busqueda=' + $('#busqueda_usuarios').val().trim(), '_blank');
+        window.open('{{url('usuarios/exportar')}}' + '?busqueda=' + encodeURIComponent($('#busqueda_usuarios').val().trim()), '_blank');
         $.LoadingOverlay('hide');
     }
 
@@ -67,7 +67,7 @@
     function add_usuario() {
         $.LoadingOverlay('show');
         $.get('{{url('usuarios/add')}}', {}, function (retorno) {
-            modal_form('modal_add_usuario', retorno, '<i class="fa fa-fw fa-plus"></i> Añadir usuario', true, false, '{{isPC() ? '60%' : ''}}', function () {
+            modal_form('modal_add_usuario', retorno, '<i class="fa fa-user-plus"></i> Nuevo usuario', true, false, '{{isPC() ? 'min(700px, 94vw)' : '100%'}}', function () {
                 store_usuario();
                 $.LoadingOverlay('hide');
             });
@@ -89,7 +89,7 @@
             id_usuario: id_usuario
         };
         $.get('{{url('usuarios/ver_usuario')}}', datos, function (retorno) {
-            modal_view('modal_view_usuario', retorno, '<i class="fa fa-fw fa-eye"></i> Detalles', true, false, '{{isPC() ? '75%' : ''}}');
+            modal_view('modal_view_usuario', retorno, '<i class="fa fa-eye"></i> Perfil de usuario', true, false, '{{isPC() ? 'min(960px, 95vw)' : '100%'}}');
             $.LoadingOverlay('hide');
         });
         $.LoadingOverlay('hide');

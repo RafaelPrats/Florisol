@@ -2,7 +2,6 @@
 
 namespace yura\Http\Controllers;
 
-use Greggilbert\Recaptcha\Recaptcha;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -159,16 +158,10 @@ class YuraController extends Controller
         $valida = Validator::make($request->all(), [
             'username' => 'required|max:250',
             'h_clave' => 'required',
-            //'g-recaptcha-response' => 'required|captcha'
-            //'captcha' => 'required|captcha',
         ], [
             'username.max' => 'El nombre de usuario es muy grande',
             'username.required' => 'El nombre de usuario es obligatorio',
             'h_clave.required' => 'La contraseña es obligatoria',
-            'g-recaptcha-response.required' => 'Haga clic en el captcha de seguridad y espere a que verifique que no es un robot',
-            'g-recaptcha-response.captcha' => 'El código de verificación es incorrecto',
-            //'captcha.required' => 'El código de verificación es obligatorio',
-            //'captcha.captcha' => 'El código de verificación es incorrecto',
         ]);
         $msg = '';
         $success = true;
