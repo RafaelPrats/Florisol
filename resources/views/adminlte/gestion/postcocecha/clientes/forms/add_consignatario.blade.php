@@ -1,11 +1,11 @@
-<div id="div_contactos_cliente">
+<div id="div_contactos_cliente" class="clientes-consignatarios">
     <div class="row">
         <div class="col-md-12">
             <table width="100%" class="table table-responsive table-bordered" style="font-size: 0.8em; border-color: #9d9d9d">
                 <thead>
-                <tr class="table-{{getUsuario(Session::get('id_usuario'))->configuracion->skin}}">
+                <tr class="clientes-consignatarios-table-heading">
                     <th class="text-center" style="border-color: #9d9d9d">
-                        <div class="box-title" style="font-size:15px">Agregar consignatrio</div>
+                        <div class="box-title">Consignatarios</div>
                     </th>
                     <th class="text-center" style="border-color: #9d9d9d;width: 10%;">
                         <button type="button" class="btn btn-xs btn-default" title="Añadir campo" onclick="aumentar_consignatario()">
@@ -60,8 +60,64 @@
             <div class="text-center">
                 <button class="btn btn-success" type="button" id="btn_guardar_modal_add_cliente"
                         onclick="store_cliente_consignatario('{{csrf_token()}}','{{$id_cliente}}')">
-                    <span class="bootstrap-dialog-button-icon fa fa-fw fa-save"></span>Guardar</button>
+                    <span class="bootstrap-dialog-button-icon fa fa-fw fa-save"></span>Guardar cambios</button>
             </div>
         </div>
+
+        <style>
+            .clientes-consignatarios {
+                --clientes-green: #00B388;
+                --clientes-ink: #003729;
+                --clientes-muted: #5A7177;
+                --clientes-line: #dce9e4;
+                color: var(--clientes-ink);
+            }
+
+            .clientes-consignatarios-table-heading th {
+                padding: 8px 10px;
+                border-color: var(--clientes-line) !important;
+                background: #eaf6f0;
+                color: var(--clientes-ink);
+            }
+
+            .clientes-consignatarios-table-heading .box-title {
+                font-size: 13px;
+                font-weight: 700;
+            }
+
+            .clientes-consignatarios #row_add_user_contactos {
+                margin: 0;
+                padding: 8px;
+                border: 1px solid var(--clientes-line);
+                border-radius: 7px;
+                background: #fbfdfc;
+            }
+
+            .clientes-consignatarios .form-group {
+                margin-bottom: 7px;
+            }
+
+            .clientes-consignatarios .form-control {
+                min-height: 35px;
+                border-color: var(--clientes-line);
+                box-shadow: none;
+                font-size: 12px;
+            }
+
+            .clientes-consignatarios .input-group-addon {
+                border-color: var(--clientes-line);
+                background: #f4faf7;
+            }
+
+            .clientes-consignatarios #btn_guardar_modal_add_cliente {
+                margin-top: 9px;
+                padding: 7px 12px;
+                border: 1px solid var(--clientes-green);
+                border-radius: 5px;
+                background: var(--clientes-green);
+                font-size: 12px;
+                font-weight: 700;
+            }
+        </style>
     </div>
 </div>

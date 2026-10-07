@@ -1,4 +1,4 @@
-<tr id="tr_select_agencias_carga_{{$cantTr+1}}">
+<tr id="tr_select_agencias_carga_{{$cantTr+1}}" class="clientes-contact-row">
     <td>
         <div class="form-group col-md-4">
             <div class="input-group">

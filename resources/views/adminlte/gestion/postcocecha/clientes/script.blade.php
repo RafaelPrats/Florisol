@@ -11,7 +11,6 @@
         $.get('{{ url('clientes/buscar') }}', datos, function(retorno) {
             $('#div_listado_clientes').html(retorno);
             estructura_tabla('table_content_clientes');
-            $('#table_content_clientes_filter>label>input').addClass('input-yura_default')
         }).always(function() {
             $.LoadingOverlay('hide');
         });
@@ -28,15 +27,14 @@
 
     $(document).on("click", "#pagination_listado_clientes .pagination li a", function(e) {
         $.LoadingOverlay("show");
-        //para que la pagina se cargen los elementos
         e.preventDefault();
         var url = $(this).attr("href");
-        url = url.replace('?', '?busqueda=' + $('#busqueda_clientes').val() + '&');
-        $('#div_listado_clientes').html($('#table_clientes').html());
+        var separador = url.indexOf('?') === -1 ? '?' : '&';
+        url += separador + 'busqueda=' + encodeURIComponent($('#busqueda_clientes').val().trim()) +
+            '&segmento=' + encodeURIComponent($('#filtro_segmento').val() || '');
         $.get(url, function(resul) {
             $('#div_listado_clientes').html(resul);
             estructura_tabla('table_content_clientes');
-            $('#table_content_clientes_filter>label>input').addClass('input-yura_default');
         }).always(function() {
             $.LoadingOverlay("hide");
         });
@@ -44,7 +42,9 @@
 
     function exportar_clientes() {
         $.LoadingOverlay('show');
-        window.open('{{ url('clientes/exportar') }}' + '?busqueda=' + $('#busqueda_clientes').val().trim(), '_blank');
+        window.open('{{ url('clientes/exportar') }}' +
+            '?busqueda=' + encodeURIComponent($('#busqueda_clientes').val().trim()) +
+            '&segmento=' + encodeURIComponent($('#filtro_segmento').val() || ''), '_blank');
         $.LoadingOverlay('hide');
     }
 

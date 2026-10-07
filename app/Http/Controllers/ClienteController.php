@@ -462,15 +462,22 @@ class ClienteController extends Controller
         $busqueda = $request->has('busqueda') ? espacios($request->busqueda) : '';
         $bus = str_replace(' ', '%%', $busqueda);
 
-        $listado = DB::table('detalle_cliente as dc');
-        $listado->where('estado', 1);
-        //dd($listado);
+        $listado = DB::table('detalle_cliente as dc')
+            ->join('cliente as c', 'c.id_cliente', '=', 'dc.id_cliente')
+            ->leftJoin('pais as pa', 'pa.codigo', '=', 'dc.codigo_pais')
+            ->where('dc.estado', 1)
+            ->where('c.id_empresa', getFincaActiva());
+
+        if ($request->segmento != '') {
+            $listado->where('dc.segmento', $request->segmento);
+        }
 
         if ($request->busqueda != '') $listado = $listado->Where(function ($q) use ($bus) {
             $q->Where('dc.nombre', 'like', '%' . $bus . '%')
                 ->orWhere('dc.correo', 'like', '%' . $bus . '%')
                 ->orWhere('dc.ruc', 'like', '%' . $bus . '%')
-                ->orWhere('pa.nombre', 'like', '%' . $bus . '%');
+                ->orWhere('pa.nombre', 'like', '%' . $bus . '%')
+                ->orWhere('dc.direccion', 'like', '%' . $bus . '%');
         });
 
         $listado = $listado->orderBy('dc.nombre', 'asc')->get();

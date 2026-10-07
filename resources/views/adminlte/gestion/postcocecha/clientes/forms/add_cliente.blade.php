@@ -1,9 +1,17 @@
-<form id="form_add_cliente">
+<div class="clientes-form">
+    <div class="clientes-form-heading">
+        <span><i class="fa fa-user-plus"></i></span>
+        <div>
+            <strong>{{ !empty($dataCliente) ? 'Actualizar cliente' : 'Registrar cliente' }}</strong>
+            <small>Completa la información de identificación, contacto y operación.</small>
+        </div>
+    </div>
+    <form id="form_add_cliente">
     <input type="hidden" id="id_cliente" value="{!! !empty($dataCliente) ? $dataCliente->id_cliente : '' !!}">
     <div class="row">
         <div class="col-md-3">
             <div class="form-group">
-                <label for="nombre_completo">Nombre</label>
+                <label for="nombre">Nombre</label>
                 <input type="text" id="nombre" name="nombre" class="form-control" required maxlength="250"
                     autocomplete="off" value="{!! !empty($dataCliente) ? $dataCliente->nombre : '' !!}">
             </div>
@@ -202,10 +210,152 @@
             </div>
         </div>
     </div>
-    <div class="text-center">
-        <button class="btn btn-success" type="button" id="btn_guardar_modal_add_cliente"
-            onclick="store_cliente('{{ csrf_token() }}')">
-            <span class="bootstrap-dialog-button-icon fa fa-fw fa-save">
-            </span>Guardar</button>
-    </div>
-</form>
+        <div class="clientes-form-actions">
+            <span><i class="fa fa-info-circle"></i> Los campos marcados son obligatorios.</span>
+            <button class="btn btn-clientes-form-save" type="button" id="btn_guardar_modal_add_cliente"
+                onclick="store_cliente('{{ csrf_token() }}')">
+                <i class="fa fa-save"></i> Guardar cliente
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .clientes-form {
+        --clientes-green: #00B388;
+        --clientes-ink: #003729;
+        --clientes-muted: #5A7177;
+        --clientes-line: #dce9e4;
+        color: var(--clientes-ink);
+        font-size: 13px;
+    }
+
+    .clientes-form-heading {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-bottom: 12px;
+        padding: 9px 11px;
+        border: 1px solid var(--clientes-line);
+        border-radius: 7px;
+        background: #f4faf7;
+    }
+
+    .clientes-form-heading > span {
+        display: grid;
+        width: 32px;
+        height: 32px;
+        flex: 0 0 32px;
+        place-items: center;
+        border-radius: 8px;
+        background: #e4f5ee;
+        color: var(--clientes-green);
+    }
+
+    .clientes-form-heading strong,
+    .clientes-form-heading small {
+        display: block;
+    }
+
+    .clientes-form-heading strong {
+        font-size: 13px;
+    }
+
+    .clientes-form-heading small {
+        margin-top: 2px;
+        color: var(--clientes-muted);
+        font-size: 10px;
+    }
+
+    .clientes-form .row {
+        margin-right: -7px;
+        margin-left: -7px;
+    }
+
+    .clientes-form .row > [class*="col-"] {
+        padding-right: 7px;
+        padding-left: 7px;
+    }
+
+    .clientes-form .form-group {
+        margin-bottom: 10px;
+    }
+
+    .clientes-form .form-group label {
+        margin-bottom: 4px;
+        color: #35574b;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .clientes-form .form-control {
+        min-height: 35px;
+        border-color: var(--clientes-line);
+        border-radius: 5px;
+        box-shadow: none;
+        color: var(--clientes-ink);
+        font-size: 12px;
+    }
+
+    .clientes-form .form-control:focus {
+        border-color: var(--clientes-green);
+        box-shadow: 0 0 0 2px rgba(0, 179, 136, .1);
+    }
+
+    .clientes-form textarea.form-control {
+        min-height: 72px;
+        resize: vertical;
+    }
+
+    .clientes-form-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 2px;
+        padding-top: 10px;
+        border-top: 1px solid var(--clientes-line);
+    }
+
+    .clientes-form-actions > span {
+        color: var(--clientes-muted);
+        font-size: 10px;
+    }
+
+    .clientes-form-actions > span i {
+        margin-right: 3px;
+        color: var(--clientes-green);
+    }
+
+    .btn-clientes-form-save {
+        padding: 7px 12px;
+        border: 1px solid var(--clientes-green);
+        border-radius: 5px;
+        background: var(--clientes-green);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .btn-clientes-form-save:hover,
+    .btn-clientes-form-save:focus {
+        border-color: #008f6c;
+        background: #008f6c;
+        color: #fff;
+    }
+
+    .btn-clientes-form-save i {
+        margin-right: 4px;
+    }
+
+    @media (max-width: 480px) {
+        .clientes-form-actions {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .clientes-form-actions .btn {
+            width: 100%;
+        }
+    }
+</style>

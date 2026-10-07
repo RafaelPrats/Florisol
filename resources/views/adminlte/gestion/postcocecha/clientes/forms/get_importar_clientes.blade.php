@@ -1,16 +1,20 @@
-<div style="overflow-y: scroll; max-height: 500px">
-    <table class="table-bordered" style="width: 100%; border: 1px solid #9d9d9d">
-        <tr class="tr_fija_top_0">
-            <th class="text-center th_yura_green">
+<div class="clientes-import-preview">
+    <div class="clientes-import-preview-scroll">
+        <table id="tabla_preview_clientes">
+            <thead>
+                <tr>
+                    <th>
                 Codigo
-            </th>
-            <th class="text-center th_yura_green">
+                    </th>
+                    <th>
                 Nombre
-            </th>
-            <th class="text-center th_yura_green">
+                    </th>
+                    <th>
                 Identificacion
-            </th>
-        </tr>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
         @foreach ($listado as $pos => $item)
             @php
                 $cambio = 0;
@@ -20,8 +24,8 @@
                     $cambio = 1;
                 }
             @endphp
-            <tr>
-                <th class="text-center" style="border-color: #9d9d9d">
+            <tr class="{{ $cambio ? 'is-changed' : '' }}">
+                <td>
                     <input type="text" style="width: 100%" value="{{ $item['row']['A'] }}"
                         id="codigo_cliente_{{ $pos }}"
                         class="text-center {{ $item['cliente'] == '' ? 'error' : '' }}">
@@ -29,26 +33,29 @@
                     <input type="hidden" id="id_cliente_{{ $pos }}"
                         value="{{ $item['cliente'] != '' ? $item['cliente']->id_cliente : '' }}">
                     <input type="hidden" id="cambio_cliente_{{ $pos }}" value="{{ $cambio }}">
-                </th>
-                <th class="text-center" style="border-color: #9d9d9d">
+                </td>
+                <td>
                     <input type="text" style="width: 100%; color: {{ $cambio == 1 ? 'red' : '' }}"
                         value="{{ espacios(mb_strtoupper($item['row']['D'])) }}"
                         id="nombre_cliente_{{ $pos }}" class="text-center">
-                </th>
-                <th class="text-center" style="border-color: #9d9d9d">
+                </td>
+                <td>
                     <input type="text" style="width: 100%; color: {{ $cambio == 1 ? 'red' : '' }}"
                         value="{{ espacios(mb_strtoupper($item['row']['C'])) }}" id="ruc_cliente_{{ $pos }}"
                         class="text-center">
-                </th>
+                </td>
             </tr>
         @endforeach
-    </table>
-</div>
+            </tbody>
+        </table>
+    </div>
 
-<div class="text-center" style="margin-top: 5px">
-    <button type="button" class="btn btn-yura_primary" onclick="store_importar_clientes()">
-        <i class="fa fa-fw fa-save"></i> GRABAR ARCHIVO
-    </button>
+    <div class="clientes-import-preview-footer">
+        <span><i class="fa fa-info-circle"></i> Las filas resaltadas contienen datos nuevos o modificados.</span>
+        <button type="button" class="btn btn-yura_primary" onclick="store_importar_clientes()">
+            <i class="fa fa-save"></i> Guardar cambios
+        </button>
+    </div>
 </div>
 
 <script>
@@ -81,3 +88,92 @@
         }
     }
 </script>
+
+<style>
+    .clientes-import-preview {
+        --clientes-green: #00B388;
+        --clientes-ink: #003729;
+        --clientes-muted: #5A7177;
+        --clientes-line: #dce9e4;
+        margin-top: 11px;
+        color: var(--clientes-ink);
+    }
+
+    .clientes-import-preview-scroll {
+        max-height: min(54vh, 500px);
+        overflow: auto;
+        border: 1px solid var(--clientes-line);
+        border-radius: 7px;
+    }
+
+    .clientes-import-preview table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .clientes-import-preview th {
+        position: sticky;
+        z-index: 2;
+        top: 0;
+        padding: 8px 9px;
+        background: #008f6c;
+        color: #fff;
+        font-size: 11px;
+        text-align: center;
+    }
+
+    .clientes-import-preview td {
+        padding: 6px;
+        border-bottom: 1px solid #e8efec;
+        background: #fff;
+    }
+
+    .clientes-import-preview tbody tr:nth-child(even) td {
+        background: #f7faf8;
+    }
+
+    .clientes-import-preview tbody tr.is-changed td {
+        background: #fff8e7;
+    }
+
+    .clientes-import-preview td .form-control,
+    .clientes-import-preview td input[type="text"] {
+        min-height: 33px;
+        padding: 5px 7px;
+        border: 1px solid var(--clientes-line);
+        border-radius: 4px;
+        font-size: 11px;
+    }
+
+    .clientes-import-preview-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 9px;
+        margin-top: 8px;
+    }
+
+    .clientes-import-preview-footer > span {
+        color: var(--clientes-muted);
+        font-size: 10px;
+    }
+
+    .clientes-import-preview-footer > span i {
+        margin-right: 3px;
+        color: #bb8b19;
+    }
+
+    .clientes-import-preview-footer .btn {
+        border-radius: 5px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    @media (max-width: 520px) {
+        .clientes-import-preview-footer {
+            align-items: stretch;
+            flex-direction: column;
+        }
+    }
+</style>

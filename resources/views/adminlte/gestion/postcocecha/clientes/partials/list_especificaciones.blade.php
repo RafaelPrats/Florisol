@@ -34,9 +34,9 @@
 
 <script>
 
-    buscar_listado($('#id_cliente').val());
+    buscar_listado_especificaciones($('#id_cliente').val());
 
-    function buscar_listado(id_cliente) {
+    function buscar_listado_especificaciones(id_cliente) {
         $.LoadingOverlay('show');
         datos = {
             id_cliente : id_cliente,
