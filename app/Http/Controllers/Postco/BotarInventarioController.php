@@ -258,42 +258,120 @@ class BotarInventarioController extends Controller
     public function store_orden_basura(Request $request)
     {
         try {
-            DB::beginTransaction();
-            if ($request->fecha >= '2026-09-17') {
-                foreach (json_decode($request->data) as $data) {
-                    $model = InventarioRecepcion::find($data->id_inv);
-                    if ($model->disponibles < $data->botar) {
-                        DB::rollBack();
-                        $success = false;
-                        $msg = 'No se pueden botar mas tallos de los disponibles, flor: ' . $model->variedad->nombre;
+            $fecha = $request->fecha;
+            $orden = filter_var($request->orden, FILTER_VALIDATE_INT);
+            $registros = json_decode($request->data);
 
-                        return [
-                            'success' => $success,
-                            'mensaje' => $msg,
-                        ];
-                    } else {
-                        $salidas = new SalidasRecepcion();
-                        $salidas->id_inventario_recepcion = $model->id_inventario_recepcion;
-                        $salidas->id_variedad = $model->id_variedad;
-                        $salidas->id_motivo_baja = $data->motivo;
-                        $salidas->cantidad = 0;
-                        $salidas->basura = $data->botar;
-                        $salidas->fecha = $request->fecha;
-                        $salidas->orden_basura = $request->orden;
-                        $salidas->estado_orden_basura = 0;
-                        $salidas->save();
-                    }
-                }
-                $success = true;
-                $msg = 'Se ha <strong>CREADO la ORDEN de FLOR de BAJA</strong> correctamente';
-                DB::commit();
-            } else {
-                DB::rollBack();
-                $success = false;
-                $msg = '<div class="alert alert-danger text-center">' .
-                    '<h3>La fecha debe ser superior al 17 de Sept 2026</h3>' .
-                    '</div>';
+            if (!is_string($fecha) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)
+                || !checkdate((int) substr($fecha, 5, 2), (int) substr($fecha, 8, 2), (int) substr($fecha, 0, 4))
+                || $fecha < '2026-09-17') {
+                return [
+                    'success' => false,
+                    'mensaje' => 'La fecha debe ser válida y superior al 17 de septiembre de 2026.',
+                ];
             }
+            if (!$orden || $orden < 1 || !in_array($request->bodega, ['V', 'P'], true)
+                || !is_array($registros) || count($registros) === 0) {
+                return [
+                    'success' => false,
+                    'mensaje' => 'La orden no tiene datos válidos para grabar.',
+                ];
+            }
+
+            DB::beginTransaction();
+
+            $finca = getFincaActiva();
+            $grupos_procesados = [];
+            foreach ($registros as $data) {
+                if (!is_object($data)) {
+                    DB::rollBack();
+                    return [
+                        'success' => false,
+                        'mensaje' => 'La información de la orden no tiene el formato esperado.',
+                    ];
+                }
+
+                $id_variedad = isset($data->id_variedad) ? filter_var($data->id_variedad, FILTER_VALIDATE_INT) : false;
+                $cantidad = isset($data->botar) ? filter_var($data->botar, FILTER_VALIDATE_INT) : false;
+                $id_motivo = isset($data->motivo) ? filter_var($data->motivo, FILTER_VALIDATE_INT) : false;
+                $longitud = isset($data->longitud) ? $data->longitud : null;
+
+                if (!$id_variedad || !$cantidad || $cantidad < 1 || !$id_motivo
+                    || !is_numeric($longitud) || !is_finite((float) $longitud)) {
+                    DB::rollBack();
+                    return [
+                        'success' => false,
+                        'mensaje' => 'La cantidad, variedad, longitud o motivo ingresado no es válido.',
+                    ];
+                }
+
+                $clave_grupo = $id_variedad . '|' . rtrim(rtrim(sprintf('%.8F', (float) $longitud), '0'), '.');
+                if (isset($grupos_procesados[$clave_grupo])) {
+                    DB::rollBack();
+                    return [
+                        'success' => false,
+                        'mensaje' => 'La orden contiene una variedad y longitud repetida.',
+                    ];
+                }
+                $grupos_procesados[$clave_grupo] = true;
+
+                $motivo = MotivoBaja::where('id_motivo_baja', $id_motivo)
+                    ->where('estado', 1)
+                    ->first();
+                if (!$motivo) {
+                    DB::rollBack();
+                    return [
+                        'success' => false,
+                        'mensaje' => 'Uno de los motivos seleccionados ya no está disponible.',
+                    ];
+                }
+
+                $lotes = InventarioRecepcion::where('id_variedad', $id_variedad)
+                    ->where('longitud', $longitud)
+                    ->where('bodega', $request->bodega)
+                    ->where('id_empresa', $finca)
+                    ->where('disponibles', '>', 0)
+                    ->orderBy('fecha', 'asc')
+                    ->orderBy('id_inventario_recepcion', 'asc')
+                    ->lockForUpdate()
+                    ->get();
+                $disponibles = $lotes->sum('disponibles');
+
+                if ($disponibles < $cantidad) {
+                    DB::rollBack();
+                    $variedad = $lotes->isEmpty() ? 'seleccionada' : $lotes->first()->variedad->nombre;
+                    return [
+                        'success' => false,
+                        'mensaje' => 'No hay suficientes tallos disponibles para ' . $variedad .
+                            ' en la longitud ' . $longitud . '. Disponibles: ' . number_format($disponibles) . '.',
+                    ];
+                }
+
+                $pendientes = $cantidad;
+                foreach ($lotes as $lote) {
+                    if ($pendientes === 0) {
+                        break;
+                    }
+
+                    $cantidad_lote = min((int) $lote->disponibles, $pendientes);
+                    $salidas = new SalidasRecepcion();
+                    $salidas->id_inventario_recepcion = $lote->id_inventario_recepcion;
+                    $salidas->id_variedad = $lote->id_variedad;
+                    $salidas->id_motivo_baja = $id_motivo;
+                    $salidas->cantidad = 0;
+                    $salidas->basura = $cantidad_lote;
+                    $salidas->fecha = $fecha;
+                    $salidas->orden_basura = $orden;
+                    $salidas->estado_orden_basura = 0;
+                    $salidas->save();
+
+                    $pendientes -= $cantidad_lote;
+                }
+            }
+
+            DB::commit();
+            $success = true;
+            $msg = 'Se ha <strong>CREADO la ORDEN de FLOR de BAJA</strong> correctamente';
         } catch (\Exception $e) {
             DB::rollBack();
             $success = false;
@@ -339,13 +417,23 @@ class BotarInventarioController extends Controller
             ->orderBy('p.nombre')
             ->orderBy('v.nombre')
             ->orderBy('i.fecha')
-            ->get();
+            ->get()
+            ->groupBy(function ($lote) {
+                return $lote->id_variedad . '|' . $lote->longitud;
+            })
+            ->map(function ($lotes) {
+                $grupo = $lotes->first();
+                $grupo->disponibles = $lotes->sum('disponibles');
+                return $grupo;
+            })
+            ->values();
 
         return view('adminlte.gestion.postco.botar_inventario.forms.modal_baja', [
             'last_orden' => $last_orden,
             'listado' => $listado,
             'motivos' => $motivos,
             'plantas' => $plantas,
+            'bodega' => $request->bodega,
         ]);
     }
 
@@ -414,7 +502,8 @@ class BotarInventarioController extends Controller
                             ->where('bodega', $inventario->bodega)
                             ->where('id_empresa', $inventario->id_empresa)
                             ->where('disponibles', '>', 0)
-                            ->orderBy('fecha', 'desc')
+                            ->orderBy('fecha', 'asc')
+                            ->orderBy('id_inventario_recepcion', 'asc')
                             ->get();
                         if (count($query_inventarios) > 0) {
                             $total_inventario = 0;

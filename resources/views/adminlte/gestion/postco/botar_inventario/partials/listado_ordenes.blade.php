@@ -178,6 +178,126 @@
         padding: 5px;
         border-radius: 5px;
     }
+
+    .baja-auth-modal {
+        padding: 3px 2px 0;
+        color: #003729;
+    }
+
+    .baja-auth-warning {
+        display: flex;
+        align-items: flex-start;
+        gap: 11px;
+        margin-bottom: 16px;
+        padding: 13px;
+        border: 1px solid #f0d89a;
+        border-radius: 8px;
+        background: #fff9e9;
+    }
+
+    .baja-auth-warning-icon {
+        display: grid;
+        width: 36px;
+        height: 36px;
+        flex: 0 0 36px;
+        place-items: center;
+        border-radius: 10px;
+        background: #ffefc5;
+        color: #936400;
+        font-size: 16px;
+    }
+
+    .baja-auth-warning strong {
+        display: block;
+        margin: 0 0 3px;
+        font-size: 14px;
+    }
+
+    .baja-auth-warning p {
+        margin: 0;
+        color: #6c6046;
+        font-size: 12px;
+        line-height: 1.45;
+    }
+
+    .baja-auth-label {
+        display: block;
+        margin-bottom: 6px;
+        color: #003729;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .baja-auth-input-group {
+        display: flex;
+        width: 100%;
+        align-items: stretch;
+    }
+
+    .baja-auth-input-icon,
+    .baja-auth-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #dce9e4;
+        background: #f4faf7;
+        color: #5A7177;
+    }
+
+    .baja-auth-input-icon {
+        width: 40px;
+        flex: 0 0 40px;
+        border-right: 0;
+        border-radius: 6px 0 0 6px;
+    }
+
+    .baja-auth-input {
+        min-width: 0;
+        height: 42px;
+        flex: 1 1 auto;
+        border: 1px solid #dce9e4;
+        border-radius: 0;
+        background: #fff;
+        color: #003729;
+        font-size: 17px;
+        letter-spacing: .12em;
+        text-align: center;
+        box-shadow: none;
+    }
+
+    .baja-auth-input:focus {
+        z-index: 1;
+        border-color: #00B388;
+        box-shadow: 0 0 0 2px rgba(0, 179, 136, .12);
+    }
+
+    .baja-auth-toggle {
+        min-width: 44px;
+        flex: 0 0 44px;
+        border-left: 0;
+        border-radius: 0 6px 6px 0;
+        cursor: pointer;
+    }
+
+    .baja-auth-toggle:hover,
+    .baja-auth-toggle:focus {
+        background: #e4f5ee;
+        color: #003729;
+        outline: 0;
+    }
+
+    .baja-auth-hint {
+        display: block;
+        margin-top: 6px;
+        color: #5A7177;
+        font-size: 11px;
+    }
+
+    @media (max-width: 480px) {
+        .baja-auth-warning {
+            padding: 10px;
+        }
+    }
 </style>
 
 <script>
@@ -226,11 +346,25 @@
 
     function completar_orden(orden) {
         var texto =
-            '<div class="alert alert-warning text-center"><h4>Confirma el desecho de los tallos de esta orden.</h4></div>' +
-            '<label for="codigo_autorizacion">Código de autorización</label>' +
-            '<input type="password" id="codigo_autorizacion" class="form-control" autocomplete="current-password">';
+            '<div class="baja-auth-modal">' +
+            '<div class="baja-auth-warning">' +
+            '<span class="baja-auth-warning-icon"><i class="fa fa-exclamation-triangle"></i></span>' +
+            '<div><strong>Confirma el desecho de los tallos</strong>' +
+            '<p>Esta acción registrará el desecho de los tallos y actualizará el inventario. Para continuar, confirma tu autorización.</p></div>' +
+            '</div>' +
+            '<label for="codigo_autorizacion" class="baja-auth-label">Código de autorización</label>' +
+            '<div class="baja-auth-input-group">' +
+            '<span class="baja-auth-input-icon"><i class="fa fa-lock"></i></span>' +
+            '<input type="password" id="codigo_autorizacion" class="baja-auth-input" ' +
+            'placeholder="Ingresa el código" autocomplete="off" autocapitalize="off" spellcheck="false" ' +
+            'aria-describedby="baja_auth_hint">' +
+            '<button type="button" class="baja-auth-toggle" onclick="toggle_baja_auth_visibility(this)" ' +
+            'aria-label="Mostrar código" title="Mostrar código"><i class="fa fa-eye"></i></button>' +
+            '</div>' +
+            '<small id="baja_auth_hint" class="baja-auth-hint"><i class="fa fa-info-circle"></i> El código se utiliza solo para autorizar esta operación.</small>' +
+            '</div>';
 
-        modal_quest('modal_completar_orden', texto, 'Desechar la flor', true, false, '40%',
+        modal_quest('modal_completar_orden', texto, 'Desechar la flor', true, false, 'min(440px, 94vw)',
             function() {
                 var datos = {
                     _token: '{{ csrf_token() }}',
@@ -242,5 +376,20 @@
                     listar_ordenes();
                 });
             });
+        setTimeout(function() {
+            $('#codigo_autorizacion').trigger('focus');
+        }, 100);
+    }
+
+    function toggle_baja_auth_visibility(button) {
+        var input = $('#codigo_autorizacion');
+        var mostrar = input.attr('type') === 'password';
+        input.attr('type', mostrar ? 'text' : 'password');
+        $(button)
+            .attr('aria-label', mostrar ? 'Ocultar código' : 'Mostrar código')
+            .attr('title', mostrar ? 'Ocultar código' : 'Mostrar código')
+            .find('i')
+            .toggleClass('fa-eye', !mostrar)
+            .toggleClass('fa-eye-slash', mostrar);
     }
 </script>

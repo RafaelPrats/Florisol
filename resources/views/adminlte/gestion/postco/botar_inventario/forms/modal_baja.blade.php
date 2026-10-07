@@ -1,4 +1,5 @@
 <div class="baja-modal">
+    <input type="hidden" id="new_bodega" value="{{ $bodega }}">
     <div class="baja-order-meta">
         <label class="baja-modal-field">
             <span><i class="fa fa-calendar"></i> Fecha de la orden</span>
@@ -11,7 +12,8 @@
                 value="{{ $last_orden + 1 }}">
         </label>
         <div class="baja-modal-help">
-            <i class="fa fa-info-circle"></i> Ingresa la cantidad a desechar y selecciona un motivo en cada lote elegido.
+            <i class="fa fa-info-circle"></i> Ingresa un total por variedad y longitud. El sistema asignará los tallos desde
+            el lote más antiguo.
         </div>
     </div>
 
@@ -26,9 +28,9 @@
 
     <div class="baja-modal-toolbar">
         <label for="baja_modal_search"><i class="fa fa-search"></i> Buscar planta o variedad</label>
-        <input type="search" id="baja_modal_search" class="form-control" placeholder="Escribe para filtrar los lotes...">
+        <input type="search" id="baja_modal_search" class="form-control" placeholder="Escribe para filtrar variedades...">
         <span class="baja-selection-count"><i class="fa fa-check-circle"></i> <strong id="baja_selection_count">0</strong>
-            lotes seleccionados</span>
+            combinaciones seleccionadas</span>
     </div>
 
     @if (count($listado))
@@ -38,39 +40,36 @@
                     <tr>
                         <th>Planta</th>
                         <th>Variedad</th>
-                        <th style="width: 112px">Fecha</th>
-                        <th class="text-center" style="width: 72px">Longitud</th>
-                        <th class="text-center" style="width: 52px">TxR</th>
+                        <th class="text-center" style="width: 90px">Longitud</th>
                         <th class="text-right" style="width: 118px">Disponibles</th>
-                        <th class="text-center" style="width: 116px">A desechar</th>
+                        <th class="text-center" style="width: 140px">Tallos a desechar</th>
                         <th style="width: 190px">Motivo</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($listado as $item)
+                    @foreach ($listado as $pos => $item)
                         <tr data-search="{{ strtolower($item->pta_nombre . ' ' . $item->var_nombre) }}">
                             <td>{{ $item->pta_nombre }}</td>
                             <td>{{ $item->var_nombre }}</td>
-                            <td>{{ $item->fecha }}</td>
                             <td class="text-center">{{ $item->longitud }}</td>
-                            <td class="text-center">{{ $item->tallos_x_ramo }}</td>
                             <td class="text-right">
                                 <span class="baja-modal-available">{{ number_format($item->disponibles) }}</span>
                             </td>
                             <td>
                                 <input type="number" min="0" step="1" inputmode="numeric"
                                     class="form-control input_botar baja-quantity"
-                                    data-id_inv="{{ $item->id_inventario_recepcion }}"
-                                    id="botar_{{ $item->id_inventario_recepcion }}"
+                                    data-id_variedad="{{ $item->id_variedad }}"
+                                    data-longitud="{{ $item->longitud }}"
+                                    id="botar_{{ $pos }}"
                                     max="{{ $item->disponibles }}"
-                                    oninput="keyup_botar('{{ $item->id_inventario_recepcion }}')"
+                                    oninput="keyup_botar('{{ $pos }}')"
                                     aria-label="Cantidad a desechar">
                             </td>
                             <td>
-                                <select id="motivo_{{ $item->id_inventario_recepcion }}"
+                                <select id="motivo_{{ $pos }}"
                                     class="form-control baja-reason"
-                                    onchange="keyup_botar('{{ $item->id_inventario_recepcion }}')"
-                                    aria-label="Motivo de baja">
+                                    onchange="keyup_botar('{{ $pos }}')"
+                                    aria-label="Motivo de baja para {{ $item->var_nombre }} longitud {{ $item->longitud }}">
                                     <option value="">Seleccionar motivo</option>
                                     @foreach ($motivos as $mot)
                                         <option value="{{ $mot->id_motivo_baja }}">{{ $mot->nombre }}</option>
@@ -87,7 +86,7 @@
     @endif
 
     <div class="baja-modal-footer">
-        <span>Los tallos seleccionados se registrarán como una orden pendiente.</span>
+        <span>La asignación se hará de los lotes más antiguos a los más recientes.</span>
         <button type="button" class="btn btn-yura_primary" onclick="store_orden_basura()"
             {{ count($motivos) === 0 || count($listado) === 0 ? 'disabled' : '' }}>
             <i class="fa fa-save"></i> Crear orden
@@ -205,7 +204,7 @@
 
     .baja-modal-table {
         width: 100%;
-        min-width: 850px;
+        min-width: 720px;
         margin: 0;
         border-collapse: separate;
         border-spacing: 0;
@@ -362,7 +361,7 @@
         $('.input_botar').each(function() {
             var quantity = Number($(this).val());
             if (quantity > 0) {
-                var id = $(this).data('id_inv');
+                var id = $(this).attr('id').replace('botar_', '');
                 var reason = $('#motivo_' + id).val();
                 if (quantity % 1 !== 0 || quantity > Number($(this).attr('max'))) {
                     invalidQuantity = true;
@@ -370,7 +369,8 @@
                     missingReason = true;
                 } else {
                     data.push({
-                        id_inv: id,
+                        id_variedad: $(this).data('id_variedad'),
+                        longitud: $(this).data('longitud'),
                         botar: quantity,
                         motivo: reason,
                     });
@@ -379,11 +379,11 @@
         });
 
         if (invalidQuantity) {
-            alerta_errores("<div class='alert alert-warning text-center'>La cantidad a desechar supera los tallos disponibles de un lote.</div>");
+            alerta_errores("<div class='alert alert-warning text-center'>La cantidad a desechar supera los tallos disponibles para una variedad y longitud.</div>");
             return false;
         }
         if (missingReason) {
-            alerta_errores("<div class='alert alert-warning text-center'>Selecciona un motivo para cada lote con cantidad a desechar.</div>");
+            alerta_errores("<div class='alert alert-warning text-center'>Selecciona un motivo para cada variedad y longitud con cantidad a desechar.</div>");
             return false;
         }
         if (!data.length) {
@@ -397,13 +397,14 @@
 
         var texto =
             "<div class='alert alert-info text-center'><h4>¿Confirmas la creación de la orden de flor de baja?</h4><p>" +
-            data.length + " lotes seleccionados</p></div>";
+            data.length + " combinaciones seleccionadas</p></div>";
         modal_quest('modal_store_orden_basura', texto, 'Crear orden', true, false, '40%', function() {
             var datos = {
                 _token: '{{ csrf_token() }}',
                 data: JSON.stringify(data),
                 fecha: $('#new_fecha').val(),
                 orden: $('#new_orden_basura').val(),
+                bodega: $('#new_bodega').val(),
             };
             post_jquery_m('{{ url('botar_inventario/store_orden_basura') }}', datos, function() {
                 cerrar_modals();
