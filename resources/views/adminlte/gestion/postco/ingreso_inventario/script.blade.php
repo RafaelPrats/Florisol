@@ -1,12 +1,10 @@
 <script>
     $('#vista_actual').val('ingreso_inventario');
-    $('#planta_filtro').select2();
-    $('#variedad_filtro').select2();
-    $('#documento_filtro').select2();
+    $('#planta_filtro, #variedad_filtro, #documento_filtro').select2({ width: '100%' });
     listar_reporte();
 
     function listar_reporte() {
-        datos = {
+        var datos = {
             planta: $('#planta_filtro').val(),
             variedad: $('#variedad_filtro').val(),
             fecha: $('#fecha_filtro').val(),
@@ -19,12 +17,12 @@
     }
 
     function admin_bodegas() {
-        datos = {}
+        var datos = {};
         get_jquery('{{ url('ingreso_inventario/admin_bodegas') }}', datos, function(retorno) {
             modal_view('modal_admin_bodegas', retorno,
-                '<i class="fa fa-fw fa-plus"></i> Administrar Bodegas',
-                true, false, '{{ isPC() ? '50%' : '' }}',
+                '<i class="fa fa-cogs"></i> Bodegas por segmento',
+                true, false, '{{ isPC() ? '70%' : '100%' }}',
                 function() {});
-        })
+        });
     }
 </script>
