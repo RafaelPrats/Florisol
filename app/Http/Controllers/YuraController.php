@@ -129,19 +129,20 @@ class YuraController extends Controller
 
     public function login(Request $request)
     {
-        $rsa = new RSA();
-        $rsa->setPublicKeyFormat(RSA::PUBLIC_FORMAT_RAW);
-        $k = $rsa->createKey();
-
-        Session::put('key_publica', $k['publickey']);
-        Session::put('key_privada', $k['privatekey']);
-
         if (!$request->session()->has('logeado')) { // Si no tiene variable logeado la session? logeado = false;
             Session::put('logeado', false);
         };
 
-        if (!$request->session()->get('logeado')) { // Si no está logeado
+        $rsa = new RSA();
+        if (!$request->session()->has('key_privada')) {
+            $rsa->setPublicKeyFormat(RSA::PUBLIC_FORMAT_RAW);
+            $k = $rsa->createKey();
 
+            Session::put('key_publica', $k['publickey']);
+            Session::put('key_privada', $k['privatekey']);
+        }
+
+        if (!$request->session()->get('logeado')) { // Si no está logeado
             $rsa->loadKey(Session::get('key_privada'));
             $raw = $rsa->getPublicKey(RSA::PUBLIC_FORMAT_RAW);
 
