@@ -5,33 +5,30 @@
 @endsection
 
 @section('contenido')
-    <section class="content-header">
-        <h1>
-            Ingreso Inventario
-            <small class="text-color_yura">módulo de postcosecha</small>
-        </h1>
-
-        <ol class="breadcrumb">
-            <li><a href="javascript:void(0)" class="text-color_yura" onclick="cargar_url('')"><i class="fa fa-home"></i>
-                    Inicio</a></li>
-            <li class="text-color_yura">{{ $submenu->menu->grupo_menu->nombre }}</li>
-            <li class="text-color_yura">{{ $submenu->menu->nombre }}</li>
-            <li class="active">
-                <a href="javascript:void(0)" class="text-color_yura" onclick="cargar_url('{{ $submenu->url }}')">
-                    <i class="fa fa-fw fa-refresh"></i> {{ $submenu->nombre }}
-                </a>
-            </li>
-        </ol>
-    </section>
-
     <section class="content ingreso-inventario">
-        <div class="ingreso-filter-card">
-            <div class="ingreso-filter-heading">
-                <span class="ingreso-heading-icon"><i class="fa fa-cubes"></i></span>
-                <div>
-                    <h2>Consulta de inventario recibido</h2>
-                    <p>Filtra existencias y recepciones pendientes por planta, documento, bodega y fecha.</p>
+        <div class="ingreso-toolbar">
+            <div class="ingreso-toolbar__top">
+                <div class="ingreso-toolbar__identity">
+                    <span class="ingreso-toolbar__icon"><i class="fa fa-cubes" aria-hidden="true"></i></span>
+                    <div>
+                        <span class="ingreso-eyebrow">MÓDULO DE POSTCOSECHA</span>
+                        <h2>Ingreso de inventario</h2>
+                    </div>
                 </div>
+                <ol class="ingreso-breadcrumb" aria-label="Ruta de navegación">
+                    <li>
+                        <a href="javascript:void(0)" onclick="cargar_url('')">
+                            <i class="fa fa-home" aria-hidden="true"></i> Inicio
+                        </a>
+                    </li>
+                    <li>{{ $submenu->menu->grupo_menu->nombre }}</li>
+                    <li>{{ $submenu->menu->nombre }}</li>
+                    <li class="ingreso-breadcrumb__current">
+                        <a href="javascript:void(0)" onclick="cargar_url('{{ $submenu->url }}')">
+                            <i class="fa fa-refresh" aria-hidden="true"></i> {{ $submenu->nombre }}
+                        </a>
+                    </li>
+                </ol>
             </div>
 
             <div class="ingreso-filter-grid">
@@ -87,20 +84,23 @@
                             value="{{ hoy() }}" max="{{ hoy() }}">
                     </div>
                 </div>
-            </div>
-
-            <div class="ingreso-filter-footer">
-                <span class="ingreso-filter-hint"><i class="fa fa-info-circle"></i> La consulta inicia mostrando el
-                    inventario disponible y pendiente.</span>
                 <div class="ingreso-filter-actions">
-                    <button type="button" class="btn btn-yura_default" onclick="admin_bodegas()">
-                        <i class="fa fa-cogs"></i> Bodegas por segmento
-                    </button>
-                    <button type="button" class="btn btn-yura_primary" onclick="listar_reporte()">
-                        <i class="fa fa-search"></i> Consultar inventario
-                    </button>
+                    <div class="btn-group" role="group" aria-label="Acciones del filtro">
+                        <button type="button" class="btn btn-yura_default" title="Bodegas por segmento"
+                            aria-label="Bodegas por segmento" onclick="admin_bodegas()">
+                            <i class="fa fa-cogs" aria-hidden="true"></i>
+                        </button>
+                        <button type="button" class="btn btn-yura_primary" title="Consultar inventario"
+                            aria-label="Consultar inventario" onclick="listar_reporte()">
+                            <i class="fa fa-search" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
+            <p class="ingreso-filter-hint">
+                <i class="fa fa-info-circle" aria-hidden="true"></i>
+                Consulta existencias y recepciones pendientes por planta, documento, bodega y fecha.
+            </p>
         </div>
 
         <div id="div_listado" class="ingreso-results"></div>
@@ -115,7 +115,6 @@
             --ingreso-soft: #f4faf7;
         }
 
-        .ingreso-filter-card,
         .ingreso-summary-card,
         .ingreso-table-card {
             overflow: hidden;
@@ -125,46 +124,105 @@
             box-shadow: 0 4px 14px rgba(0, 55, 41, .06);
         }
 
-        .ingreso-filter-card {
-            margin-bottom: 14px;
-            padding: 15px;
+        .ingreso-toolbar {
+            display: flex;
+            flex-direction: column;
+            gap: 11px;
+            margin: 0 0 12px;
+            padding: 10px 14px 12px;
+            border: 1px solid #dcebe4;
+            border-radius: 12px;
+            background: linear-gradient(110deg, #fff, #f0faf5);
+            box-shadow: 0 4px 14px rgba(28, 76, 58, .05);
         }
 
-        .ingreso-filter-heading {
+        .ingreso-toolbar__top {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 13px;
+            justify-content: space-between;
+            gap: 12px;
         }
 
-        .ingreso-heading-icon {
+        .ingreso-toolbar__identity {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .ingreso-toolbar__icon {
             display: grid;
-            width: 39px;
-            height: 39px;
-            flex: 0 0 39px;
+            width: 32px;
+            height: 32px;
+            flex: 0 0 32px;
             place-items: center;
-            border-radius: 10px;
-            background: rgba(0, 179, 136, .12);
-            color: var(--ingreso-ink);
-            font-size: 16px;
+            border-radius: 9px;
+            background: var(--ingreso-green);
+            color: #fff;
+            font-size: 14px;
         }
 
-        .ingreso-filter-heading h2 {
-            margin: 0 0 3px;
-            color: var(--ingreso-ink);
+        .ingreso-eyebrow {
+            color: #087d60;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .8px;
+        }
+
+        .ingreso-toolbar h2 {
+            margin: 1px 0 0;
+            color: #253f37;
             font-size: 17px;
             font-weight: 700;
         }
 
-        .ingreso-filter-heading p {
+        .ingreso-breadcrumb {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 0;
             margin: 0;
-            color: var(--ingreso-muted);
+            padding: 0;
+            list-style: none;
+            color: #7b8c86;
             font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .ingreso-breadcrumb li {
+            display: inline-flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+        .ingreso-breadcrumb li + li::before {
+            padding: 0 7px;
+            color: #b4c3bc;
+            content: "›";
+        }
+
+        .ingreso-breadcrumb a {
+            color: #087d60;
+            text-decoration: none;
+        }
+
+        .ingreso-breadcrumb a:hover {
+            color: var(--ingreso-green);
+        }
+
+        .ingreso-breadcrumb__current a {
+            font-weight: 700;
+        }
+
+        .ingreso-breadcrumb i {
+            margin-right: 4px;
         }
 
         .ingreso-filter-grid {
             display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
+            width: 100%;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            align-items: end;
             gap: 10px;
         }
 
@@ -183,6 +241,8 @@
         .ingreso-filter-field .input-group,
         .ingreso-filter-field .select2-container {
             width: 100% !important;
+            min-width: 0;
+            max-width: 100%;
         }
 
         .ingreso-filter-field .input-group-addon {
@@ -194,6 +254,7 @@
         }
 
         .ingreso-filter-field .form-control {
+            min-width: 0;
             height: 35px;
             border-color: var(--ingreso-line);
             box-shadow: none;
@@ -218,17 +279,8 @@
             height: 33px !important;
         }
 
-        .ingreso-filter-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            margin-top: 12px;
-            padding-top: 11px;
-            border-top: 1px solid var(--ingreso-line);
-        }
-
         .ingreso-filter-hint {
+            margin: 0;
             color: var(--ingreso-muted);
             font-size: 11px;
         }
@@ -243,40 +295,54 @@
             flex-wrap: wrap;
             justify-content: flex-end;
             gap: 7px;
+            white-space: nowrap;
         }
 
         .ingreso-filter-actions .btn {
-            min-height: 34px;
-            padding: 7px 10px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 700;
+            min-height: 36px;
+            padding: 8px 11px;
+            border-radius: 0;
+            font-size: 13px;
         }
 
-        @media (max-width: 1100px) {
-            .ingreso-filter-grid {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-            }
+        .ingreso-filter-actions .btn-group > .btn:first-child {
+            border-radius: 18px 0 0 18px;
+        }
+
+        .ingreso-filter-actions .btn-group > .btn:last-child {
+            border-radius: 0 18px 18px 0;
+        }
+
+        .ingreso-filter-actions .btn i {
+            margin: 0;
         }
 
         @media (max-width: 700px) {
-            .ingreso-filter-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
-            .ingreso-filter-footer {
+            .ingreso-toolbar__top {
                 align-items: flex-start;
                 flex-direction: column;
+                gap: 5px;
+            }
+
+            .ingreso-breadcrumb {
+                justify-content: flex-start;
+                padding-left: 41px;
+            }
+
+            .ingreso-filter-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 9px;
             }
 
             .ingreso-filter-actions {
-                justify-content: flex-start;
+                grid-column: 1 / -1;
+                justify-content: flex-end;
             }
         }
 
         @media (max-width: 480px) {
-            .ingreso-filter-card {
-                padding: 12px;
+            .ingreso-toolbar {
+                padding: 10px;
             }
 
             .ingreso-filter-grid {
@@ -284,13 +350,7 @@
             }
 
             .ingreso-filter-actions {
-                display: grid;
-                width: 100%;
-                grid-template-columns: 1fr;
-            }
-
-            .ingreso-filter-actions .btn {
-                text-align: left;
+                justify-content: flex-start;
             }
         }
     </style>

@@ -45,56 +45,119 @@ class InventarioRecepcionController extends Controller
     public function listar_reporte(Request $request)
     {
         $finca = getFincaActiva();
-        $plantas = DB::table('inventario_recepcion as i')
+        $inventarios = DB::table('inventario_recepcion as i')
             ->join('variedad as v', 'v.id_variedad', '=', 'i.id_variedad')
             ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
-            ->leftJoin('detalle_api_store_cajas as da', function ($join) use ($finca, $request) {
-                $join->on('da.id_variedad', '=', 'i.id_variedad')
-                    ->where('da.id_empresa', '=', $finca);
-            })
-            ->select('v.id_planta', 'p.nombre')
-            ->distinct()
+            ->select('i.*', 'v.nombre', 'v.id_planta', 'p.nombre as nombre_planta')
             ->where('i.id_empresa', $finca)
             ->where('i.bodega', $request->bodega)
-            ->where(function ($query) {
-                $query->where('i.disponibles', '>', 0)
-                    ->orWhere('da.estado', 'P');
+            ->when($request->planta != '', function ($query) use ($request) {
+                return $query->where('v.id_planta', $request->planta);
+            })
+            ->when($request->variedad != '', function ($query) use ($request) {
+                return $query->where('i.id_variedad', $request->variedad);
+            })
+            ->get();
+
+        $pendientes = DB::table('detalle_api_store_cajas as da')
+            ->join('api_store_cajas as api', 'api.id_api_store_cajas', '=', 'da.id_api_store_cajas')
+            ->join('variedad as v', 'v.id_variedad', '=', 'da.id_variedad')
+            ->join('planta as p', 'p.id_planta', '=', 'v.id_planta')
+            ->select(
+                'da.id_variedad',
+                'da.tallos_x_ramo',
+                'da.longitud',
+                'da.id_empresa',
+                'api.fecha',
+                'v.nombre',
+                'v.id_planta',
+                'p.nombre as nombre_planta'
+            )
+            ->distinct()
+            ->where('da.id_empresa', $finca)
+            ->where('da.estado', 'P')
+            ->when($request->documento != '', function ($query) use ($request) {
+                return $query->where('api.id_api_store_cajas', $request->documento);
             })
             ->when($request->planta != '', function ($query) use ($request) {
                 return $query->where('v.id_planta', $request->planta);
             })
+            ->when($request->variedad != '', function ($query) use ($request) {
+                return $query->where('da.id_variedad', $request->variedad);
+            })
             ->orderBy('p.nombre')
             ->get();
+
+        $claveInventario = function ($idVariedad, $fecha, $tallosXRamo, $longitud, $idEmpresa) {
+            return implode('|', [
+                $idEmpresa,
+                $idVariedad,
+                $fecha,
+                $tallosXRamo,
+                $longitud,
+            ]);
+        };
+        $pendientesPorClave = [];
+        foreach ($pendientes as $pendiente) {
+            $clave = $claveInventario(
+                $pendiente->id_variedad,
+                $pendiente->fecha,
+                $pendiente->tallos_x_ramo,
+                $pendiente->longitud,
+                $pendiente->id_empresa
+            );
+            $pendientesPorClave[$clave] = $pendiente;
+        }
+
+        $variedadesPorPlanta = [];
+        foreach ($inventarios as $inventario) {
+            $clave = $claveInventario(
+                $inventario->id_variedad,
+                $inventario->fecha,
+                $inventario->tallos_x_ramo,
+                $inventario->longitud,
+                $inventario->id_empresa
+            );
+            if ($inventario->disponibles > 0 || isset($pendientesPorClave[$clave])) {
+                $inventario->row_key = 'inv_' . $inventario->id_inventario_recepcion;
+                $variedadesPorPlanta[$inventario->id_planta][] = $inventario;
+                unset($pendientesPorClave[$clave]);
+            }
+        }
+
+        foreach ($pendientesPorClave as $clave => $pendiente) {
+            $variedadesPorPlanta[$pendiente->id_planta][] = (object) [
+                'id_inventario_recepcion' => null,
+                'id_variedad' => $pendiente->id_variedad,
+                'fecha' => $pendiente->fecha,
+                'tallos_x_ramo' => $pendiente->tallos_x_ramo,
+                'longitud' => $pendiente->longitud,
+                'id_empresa' => $pendiente->id_empresa,
+                'ramos' => 0,
+                'disponibles' => 0,
+                'nombre' => $pendiente->nombre,
+                'id_planta' => $pendiente->id_planta,
+                'nombre_planta' => $pendiente->nombre_planta,
+                'row_key' => 'api_' . sha1($clave),
+            ];
+        }
+
         $listado = [];
-        foreach ($plantas as $pta) {
-            $variedades = DB::table('inventario_recepcion as i')
-                ->join('variedad as v', 'v.id_variedad', '=', 'i.id_variedad')
-                ->leftJoin('detalle_api_store_cajas as da', function ($join) use ($finca, $request) {
-                    $join->on('da.id_variedad', '=', 'i.id_variedad')
-                        ->where('da.id_empresa', '=', $finca);
-                })
-                ->select(
-                    'i.*',
-                    'v.nombre'
-                )
-                ->distinct()
-                ->where('i.id_empresa', $finca)
-                ->where('i.bodega', $request->bodega)
-                ->where('v.id_planta', $pta->id_planta)
-                ->where(function ($query) {
-                    $query->where('i.disponibles', '>', 0)
-                        ->orWhere('da.estado', 'P');
-                })
-                ->when($request->variedad != '', function ($query) use ($request) {
-                    return $query->where('i.id_variedad', $request->variedad);
-                })
-                ->orderBy('v.nombre')
-                ->get();
+        foreach ($variedadesPorPlanta as $idPlanta => $variedades) {
+            usort($variedades, function ($a, $b) {
+                return strcmp($a->nombre, $b->nombre);
+            });
             $listado[] = [
-                'planta' => $pta,
+                'planta' => (object) [
+                    'id_planta' => $idPlanta,
+                    'nombre' => $variedades[0]->nombre_planta,
+                ],
                 'variedades' => $variedades,
             ];
         }
+        usort($listado, function ($a, $b) {
+            return strcmp($a['planta']->nombre, $b['planta']->nombre);
+        });
 
         return view('adminlte.gestion.postco.ingreso_inventario.partials.listado', [
             'finca' => $finca,
@@ -342,10 +405,27 @@ class InventarioRecepcionController extends Controller
             DB::beginTransaction();
 
             foreach (json_decode($request->data) as $data) {
-                $model = InventarioRecepcion::find($data->id_inv);
+                $detApi = DetalleApiStoreCajas::where('id_detalle_api_store_cajas', $data->id_detApi)
+                    ->where('id_empresa', getFincaActiva())
+                    ->where('estado', 'P')
+                    ->first();
+                if ($detApi == '') {
+                    throw new \RuntimeException('El detalle API ya no está pendiente o no pertenece a la finca activa.');
+                }
+                $fechaInventario = DB::table('api_store_cajas')
+                    ->where('id_api_store_cajas', $detApi->id_api_store_cajas)
+                    ->value('fecha');
+                if ($fechaInventario == '') {
+                    throw new \RuntimeException('No se encontró la fecha del documento API.');
+                }
+                $model = new InventarioRecepcion();
+                $model->id_variedad = $detApi->id_variedad;
+                $model->fecha = $fechaInventario;
+                $model->tallos_x_ramo = $detApi->tallos_x_ramo;
+                $model->longitud = $detApi->longitud;
+                $model->id_empresa = $detApi->id_empresa;
                 $data->ramos_ventas = $data->ramos_ventas >= 0 ? $data->ramos_ventas : 0;
                 $data->ramos_produccion = $data->ramos_produccion >= 0 ? $data->ramos_produccion : 0;
-                $detApi = DetalleApiStoreCajas::find($data->id_detApi);
                 if ($data->ramos_ventas > 0) {
                     $model_inventario = InventarioRecepcion::where('id_variedad', $model->id_variedad)
                         ->where('fecha', $model->fecha)

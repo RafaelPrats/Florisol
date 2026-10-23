@@ -120,7 +120,7 @@
                                 </th>
                                 <th>
                                     <input type="number" class="ingreso-number-input text-center"
-                                        id="ramos_ingresados_{{ $var->id_inventario_recepcion }}"
+                                        id="ramos_ingresados_{{ $var->row_key }}"
                                         value="{{ $var->ramos }}" readonly>
                                 </th>
                                 <th class="padding_lateral_5">
@@ -132,13 +132,13 @@
                                 <th>
                                     @if ($ramos_pendientes > 0)
                                         <input type="number" class="ingreso-number-input ingreso-pending-input text-center" readonly
-                                            id="ramos_pendiente_{{ $var->id_inventario_recepcion }}"
+                                            id="ramos_pendiente_{{ $var->row_key }}"
                                             value="{{ $ramos_pendientes }}">
                                     @endif
                                 </th>
                                 <th>
                                     <input type="number" class="ingreso-number-input text-center"
-                                        id="tallos_disponibles_{{ $var->id_inventario_recepcion }}"
+                                        id="tallos_disponibles_{{ $var->row_key }}"
                                         value="{{ $var->disponibles }}">
                                 </th>
                                 <th class="text-center">
@@ -169,7 +169,6 @@
                                         <td class="text-right padding_lateral_5 ingreso-document-cell" colspan="4">
                                             <input type="checkbox"
                                                 id="check_detApi_{{ $detApi->id_detalle_api_store_cajas }}"
-                                                data-id_inventario_recepcion="{{ $var->id_inventario_recepcion }}"
                                                 class="ramos_pendiente check_all_ramos_pendiente"
                                                 data-id_detalle_api_store_cajas="{{ $detApi->id_detalle_api_store_cajas }}">
                                             {{ $detApi->documento }}
@@ -520,11 +519,9 @@
             ramos_pendiente = $('.ramos_pendiente');
             for (i = 0; i < ramos_pendiente.length; i++) {
                 id = ramos_pendiente[i].id;
-                id_inv = $('#' + id).data('id_inventario_recepcion');
                 id_detApi = $('#' + id).data('id_detalle_api_store_cajas');
                 if ($('#check_detApi_' + id_detApi).prop('checked') == true) {
                     data.push({
-                        id_inv: id_inv,
                         id_detApi: id_detApi,
                         ramos_ventas: $('#detApi_ramos_pendiente_ventas_' + id_detApi).val(),
                         ramos_produccion: $('#detApi_ramos_pendiente_produccion_' + id_detApi).val(),
