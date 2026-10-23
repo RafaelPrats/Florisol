@@ -1292,19 +1292,9 @@ class ComandoDev extends Command
     {
         $this->info('Importando plantillas de Florisol');
 
-        $rutas = [
-            public_path('storage/file_loads/PLANTILLAS benchFlow.xlsx'),
-            'E:\\BD\\PLANTILLAS benchFlow.xlsx',
-        ];
-        $url = '';
-        foreach ($rutas as $ruta) {
-            if (is_file($ruta)) {
-                $url = $ruta;
-                break;
-            }
-        }
-        if ($url == '') {
-            $this->error('No se encontró PLANTILLAS benchFlow.xlsx.');
+        $url = public_path('storage/file_loads/importar_plantilla.xlsx');
+        if (!is_file($url)) {
+            $this->error('No se encontró importar_plantilla.xlsx en public/storage/file_loads.');
             return;
         }
 
@@ -1324,8 +1314,8 @@ class ComandoDev extends Command
         }
 
         $nombres_hojas = [
-            'PLANTA',
-            'VARIEDAD',
+            'PLANTAS',
+            'VARIEDADES',
             'AGENCIAS de CARGA',
             'CLIENTE',
             'RECETAS',
@@ -1364,35 +1354,31 @@ class ComandoDev extends Command
             'códigos de agencia nuevos' => 0,
             'clientes nuevos' => 0,
             'recetas nuevas' => 0,
+            'recetas existentes' => 0,
             'detalles de receta nuevos' => 0,
             'detalles de receta existentes' => 0,
         ];
 
         $plantas_por_nombre = [];
-        $plantas_por_codigo = [];
-        foreach ($hojas['PLANTA'] as $posicion => $fila) {
+        foreach ($hojas['PLANTAS'] as $posicion => $fila) {
             if ($posicion == 1) {
                 continue;
             }
-            dump('PLANTA ' . ($posicion - 1) . '/' . (count($hojas['PLANTA']) - 1));
+            dump('PLANTA ' . ($posicion - 1) . '/' . (count($hojas['PLANTAS']) - 1));
             $nombre = $normalizar($fila['A'] ?? '');
-            $codigo_latin = $normalizar($fila['B'] ?? '');
-            $codigo_exportacion = $normalizar($fila['C'] ?? '');
-            if ($nombre == '' || $codigo_exportacion == '') {
-                $registrar_fallo('PLANTA', $posicion, 'Nombre o código de exportación vacío.');
+            if ($nombre == '') {
+                $registrar_fallo('PLANTAS', $posicion, 'Nombre de planta vacío.');
                 continue;
             }
 
             try {
                 $planta = DB::table('planta')
                     ->where('id_empresa', 2)
-                    ->where('codigo_exportacion', $codigo_exportacion)
+                    ->where('nombre', $nombre)
                     ->first();
                 if ($planta == '') {
                     $id_planta = DB::table('planta')->insertGetId([
                         'nombre' => $nombre,
-                        'codigo_latin' => $codigo_latin,
-                        'codigo_exportacion' => $codigo_exportacion,
                         'id_empresa' => 2,
                         'estado' => 1,
                         'tipo' => 'N',
@@ -1401,89 +1387,37 @@ class ComandoDev extends Command
                 } else {
                     $id_planta = $planta->id_planta;
                     $totales['plantas existentes']++;
-                    if ($normalizar($planta->nombre) != $nombre) {
-                        $registrar_fallo('PLANTA', $posicion, 'El código ' . $codigo_exportacion . ' ya existe con otro nombre.');
-                        continue;
-                    }
                 }
-                $registro = [
+                $plantas_por_nombre[$nombre] = [
                     'id_planta' => $id_planta,
                     'nombre' => $nombre,
-                    'codigo_exportacion' => $codigo_exportacion,
                 ];
-                $plantas_por_nombre[$nombre] = $registro;
-                $plantas_por_codigo[$codigo_exportacion] = $registro;
-                if ($codigo_latin != '') {
-                    $plantas_por_codigo[$codigo_latin] = $registro;
-                }
             } catch (\Throwable $e) {
-                $registrar_fallo('PLANTA', $posicion, $nombre . ': ' . $e->getMessage());
-            }
-        }
-
-        $plantas_receta_por_variedad = [];
-        foreach ($hojas['RECETAS'] as $posicion => $fila) {
-            if ($posicion == 1) {
-                continue;
-            }
-            $nombre_variedad = $normalizar($fila['F'] ?? '');
-            $nombre_planta = $normalizar($fila['E'] ?? '');
-            if ($nombre_variedad == '' || $nombre_planta == '') {
-                continue;
-            }
-            $planta = $plantas_por_nombre[$nombre_planta] ?? $plantas_por_codigo[$nombre_planta] ?? null;
-            if ($planta == null) {
-                $registrar_fallo('RECETAS', $posicion, 'No se encontró la planta "' . $nombre_planta . '".');
-                continue;
-            }
-            $plantas_receta_por_variedad[$nombre_variedad][$planta['id_planta']] = $planta['nombre'];
-        }
-
-        $plantas_por_tipo = [];
-        foreach ($hojas['VARIEDAD'] as $posicion => $fila) {
-            if ($posicion == 1) {
-                continue;
-            }
-            $nombre = $normalizar($fila['A'] ?? '');
-            $tipo = $normalizar($fila['C'] ?? '');
-            $plantas_referenciadas = $plantas_receta_por_variedad[$nombre] ?? [];
-            if ($tipo != '' && count($plantas_referenciadas) == 1) {
-                $id_planta = key($plantas_referenciadas);
-                $plantas_por_tipo[$tipo][$id_planta] = $plantas_referenciadas[$id_planta];
+                $registrar_fallo('PLANTAS', $posicion, $nombre . ': ' . $e->getMessage());
             }
         }
 
         $variedades_por_nombre = [];
-        foreach ($hojas['VARIEDAD'] as $posicion => $fila) {
+        foreach ($hojas['VARIEDADES'] as $posicion => $fila) {
             if ($posicion == 1) {
                 continue;
             }
-            dump('VARIEDAD ' . ($posicion - 1) . '/' . (count($hojas['VARIEDAD']) - 1));
-            $nombre = $normalizar($fila['A'] ?? '');
-            $color = $normalizar($fila['B'] ?? '');
-            $tipo = $normalizar($fila['C'] ?? '');
-            $tallos_x_malla = trim((string)($fila['D'] ?? ''));
-            $codigo_latin = $normalizar($fila['E'] ?? '');
-            $codigo_exportacion = $normalizar($fila['F'] ?? '');
-            if ($nombre == '' || $codigo_exportacion == '' || !is_numeric($tallos_x_malla)) {
-                $registrar_fallo('VARIEDAD', $posicion, 'Nombre, código de exportación o tallos por malla inválidos.');
+            dump('VARIEDAD ' . ($posicion - 1) . '/' . (count($hojas['VARIEDADES']) - 1));
+            $nombre_planta = $normalizar($fila['A'] ?? '');
+            $nombre = $normalizar($fila['B'] ?? '');
+            $codigo_exportacion = $normalizar($fila['C'] ?? '');
+            $color = $normalizar($fila['D'] ?? '');
+            $tallos_x_malla = trim((string)($fila['E'] ?? ''));
+            $codigo_latin = $normalizar($fila['F'] ?? '');
+            if ($nombre_planta == '' || $nombre == '' || $codigo_exportacion == '' || !is_numeric($tallos_x_malla)) {
+                $registrar_fallo('VARIEDADES', $posicion, 'Planta, nombre, código de exportación o tallos por malla inválidos.');
                 continue;
             }
-
-            $plantas_referenciadas = $plantas_receta_por_variedad[$nombre] ?? [];
-            $id_planta = null;
-            if (count($plantas_referenciadas) == 1) {
-                $id_planta = key($plantas_referenciadas);
-            } elseif (count($plantas_referenciadas) > 1 && isset($plantas_por_tipo[$tipo]) && count($plantas_por_tipo[$tipo]) == 1) {
-                $id_tipo_planta = key($plantas_por_tipo[$tipo]);
-                if (isset($plantas_referenciadas[$id_tipo_planta])) {
-                    $id_planta = $id_tipo_planta;
-                }
-            }
-            if ($id_planta == null) {
-                $registrar_fallo('VARIEDAD', $posicion, 'No se pudo determinar la planta para "' . $nombre . '" (tipo "' . $tipo . '").');
+            if (!isset($plantas_por_nombre[$nombre_planta])) {
+                $registrar_fallo('VARIEDADES', $posicion, 'No se encontró la planta "' . $nombre_planta . '".');
                 continue;
             }
+            $id_planta = $plantas_por_nombre[$nombre_planta]['id_planta'];
 
             try {
                 $variedad = DB::table('variedad')
@@ -1508,7 +1442,7 @@ class ComandoDev extends Command
                     $id_variedad = $variedad->id_variedad;
                     $totales['variedades existentes']++;
                     if ($normalizar($variedad->nombre) != $nombre || $variedad->id_planta != $id_planta) {
-                        $registrar_fallo('VARIEDAD', $posicion, 'El código ' . $codigo_exportacion . ' ya existe con otros datos.');
+                        $registrar_fallo('VARIEDADES', $posicion, 'El código ' . $codigo_exportacion . ' ya existe con otros datos.');
                         continue;
                     }
                 }
@@ -1518,7 +1452,7 @@ class ComandoDev extends Command
                     'codigo_exportacion' => $codigo_exportacion,
                 ];
             } catch (\Throwable $e) {
-                $registrar_fallo('VARIEDAD', $posicion, $nombre . ': ' . $e->getMessage());
+                $registrar_fallo('VARIEDADES', $posicion, $nombre . ': ' . $e->getMessage());
             }
         }
 
@@ -1664,47 +1598,36 @@ class ComandoDev extends Command
         }
 
         $recetas = [];
-        $codigo_receta_actual = '';
+        $recetas_por_nombre = [];
+        $receta_actual = null;
         foreach ($hojas['RECETAS'] as $posicion => $fila) {
             if ($posicion == 1) {
                 continue;
             }
             $nombre_receta = $normalizar($fila['A'] ?? '');
-            $codigo_latin = $normalizar($fila['B'] ?? '');
-            $codigo_exportacion = $normalizar($fila['C'] ?? '');
-            if ($nombre_receta != '' || $codigo_exportacion != '') {
-                if ($nombre_receta == '' || $codigo_exportacion == '') {
-                    $registrar_fallo('RECETAS', $posicion, 'La receta requiere nombre y código de exportación.');
-                    $codigo_receta_actual = '';
-                } else {
-                    $codigo_receta_actual = $codigo_exportacion;
-                    if (!isset($recetas[$codigo_receta_actual])) {
-                        $recetas[$codigo_receta_actual] = [
-                            'nombre' => $nombre_receta,
-                            'codigo_latin' => $codigo_latin,
-                            'codigo_exportacion' => $codigo_exportacion,
-                            'fila' => $posicion,
-                            'detalles' => [],
-                        ];
-                    } elseif ($recetas[$codigo_receta_actual]['nombre'] != $nombre_receta) {
-                        $registrar_fallo('RECETAS', $posicion, 'El código ' . $codigo_exportacion . ' está repetido con otro nombre.');
-                        $codigo_receta_actual = '';
-                    }
-                }
+            if ($nombre_receta != '') {
+                $recetas_por_nombre[$nombre_receta] = ($recetas_por_nombre[$nombre_receta] ?? 0) + 1;
+                $numero_receta = $recetas_por_nombre[$nombre_receta] == 1
+                    ? null
+                    : (string)$recetas_por_nombre[$nombre_receta];
+                $receta_actual = $nombre_receta . '|' . ($numero_receta ?? 'DEFAULT');
+                $recetas[$receta_actual] = [
+                    'nombre' => $nombre_receta,
+                    'numero_receta' => $numero_receta,
+                    'fila' => $posicion,
+                    'detalles' => [],
+                ];
             }
 
-            $nombre_planta = $normalizar($fila['E'] ?? '');
-            $nombre_variedad = $normalizar($fila['F'] ?? '');
-            $unidades = trim((string)($fila['G'] ?? ''));
-            if ($nombre_planta != '' || $nombre_variedad != '' || $unidades != '') {
-                if ($codigo_receta_actual == '') {
+            $nombre_variedad = $normalizar($fila['B'] ?? '');
+            $unidades = trim((string)($fila['C'] ?? ''));
+            if ($nombre_variedad != '' || $unidades != '') {
+                if ($receta_actual == null || !isset($recetas[$receta_actual])) {
                     $registrar_fallo('RECETAS', $posicion, 'El detalle no está asociado a una receta válida.');
                     continue;
                 }
-                $recetas[$codigo_receta_actual]['detalles'][] = [
-                    'planta' => $nombre_planta,
+                $recetas[$receta_actual]['detalles'][] = [
                     'variedad' => $nombre_variedad,
-                    'longitud' => trim((string)($fila['D'] ?? '')),
                     'unidades' => $unidades,
                     'fila' => $posicion,
                 ];
@@ -1717,6 +1640,7 @@ class ComandoDev extends Command
         }
         $progreso_recetas = 0;
         $progreso_detalles_receta = 0;
+        $id_variedad_recetas = [];
         foreach ($recetas as $receta) {
             $progreso_recetas++;
             dump('RECETA ' . $progreso_recetas . '/' . count($recetas) . ' (' . count($receta['detalles']) . ' detalles)');
@@ -1725,37 +1649,46 @@ class ComandoDev extends Command
                 continue;
             }
             try {
-                $variedad_receta = DB::table('variedad')
-                    ->where('id_empresa', 2)
-                    ->where('codigo_exportacion', $receta['codigo_exportacion'])
-                    ->first();
-                if ($variedad_receta == '') {
-                    $id_variedad_receta = DB::table('variedad')->insertGetId([
-                        'nombre' => $receta['nombre'],
-                        'codigo_latin' => $receta['codigo_latin'],
-                        'codigo_exportacion' => $receta['codigo_exportacion'],
-                        'color' => 'RECETA',
-                        'tipo' => 'L',
-                        'tallos_x_malla' => 0,
-                        'id_planta' => $id_planta_bouquet,
-                        'id_empresa' => 2,
-                        'receta' => 1,
-                        'estado' => 1,
-                    ]);
-                    $totales['recetas nuevas']++;
-                } elseif ((int)$variedad_receta->receta == 1 && $normalizar($variedad_receta->nombre) == $receta['nombre']) {
-                    $id_variedad_receta = $variedad_receta->id_variedad;
+                if (isset($id_variedad_recetas[$receta['nombre']])) {
+                    $id_variedad_receta = $id_variedad_recetas[$receta['nombre']];
                 } else {
-                    $registrar_fallo('RECETAS', $receta['fila'], 'El código ' . $receta['codigo_exportacion'] . ' ya existe como otra variedad.');
-                    continue;
+                    $variedades_receta = DB::table('variedad')
+                        ->where('id_empresa', 2)
+                        ->where('receta', 1)
+                        ->where('nombre', $receta['nombre'])
+                        ->get();
+                    if (count($variedades_receta) == 0) {
+                        $id_variedad_receta = DB::table('variedad')->insertGetId([
+                            'nombre' => $receta['nombre'],
+                            'color' => 'RECETA',
+                            'tipo' => 'L',
+                            'tallos_x_malla' => 0,
+                            'id_planta' => $id_planta_bouquet,
+                            'id_empresa' => 2,
+                            'receta' => 1,
+                            'estado' => 1,
+                        ]);
+                        $totales['recetas nuevas']++;
+                    } elseif (count($variedades_receta) == 1) {
+                        $id_variedad_receta = $variedades_receta[0]->id_variedad;
+                        $totales['recetas existentes']++;
+                    } else {
+                        $registrar_fallo('RECETAS', $receta['fila'], 'Hay varias recetas existentes con el nombre "' . $receta['nombre'] . '".');
+                        continue;
+                    }
+                    $id_variedad_recetas[$receta['nombre']] = $id_variedad_receta;
                 }
 
                 $existentes = [];
-                foreach (DB::table('detalle_receta')
-                    ->where('id_variedad', $id_variedad_receta)
-                    ->whereNull('numero_receta')
-                    ->get(['id_item', 'longitud', 'unidades']) as $detalle_existente) {
-                    $firma = $detalle_existente->id_item . '|' . trim((string)$detalle_existente->longitud) . '|' . (int)$detalle_existente->unidades;
+                $consulta_detalles = DB::table('detalle_receta')
+                    ->where('id_variedad', $id_variedad_receta);
+                if ($receta['numero_receta'] === null) {
+                    $consulta_detalles->whereNull('numero_receta');
+                } else {
+                    $consulta_detalles->where('numero_receta', $receta['numero_receta']);
+                }
+                foreach ($consulta_detalles->get(['id_item', 'unidades']) as $detalle_existente) {
+                    $firma = $detalle_existente->id_item . '|' . (int)$detalle_existente->unidades;
                     $existentes[$firma] = ($existentes[$firma] ?? 0) + 1;
                 }
                 $vistos = [];
@@ -1764,32 +1697,22 @@ class ComandoDev extends Command
                     if ($progreso_detalles_receta % 100 == 0 || $progreso_detalles_receta == $total_detalles_receta) {
                         dump('DETALLE DE RECETA ' . $progreso_detalles_receta . '/' . $total_detalles_receta);
                     }
-                    if ($detalle['planta'] == '' || $detalle['variedad'] == '' || !is_numeric($detalle['unidades'])) {
-                        $registrar_fallo('RECETAS', $detalle['fila'], 'El detalle requiere planta, variedad y unidades numéricas.');
+                    if ($detalle['variedad'] == '' || !is_numeric($detalle['unidades'])) {
+                        $registrar_fallo('RECETAS', $detalle['fila'], 'El detalle requiere variedad y unidades numéricas.');
                         continue;
                     }
-                    $planta_item = $plantas_por_nombre[$detalle['planta']] ?? $plantas_por_codigo[$detalle['planta']] ?? null;
-                    if ($planta_item == null) {
-                        $registrar_fallo('RECETAS', $detalle['fila'], 'No se encontró la planta "' . $detalle['planta'] . '".');
-                        continue;
-                    }
-                    $candidatas = [];
-                    foreach ($variedades_por_nombre[$detalle['variedad']] ?? [] as $variedad_item) {
-                        if ((int)$variedad_item['id_planta'] == (int)$planta_item['id_planta']) {
-                            $candidatas[] = $variedad_item;
-                        }
-                    }
+                    $candidatas = $variedades_por_nombre[$detalle['variedad']] ?? [];
                     if (count($candidatas) == 0) {
-                        $registrar_fallo('RECETAS', $detalle['fila'], 'No se encontró la variedad "' . $detalle['variedad'] . '" para la planta "' . $detalle['planta'] . '".');
+                        $registrar_fallo('RECETAS', $detalle['fila'], 'No se encontró la variedad "' . $detalle['variedad'] . '".');
                         continue;
                     }
                     if (count($candidatas) > 1) {
                         $codigos = implode(', ', array_column($candidatas, 'codigo_exportacion'));
-                        $registrar_fallo('RECETAS', $detalle['fila'], 'La variedad "' . $detalle['variedad'] . '" es ambigua para "' . $detalle['planta'] . '"; códigos posibles: ' . $codigos . '.');
+                        $registrar_fallo('RECETAS', $detalle['fila'], 'La variedad "' . $detalle['variedad'] . '" es ambigua; códigos posibles: ' . $codigos . '.');
                         continue;
                     }
                     $unidades = (int)$detalle['unidades'];
-                    $firma = $candidatas[0]['id_variedad'] . '|' . $detalle['longitud'] . '|' . $unidades;
+                    $firma = $candidatas[0]['id_variedad'] . '|' . $unidades;
                     $vistos[$firma] = ($vistos[$firma] ?? 0) + 1;
                     if ($vistos[$firma] <= ($existentes[$firma] ?? 0)) {
                         $totales['detalles de receta existentes']++;
@@ -1799,18 +1722,19 @@ class ComandoDev extends Command
                         DB::table('detalle_receta')->insert([
                             'id_variedad' => $id_variedad_receta,
                             'id_item' => $candidatas[0]['id_variedad'],
-                            'longitud' => $detalle['longitud'] != '' ? $detalle['longitud'] : null,
+                            'longitud' => null,
                             'unidades' => $unidades,
-                            'defecto' => 1,
+                            'numero_receta' => $receta['numero_receta'],
+                            'defecto' => $receta['numero_receta'] === null ? 1 : 0,
                             'bloquear' => 0,
                         ]);
                         $totales['detalles de receta nuevos']++;
                     } catch (\Throwable $e) {
-                        $registrar_fallo('RECETAS', $detalle['fila'], $receta['codigo_exportacion'] . ' / ' . $detalle['variedad'] . ': ' . $e->getMessage());
+                        $registrar_fallo('RECETAS', $detalle['fila'], $receta['nombre'] . ' / ' . $detalle['variedad'] . ': ' . $e->getMessage());
                     }
                 }
             } catch (\Throwable $e) {
-                $registrar_fallo('RECETAS', $receta['fila'], $receta['codigo_exportacion'] . ': ' . $e->getMessage());
+                $registrar_fallo('RECETAS', $receta['fila'], $receta['nombre'] . ': ' . $e->getMessage());
             }
         }
 

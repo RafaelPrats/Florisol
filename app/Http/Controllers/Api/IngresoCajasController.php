@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use yura\Http\Controllers\Controller;
-use yura\Modelos\ApiStoreCajas;
 use yura\Modelos\ConfiguracionEmpresa;
 use yura\Modelos\DetalleApiStoreCajas;
 use yura\Modelos\InventarioRecepcion;
@@ -26,6 +25,7 @@ class IngresoCajasController extends Controller
             'id_documento' => 'required|string|unique:api_store_cajas,documento',
             'fecha' => 'required|date',
             'cajas' => 'required|array|min:1',
+            'cajas.*.destino' => 'required|integer|in:1,2',
         ]);
 
         if ($validator->fails()) {
@@ -38,13 +38,10 @@ class IngresoCajasController extends Controller
         try {
             DB::beginTransaction();
 
-            $model_api = new ApiStoreCajas();
-            $model_api->documento = $request->id_documento;
-            $model_api->fecha = $request->fecha;
-            $model_api->save();
-            $model_api->id_api_store_cajas = DB::table('api_store_cajas')
-                ->select(DB::raw('max(id_api_store_cajas) as id'))
-                ->get()[0]->id;
+            $id_api_store_cajas = DB::table('api_store_cajas')->insertGetId([
+                'documento' => $request->id_documento,
+                'fecha' => $request->fecha,
+            ]);
 
             $variedades_faltantes = [];
             foreach ($request->cajas as $caja) {
@@ -76,7 +73,7 @@ class IngresoCajasController extends Controller
 
                             // DETALLE API
                             $det_api = new DetalleApiStoreCajas();
-                            $det_api->id_api_store_cajas = $model_api->id_api_store_cajas;
+                            $det_api->id_api_store_cajas = $id_api_store_cajas;
                             $det_api->id_variedad = $variedad->id_variedad;
                             $det_api->tallos_x_ramo = $var['tallos_x_ramo'];
                             $det_api->ramos = $caja['cantidad_cajas'] * $var['ramos_x_caja'];
