@@ -42,6 +42,168 @@ class InventarioRecepcionController extends Controller
         ]);
     }
 
+    public function modal_documentos_api_pendientes()
+    {
+        $this->autorizarAdministracionDocumentosApi();
+
+        return view('adminlte.gestion.postco.ingreso_inventario.forms.documentos_api_pendientes', [
+            'documentos' => $this->obtenerDocumentosApiPendientes(),
+        ]);
+    }
+
+    public function listar_documentos_api_pendientes()
+    {
+        $this->autorizarAdministracionDocumentosApi();
+
+        return view('adminlte.gestion.postco.ingreso_inventario.partials.documentos_api_pendientes', [
+            'documentos' => $this->obtenerDocumentosApiPendientes(),
+        ]);
+    }
+
+    public function eliminar_documento_api_pendiente(Request $request)
+    {
+        $this->autorizarAdministracionDocumentosApi();
+        $idApi = filter_var($request->id_api_store_cajas, FILTER_VALIDATE_INT);
+        if ($idApi === false || $idApi < 1) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'El documento seleccionado no es válido.',
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $documento = DB::table('api_store_cajas')
+                ->where('id_api_store_cajas', $idApi)
+                ->lockForUpdate()
+                ->first();
+            if ($documento == '') {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'El documento ya no existe.',
+                ], 404);
+            }
+
+            $detalles = DB::table('detalle_api_store_cajas')
+                ->where('id_api_store_cajas', $idApi)
+                ->lockForUpdate()
+                ->get();
+            if (count($detalles) == 0) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'El documento no tiene detalles para eliminar.',
+                ], 422);
+            }
+            foreach ($detalles as $detalle) {
+                if ($detalle->estado != 'P') {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'mensaje' => 'No se puede eliminar el documento porque contiene detalles ya recibidos.',
+                    ], 422);
+                }
+            }
+
+            $tieneIngresos = DB::table('ingreso_recepcion')
+                ->where('id_api_store_cajas', $idApi)
+                ->exists();
+            $tieneMovimientos = DB::table('registro_movimientos')
+                ->where('id_api_store_cajas', $idApi)
+                ->exists();
+            if ($tieneIngresos || $tieneMovimientos) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'No se puede eliminar el documento porque ya tiene ingresos o movimientos asociados.',
+                ], 422);
+            }
+
+            DB::table('detalle_api_store_cajas')
+                ->where('id_api_store_cajas', $idApi)
+                ->delete();
+            DB::table('api_store_cajas')
+                ->where('id_api_store_cajas', $idApi)
+                ->delete();
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'mensaje' => 'El documento pendiente se eliminó correctamente.',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'No se pudo eliminar el documento: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    private function autorizarAdministracionDocumentosApi()
+    {
+        if (session('id_usuario') != 1) {
+            abort(403, 'No autorizado para administrar documentos API.');
+        }
+    }
+
+    private function obtenerDocumentosApiPendientes()
+    {
+        $documentos = DB::table('api_store_cajas as api')
+            ->join('detalle_api_store_cajas as da', 'da.id_api_store_cajas', '=', 'api.id_api_store_cajas')
+            ->leftJoin('configuracion_empresa as ce', 'ce.id_configuracion_empresa', '=', 'da.id_empresa')
+            ->select(
+                'api.id_api_store_cajas',
+                'api.documento',
+                'api.fecha',
+                DB::raw('COUNT(DISTINCT da.id_detalle_api_store_cajas) as cantidad_pendiente'),
+                DB::raw('GROUP_CONCAT(DISTINCT ce.nombre ORDER BY ce.nombre SEPARATOR ", ") as fincas')
+            )
+            ->where('da.estado', 'P')
+            ->groupBy('api.id_api_store_cajas', 'api.documento', 'api.fecha')
+            ->orderBy('api.fecha', 'desc')
+            ->orderBy('api.documento')
+            ->get();
+
+        if (count($documentos) == 0) {
+            return $documentos;
+        }
+
+        $idsApi = $documentos->pluck('id_api_store_cajas')->all();
+        $resumenDetalles = DB::table('detalle_api_store_cajas')
+            ->select(
+                'id_api_store_cajas',
+                DB::raw('COUNT(*) as total'),
+                DB::raw("SUM(CASE WHEN estado = 'P' THEN 1 ELSE 0 END) as pendientes")
+            )
+            ->whereIn('id_api_store_cajas', $idsApi)
+            ->groupBy('id_api_store_cajas')
+            ->get()
+            ->keyBy('id_api_store_cajas');
+        $idsConIngresos = DB::table('ingreso_recepcion')
+            ->whereIn('id_api_store_cajas', $idsApi)
+            ->distinct()
+            ->pluck('id_api_store_cajas')
+            ->all();
+        $idsConMovimientos = DB::table('registro_movimientos')
+            ->whereIn('id_api_store_cajas', $idsApi)
+            ->distinct()
+            ->pluck('id_api_store_cajas')
+            ->all();
+
+        foreach ($documentos as $documento) {
+            $resumen = $resumenDetalles->get($documento->id_api_store_cajas);
+            $documento->puede_eliminar = $resumen
+                && $resumen->total == $resumen->pendientes
+                && !in_array($documento->id_api_store_cajas, $idsConIngresos)
+                && !in_array($documento->id_api_store_cajas, $idsConMovimientos);
+        }
+
+        return $documentos;
+    }
+
     public function listar_reporte(Request $request)
     {
         $finca = getFincaActiva();
@@ -408,6 +570,7 @@ class InventarioRecepcionController extends Controller
                 $detApi = DetalleApiStoreCajas::where('id_detalle_api_store_cajas', $data->id_detApi)
                     ->where('id_empresa', getFincaActiva())
                     ->where('estado', 'P')
+                    ->lockForUpdate()
                     ->first();
                 if ($detApi == '') {
                     throw new \RuntimeException('El detalle API ya no está pendiente o no pertenece a la finca activa.');

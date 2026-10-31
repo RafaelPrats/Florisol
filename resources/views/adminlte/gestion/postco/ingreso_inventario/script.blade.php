@@ -25,4 +25,39 @@
                 function() {});
         });
     }
+
+    function modal_documentos_api_pendientes() {
+        get_jquery('{{ url('ingreso_inventario/documentos_api_pendientes') }}', {}, function(retorno) {
+            modal_view('modal_documentos_api_pendientes', retorno,
+                '<i class="fa fa-trash-o"></i> Documentos API pendientes',
+                true, false, '{{ isPC() ? '75%' : '100%' }}',
+                function() {});
+        });
+    }
+
+    function eliminar_documento_api_pendiente(id, button) {
+        var documento = $(button).closest('tr').children().first().text().trim();
+        var texto = '<div class="alert alert-danger text-center">' +
+            '<h4>¿Eliminar el documento <strong>' + $('<div>').text(documento).html() + '</strong>?</h4>' +
+            '<p>Se eliminarán el encabezado y sus detalles pendientes. Esta acción no se puede deshacer.</p>' +
+            '</div>';
+
+        modal_quest('confirmar_eliminar_documento_api', texto, 'Eliminar documento', true, false, '40%',
+            function() {
+                post_jquery_m('{{ url('ingreso_inventario/eliminar_documento_api_pendiente') }}', {
+                    _token: '{{ csrf_token() }}',
+                    id_api_store_cajas: id
+                }, function() {
+                    $('#documento_filtro option[value="' + id + '"]').remove();
+                    if ($('#documento_filtro').val() == id) {
+                        $('#documento_filtro').val('').trigger('change');
+                    }
+                    listar_reporte();
+                    get_jquery('{{ url('ingreso_inventario/listar_documentos_api_pendientes') }}', {},
+                        function(retorno) {
+                            $('#div_documentos_api_pendientes').html(retorno);
+                        });
+                });
+            });
+    }
 </script>
