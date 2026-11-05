@@ -4,7 +4,7 @@
             <tr>
                 <th>Documento</th>
                 <th>Fecha</th>
-                <th>Fincas</th>
+                <th>Finca activa</th>
                 <th class="text-center">Detalles P</th>
                 <th class="text-center">Detalles R</th>
                 <th class="text-center">Eliminables</th>

@@ -39,8 +39,8 @@
         var documento = $(button).closest('tr').children().first().text().trim();
         var eliminaraEncabezado = $(button).text().indexOf('Eliminar documento') >= 0;
         var alcance = eliminaraEncabezado
-            ? 'Se eliminará el encabezado junto con todos sus detalles pendientes.'
-            : 'Se eliminarán únicamente los detalles pendientes que no tengan ingresos ni movimientos asociados. Los detalles recibidos y el encabezado se conservarán.';
+            ? 'Se eliminará el encabezado y sus detalles pendientes, que pertenecen únicamente a la finca activa.'
+            : 'Se eliminarán solo los detalles P sin ingresos ni movimientos asociados de la finca activa. Los detalles recibidos, los de otras fincas y el encabezado se conservarán.';
         var texto = '<div class="alert alert-danger text-center">' +
             '<h4>¿Eliminar el documento <strong>' + $('<div>').text(documento).html() + '</strong>?</h4>' +
             '<p>' + alcance + ' Esta acción no se puede deshacer.</p>' +

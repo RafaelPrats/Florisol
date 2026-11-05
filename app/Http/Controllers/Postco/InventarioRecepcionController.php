@@ -58,6 +58,7 @@ class InventarioRecepcionController extends Controller
 
     public function eliminar_documento_api_pendiente(Request $request)
     {
+        $finca = getFincaActiva();
         $idApi = filter_var($request->id_api_store_cajas, FILTER_VALIDATE_INT);
         if ($idApi === false || $idApi < 1) {
             return response()->json([
@@ -83,6 +84,7 @@ class InventarioRecepcionController extends Controller
 
             $detalles = DB::table('detalle_api_store_cajas')
                 ->where('id_api_store_cajas', $idApi)
+                ->where('id_empresa', $finca)
                 ->lockForUpdate()
                 ->get();
             if (count($detalles) == 0) {
@@ -96,11 +98,13 @@ class InventarioRecepcionController extends Controller
             $ingresos = DB::table('ingreso_recepcion')
                 ->select('id_empresa', 'id_variedad', 'tallos_x_ramo', 'longitud')
                 ->where('id_api_store_cajas', $idApi)
+                ->where('id_empresa', $finca)
                 ->lockForUpdate()
                 ->get();
             $movimientos = DB::table('registro_movimientos')
                 ->select('id_empresa', 'id_variedad')
                 ->where('id_api_store_cajas', $idApi)
+                ->where('id_empresa', $finca)
                 ->lockForUpdate()
                 ->get();
 
@@ -155,6 +159,7 @@ class InventarioRecepcionController extends Controller
 
             DB::table('detalle_api_store_cajas')
                 ->where('id_api_store_cajas', $idApi)
+                ->where('id_empresa', $finca)
                 ->whereIn('id_detalle_api_store_cajas', $idsEliminables)
                 ->where('estado', 'P')
                 ->delete();
@@ -208,6 +213,7 @@ class InventarioRecepcionController extends Controller
 
     private function obtenerDocumentosApiPendientes()
     {
+        $finca = getFincaActiva();
         $documentos = DB::table('api_store_cajas as api')
             ->join('detalle_api_store_cajas as da', 'da.id_api_store_cajas', '=', 'api.id_api_store_cajas')
             ->leftJoin('configuracion_empresa as ce', 'ce.id_configuracion_empresa', '=', 'da.id_empresa')
@@ -218,6 +224,7 @@ class InventarioRecepcionController extends Controller
                 DB::raw('COUNT(DISTINCT da.id_detalle_api_store_cajas) as cantidad_pendiente'),
                 DB::raw('GROUP_CONCAT(DISTINCT ce.nombre ORDER BY ce.nombre SEPARATOR ", ") as fincas')
             )
+            ->where('da.id_empresa', $finca)
             ->where('da.estado', 'P')
             ->groupBy('api.id_api_store_cajas', 'api.documento', 'api.fecha')
             ->orderBy('api.fecha', 'desc')
@@ -240,20 +247,37 @@ class InventarioRecepcionController extends Controller
                 'estado'
             )
             ->whereIn('id_api_store_cajas', $idsApi)
+            ->where('id_empresa', $finca)
             ->get();
+        $resumenDetallesGlobal = DB::table('detalle_api_store_cajas')
+            ->select('id_api_store_cajas', DB::raw('COUNT(*) as total'))
+            ->whereIn('id_api_store_cajas', $idsApi)
+            ->groupBy('id_api_store_cajas')
+            ->get()
+            ->keyBy('id_api_store_cajas');
+        $idsConIngresosGlobales = DB::table('ingreso_recepcion')
+            ->whereIn('id_api_store_cajas', $idsApi)
+            ->distinct()
+            ->pluck('id_api_store_cajas')
+            ->all();
+        $idsConMovimientosGlobales = DB::table('registro_movimientos')
+            ->whereIn('id_api_store_cajas', $idsApi)
+            ->distinct()
+            ->pluck('id_api_store_cajas')
+            ->all();
         $ingresos = DB::table('ingreso_recepcion')
             ->select('id_api_store_cajas', 'id_empresa', 'id_variedad', 'tallos_x_ramo', 'longitud')
             ->whereIn('id_api_store_cajas', $idsApi)
+            ->where('id_empresa', $finca)
             ->get();
         $movimientos = DB::table('registro_movimientos')
             ->select('id_api_store_cajas', 'id_empresa', 'id_variedad')
             ->whereIn('id_api_store_cajas', $idsApi)
+            ->where('id_empresa', $finca)
             ->get();
 
         $clavesConIngreso = [];
-        $idsConIngresos = [];
         foreach ($ingresos as $ingreso) {
-            $idsConIngresos[$ingreso->id_api_store_cajas] = true;
             $clavesConIngreso[$this->claveDetalleApi(
                 $ingreso->id_api_store_cajas,
                 $ingreso->id_empresa,
@@ -263,9 +287,7 @@ class InventarioRecepcionController extends Controller
             )] = true;
         }
         $clavesConMovimiento = [];
-        $idsConMovimientos = [];
         foreach ($movimientos as $movimiento) {
-            $idsConMovimientos[$movimiento->id_api_store_cajas] = true;
             $clavesConMovimiento[$this->claveDetalleApi(
                 $movimiento->id_api_store_cajas,
                 $movimiento->id_empresa,
@@ -314,9 +336,11 @@ class InventarioRecepcionController extends Controller
             $documento->cantidad_pendiente = $resumen['pendientes'];
             $documento->cantidad_recibida = $resumen['recibidos'];
             $documento->cantidad_eliminable = $resumen['eliminables'];
-            $documento->eliminara_encabezado = $resumen['eliminables'] == $resumen['total']
-                && !isset($idsConIngresos[$documento->id_api_store_cajas])
-                && !isset($idsConMovimientos[$documento->id_api_store_cajas]);
+            $resumenGlobal = $resumenDetallesGlobal->get($documento->id_api_store_cajas);
+            $documento->eliminara_encabezado = $resumenGlobal
+                && $resumen['eliminables'] == $resumenGlobal->total
+                && !in_array($documento->id_api_store_cajas, $idsConIngresosGlobales)
+                && !in_array($documento->id_api_store_cajas, $idsConMovimientosGlobales);
             $documento->puede_eliminar = $resumen['eliminables'] > 0;
         }
 
