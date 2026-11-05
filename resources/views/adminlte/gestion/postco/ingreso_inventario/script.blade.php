@@ -29,7 +29,7 @@
     function modal_documentos_api_pendientes() {
         get_jquery('{{ url('ingreso_inventario/documentos_api_pendientes') }}', {}, function(retorno) {
             modal_view('modal_documentos_api_pendientes', retorno,
-                '<i class="fa fa-trash-o"></i> Documentos API pendientes',
+                '<i class="fa fa-file-text-o"></i> Documentos API pendientes',
                 true, false, '{{ isPC() ? '75%' : '100%' }}',
                 function() {});
         });

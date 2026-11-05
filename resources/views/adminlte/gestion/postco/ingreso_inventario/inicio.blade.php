@@ -86,13 +86,10 @@
                 </div>
                 <div class="ingreso-filter-actions">
                     <div class="btn-group" role="group" aria-label="Acciones del filtro">
-                        @if (session('id_usuario') == 1)
-                            <button type="button" class="btn btn-yura_danger" title="Administrar documentos API pendientes"
-                                aria-label="Administrar documentos API pendientes"
-                                onclick="modal_documentos_api_pendientes()">
-                                <i class="fa fa-trash-o" aria-hidden="true"></i>
-                            </button>
-                        @endif
+                        <button type="button" class="btn btn-yura_default" title="Documentos API pendientes"
+                            aria-label="Documentos API pendientes" onclick="modal_documentos_api_pendientes()">
+                            <i class="fa fa-file-text-o" aria-hidden="true"></i>
+                        </button>
                         <button type="button" class="btn btn-yura_default" title="Bodegas por segmento"
                             aria-label="Bodegas por segmento" onclick="admin_bodegas()">
                             <i class="fa fa-cogs" aria-hidden="true"></i>

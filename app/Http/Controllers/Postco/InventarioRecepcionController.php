@@ -44,8 +44,6 @@ class InventarioRecepcionController extends Controller
 
     public function modal_documentos_api_pendientes()
     {
-        $this->autorizarAdministracionDocumentosApi();
-
         return view('adminlte.gestion.postco.ingreso_inventario.forms.documentos_api_pendientes', [
             'documentos' => $this->obtenerDocumentosApiPendientes(),
         ]);
@@ -53,8 +51,6 @@ class InventarioRecepcionController extends Controller
 
     public function listar_documentos_api_pendientes()
     {
-        $this->autorizarAdministracionDocumentosApi();
-
         return view('adminlte.gestion.postco.ingreso_inventario.partials.documentos_api_pendientes', [
             'documentos' => $this->obtenerDocumentosApiPendientes(),
         ]);
@@ -62,7 +58,6 @@ class InventarioRecepcionController extends Controller
 
     public function eliminar_documento_api_pendiente(Request $request)
     {
-        $this->autorizarAdministracionDocumentosApi();
         $idApi = filter_var($request->id_api_store_cajas, FILTER_VALIDATE_INT);
         if ($idApi === false || $idApi < 1) {
             return response()->json([
@@ -197,13 +192,6 @@ class InventarioRecepcionController extends Controller
                 'success' => false,
                 'mensaje' => 'No se pudo eliminar el documento: ' . $e->getMessage(),
             ], 500);
-        }
-    }
-
-    private function autorizarAdministracionDocumentosApi()
-    {
-        if (session('id_usuario') != 1) {
-            abort(403, 'No autorizado para administrar documentos API.');
         }
     }
 
