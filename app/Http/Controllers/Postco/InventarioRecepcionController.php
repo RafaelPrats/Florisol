@@ -216,17 +216,14 @@ class InventarioRecepcionController extends Controller
         $finca = getFincaActiva();
         $documentos = DB::table('api_store_cajas as api')
             ->join('detalle_api_store_cajas as da', 'da.id_api_store_cajas', '=', 'api.id_api_store_cajas')
-            ->leftJoin('configuracion_empresa as ce', 'ce.id_configuracion_empresa', '=', 'da.id_empresa')
             ->select(
                 'api.id_api_store_cajas',
                 'api.documento',
-                'api.fecha',
-                DB::raw('COUNT(DISTINCT da.id_detalle_api_store_cajas) as cantidad_pendiente'),
-                DB::raw('GROUP_CONCAT(DISTINCT ce.nombre ORDER BY ce.nombre SEPARATOR ", ") as fincas')
+                'api.fecha'
             )
             ->where('da.id_empresa', $finca)
             ->where('da.estado', 'P')
-            ->groupBy('api.id_api_store_cajas', 'api.documento', 'api.fecha')
+            ->distinct()
             ->orderBy('api.fecha', 'desc')
             ->orderBy('api.documento')
             ->get();
@@ -242,6 +239,7 @@ class InventarioRecepcionController extends Controller
                 'id_api_store_cajas',
                 'id_empresa',
                 'id_variedad',
+                'ramos',
                 'tallos_x_ramo',
                 'longitud',
                 'estado'
@@ -266,7 +264,7 @@ class InventarioRecepcionController extends Controller
             ->pluck('id_api_store_cajas')
             ->all();
         $ingresos = DB::table('ingreso_recepcion')
-            ->select('id_api_store_cajas', 'id_empresa', 'id_variedad', 'tallos_x_ramo', 'longitud')
+            ->select('id_api_store_cajas', 'id_empresa', 'id_variedad', 'tallos_x_ramo', 'longitud', 'tallos')
             ->whereIn('id_api_store_cajas', $idsApi)
             ->where('id_empresa', $finca)
             ->get();
@@ -277,7 +275,12 @@ class InventarioRecepcionController extends Controller
             ->get();
 
         $clavesConIngreso = [];
+        $tallosRecibidosPorApi = [];
         foreach ($ingresos as $ingreso) {
+            if (!isset($tallosRecibidosPorApi[$ingreso->id_api_store_cajas])) {
+                $tallosRecibidosPorApi[$ingreso->id_api_store_cajas] = 0;
+            }
+            $tallosRecibidosPorApi[$ingreso->id_api_store_cajas] += $ingreso->tallos;
             $clavesConIngreso[$this->claveDetalleApi(
                 $ingreso->id_api_store_cajas,
                 $ingreso->id_empresa,
@@ -302,13 +305,14 @@ class InventarioRecepcionController extends Controller
                 $resumenDetalles[$idApi] = [
                     'total' => 0,
                     'pendientes' => 0,
-                    'recibidos' => 0,
+                    'pendientes_tallos' => 0,
                     'eliminables' => 0,
                 ];
             }
             $resumenDetalles[$idApi]['total']++;
             if ($detalle->estado == 'P') {
                 $resumenDetalles[$idApi]['pendientes']++;
+                $resumenDetalles[$idApi]['pendientes_tallos'] += $detalle->ramos * $detalle->tallos_x_ramo;
                 $claveIngreso = $this->claveDetalleApi(
                     $idApi,
                     $detalle->id_empresa,
@@ -324,17 +328,17 @@ class InventarioRecepcionController extends Controller
                 if (!isset($clavesConIngreso[$claveIngreso]) && !isset($clavesConMovimiento[$claveMovimiento])) {
                     $resumenDetalles[$idApi]['eliminables']++;
                 }
-            } else {
-                $resumenDetalles[$idApi]['recibidos']++;
             }
         }
 
         foreach ($documentos as $documento) {
             $resumen = isset($resumenDetalles[$documento->id_api_store_cajas])
                 ? $resumenDetalles[$documento->id_api_store_cajas]
-                : ['total' => 0, 'pendientes' => 0, 'recibidos' => 0, 'eliminables' => 0];
-            $documento->cantidad_pendiente = $resumen['pendientes'];
-            $documento->cantidad_recibida = $resumen['recibidos'];
+                : ['total' => 0, 'pendientes' => 0, 'pendientes_tallos' => 0, 'eliminables' => 0];
+            $documento->cantidad_pendiente = $resumen['pendientes_tallos'];
+            $documento->cantidad_recibida = isset($tallosRecibidosPorApi[$documento->id_api_store_cajas])
+                ? $tallosRecibidosPorApi[$documento->id_api_store_cajas]
+                : 0;
             $documento->cantidad_eliminable = $resumen['eliminables'];
             $resumenGlobal = $resumenDetallesGlobal->get($documento->id_api_store_cajas);
             $documento->eliminara_encabezado = $resumenGlobal

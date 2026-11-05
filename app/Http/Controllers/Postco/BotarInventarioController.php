@@ -294,10 +294,12 @@ class BotarInventarioController extends Controller
                 $id_variedad = isset($data->id_variedad) ? filter_var($data->id_variedad, FILTER_VALIDATE_INT) : false;
                 $cantidad = isset($data->botar) ? filter_var($data->botar, FILTER_VALIDATE_INT) : false;
                 $id_motivo = isset($data->motivo) ? filter_var($data->motivo, FILTER_VALIDATE_INT) : false;
-                $longitud = isset($data->longitud) ? $data->longitud : null;
+                $longitud = isset($data->longitud) && is_scalar($data->longitud)
+                    ? trim((string) $data->longitud)
+                    : '';
 
                 if (!$id_variedad || !$cantidad || $cantidad < 1 || !$id_motivo
-                    || !is_numeric($longitud) || !is_finite((float) $longitud)) {
+                    || $longitud === '') {
                     DB::rollBack();
                     return [
                         'success' => false,
@@ -305,7 +307,7 @@ class BotarInventarioController extends Controller
                     ];
                 }
 
-                $clave_grupo = $id_variedad . '|' . rtrim(rtrim(sprintf('%.8F', (float) $longitud), '0'), '.');
+                $clave_grupo = $id_variedad . '|' . $longitud;
                 if (isset($grupos_procesados[$clave_grupo])) {
                     DB::rollBack();
                     return [
