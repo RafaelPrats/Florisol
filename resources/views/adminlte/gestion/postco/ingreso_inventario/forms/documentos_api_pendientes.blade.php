@@ -1,8 +1,8 @@
 <div class="api-pending-modal">
     <div class="api-pending-intro">
         <i class="fa fa-info-circle" aria-hidden="true"></i>
-        Solo se pueden eliminar documentos cuyos detalles sigan completamente pendientes y que no tengan ingresos ni
-        movimientos asociados.
+        Solo se eliminan detalles en estado P sin ingresos ni movimientos asociados. Los detalles recibidos se conservan;
+        el encabezado se elimina únicamente cuando ya no quedan detalles ni referencias de ingresos o movimientos.
     </div>
     <div id="div_documentos_api_pendientes">
         @include('adminlte.gestion.postco.ingreso_inventario.partials.documentos_api_pendientes')

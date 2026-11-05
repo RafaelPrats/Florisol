@@ -97,41 +97,99 @@ class InventarioRecepcionController extends Controller
                     'mensaje' => 'El documento no tiene detalles para eliminar.',
                 ], 422);
             }
+
+            $ingresos = DB::table('ingreso_recepcion')
+                ->select('id_empresa', 'id_variedad', 'tallos_x_ramo', 'longitud')
+                ->where('id_api_store_cajas', $idApi)
+                ->lockForUpdate()
+                ->get();
+            $movimientos = DB::table('registro_movimientos')
+                ->select('id_empresa', 'id_variedad')
+                ->where('id_api_store_cajas', $idApi)
+                ->lockForUpdate()
+                ->get();
+
+            $clavesConIngreso = [];
+            foreach ($ingresos as $ingreso) {
+                $clavesConIngreso[$this->claveDetalleApi(
+                    $idApi,
+                    $ingreso->id_empresa,
+                    $ingreso->id_variedad,
+                    $ingreso->tallos_x_ramo,
+                    $ingreso->longitud
+                )] = true;
+            }
+            $clavesConMovimiento = [];
+            foreach ($movimientos as $movimiento) {
+                $clavesConMovimiento[$this->claveDetalleApi(
+                    $idApi,
+                    $movimiento->id_empresa,
+                    $movimiento->id_variedad
+                )] = true;
+            }
+
+            $idsEliminables = [];
             foreach ($detalles as $detalle) {
                 if ($detalle->estado != 'P') {
-                    DB::rollBack();
-                    return response()->json([
-                        'success' => false,
-                        'mensaje' => 'No se puede eliminar el documento porque contiene detalles ya recibidos.',
-                    ], 422);
+                    continue;
+                }
+                $claveIngreso = $this->claveDetalleApi(
+                    $idApi,
+                    $detalle->id_empresa,
+                    $detalle->id_variedad,
+                    $detalle->tallos_x_ramo,
+                    $detalle->longitud
+                );
+                $claveMovimiento = $this->claveDetalleApi(
+                    $idApi,
+                    $detalle->id_empresa,
+                    $detalle->id_variedad
+                );
+                if (!isset($clavesConIngreso[$claveIngreso]) && !isset($clavesConMovimiento[$claveMovimiento])) {
+                    $idsEliminables[] = $detalle->id_detalle_api_store_cajas;
                 }
             }
 
-            $tieneIngresos = DB::table('ingreso_recepcion')
-                ->where('id_api_store_cajas', $idApi)
-                ->exists();
-            $tieneMovimientos = DB::table('registro_movimientos')
-                ->where('id_api_store_cajas', $idApi)
-                ->exists();
-            if ($tieneIngresos || $tieneMovimientos) {
+            if (count($idsEliminables) == 0) {
                 DB::rollBack();
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'No se puede eliminar el documento porque ya tiene ingresos o movimientos asociados.',
+                    'mensaje' => 'No hay detalles pendientes sin ingresos o movimientos asociados para eliminar.',
                 ], 422);
             }
 
             DB::table('detalle_api_store_cajas')
                 ->where('id_api_store_cajas', $idApi)
+                ->whereIn('id_detalle_api_store_cajas', $idsEliminables)
+                ->where('estado', 'P')
                 ->delete();
-            DB::table('api_store_cajas')
+
+            $detallesRestantes = DB::table('detalle_api_store_cajas')
                 ->where('id_api_store_cajas', $idApi)
-                ->delete();
+                ->count();
+            $encabezadoEliminado = false;
+            if ($detallesRestantes == 0) {
+                $tieneIngresos = DB::table('ingreso_recepcion')
+                    ->where('id_api_store_cajas', $idApi)
+                    ->exists();
+                $tieneMovimientos = DB::table('registro_movimientos')
+                    ->where('id_api_store_cajas', $idApi)
+                    ->exists();
+                if (!$tieneIngresos && !$tieneMovimientos) {
+                    DB::table('api_store_cajas')
+                        ->where('id_api_store_cajas', $idApi)
+                        ->delete();
+                    $encabezadoEliminado = true;
+                }
+            }
 
             DB::commit();
             return response()->json([
                 'success' => true,
-                'mensaje' => 'El documento pendiente se eliminó correctamente.',
+                'mensaje' => count($idsEliminables) . ' detalle(s) pendiente(s) eliminado(s).' .
+                    ($encabezadoEliminado
+                        ? ' El encabezado del documento también fue eliminado.'
+                        : ' El encabezado y los demás detalles se conservaron.'),
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -147,6 +205,17 @@ class InventarioRecepcionController extends Controller
         if (session('id_usuario') != 1) {
             abort(403, 'No autorizado para administrar documentos API.');
         }
+    }
+
+    private function claveDetalleApi($idApi, $idEmpresa, $idVariedad, $tallosXRamo = null, $longitud = null)
+    {
+        return serialize([
+            (string) $idApi,
+            (string) $idEmpresa,
+            (string) $idVariedad,
+            $tallosXRamo === null ? null : (string) $tallosXRamo,
+            $longitud === null ? null : (string) $longitud,
+        ]);
     }
 
     private function obtenerDocumentosApiPendientes()
@@ -172,33 +241,95 @@ class InventarioRecepcionController extends Controller
         }
 
         $idsApi = $documentos->pluck('id_api_store_cajas')->all();
-        $resumenDetalles = DB::table('detalle_api_store_cajas')
+        $detalles = DB::table('detalle_api_store_cajas')
             ->select(
+                'id_detalle_api_store_cajas',
                 'id_api_store_cajas',
-                DB::raw('COUNT(*) as total'),
-                DB::raw("SUM(CASE WHEN estado = 'P' THEN 1 ELSE 0 END) as pendientes")
+                'id_empresa',
+                'id_variedad',
+                'tallos_x_ramo',
+                'longitud',
+                'estado'
             )
             ->whereIn('id_api_store_cajas', $idsApi)
-            ->groupBy('id_api_store_cajas')
-            ->get()
-            ->keyBy('id_api_store_cajas');
-        $idsConIngresos = DB::table('ingreso_recepcion')
+            ->get();
+        $ingresos = DB::table('ingreso_recepcion')
+            ->select('id_api_store_cajas', 'id_empresa', 'id_variedad', 'tallos_x_ramo', 'longitud')
             ->whereIn('id_api_store_cajas', $idsApi)
-            ->distinct()
-            ->pluck('id_api_store_cajas')
-            ->all();
-        $idsConMovimientos = DB::table('registro_movimientos')
+            ->get();
+        $movimientos = DB::table('registro_movimientos')
+            ->select('id_api_store_cajas', 'id_empresa', 'id_variedad')
             ->whereIn('id_api_store_cajas', $idsApi)
-            ->distinct()
-            ->pluck('id_api_store_cajas')
-            ->all();
+            ->get();
+
+        $clavesConIngreso = [];
+        $idsConIngresos = [];
+        foreach ($ingresos as $ingreso) {
+            $idsConIngresos[$ingreso->id_api_store_cajas] = true;
+            $clavesConIngreso[$this->claveDetalleApi(
+                $ingreso->id_api_store_cajas,
+                $ingreso->id_empresa,
+                $ingreso->id_variedad,
+                $ingreso->tallos_x_ramo,
+                $ingreso->longitud
+            )] = true;
+        }
+        $clavesConMovimiento = [];
+        $idsConMovimientos = [];
+        foreach ($movimientos as $movimiento) {
+            $idsConMovimientos[$movimiento->id_api_store_cajas] = true;
+            $clavesConMovimiento[$this->claveDetalleApi(
+                $movimiento->id_api_store_cajas,
+                $movimiento->id_empresa,
+                $movimiento->id_variedad
+            )] = true;
+        }
+
+        $resumenDetalles = [];
+        foreach ($detalles as $detalle) {
+            $idApi = $detalle->id_api_store_cajas;
+            if (!isset($resumenDetalles[$idApi])) {
+                $resumenDetalles[$idApi] = [
+                    'total' => 0,
+                    'pendientes' => 0,
+                    'recibidos' => 0,
+                    'eliminables' => 0,
+                ];
+            }
+            $resumenDetalles[$idApi]['total']++;
+            if ($detalle->estado == 'P') {
+                $resumenDetalles[$idApi]['pendientes']++;
+                $claveIngreso = $this->claveDetalleApi(
+                    $idApi,
+                    $detalle->id_empresa,
+                    $detalle->id_variedad,
+                    $detalle->tallos_x_ramo,
+                    $detalle->longitud
+                );
+                $claveMovimiento = $this->claveDetalleApi(
+                    $idApi,
+                    $detalle->id_empresa,
+                    $detalle->id_variedad
+                );
+                if (!isset($clavesConIngreso[$claveIngreso]) && !isset($clavesConMovimiento[$claveMovimiento])) {
+                    $resumenDetalles[$idApi]['eliminables']++;
+                }
+            } else {
+                $resumenDetalles[$idApi]['recibidos']++;
+            }
+        }
 
         foreach ($documentos as $documento) {
-            $resumen = $resumenDetalles->get($documento->id_api_store_cajas);
-            $documento->puede_eliminar = $resumen
-                && $resumen->total == $resumen->pendientes
-                && !in_array($documento->id_api_store_cajas, $idsConIngresos)
-                && !in_array($documento->id_api_store_cajas, $idsConMovimientos);
+            $resumen = isset($resumenDetalles[$documento->id_api_store_cajas])
+                ? $resumenDetalles[$documento->id_api_store_cajas]
+                : ['total' => 0, 'pendientes' => 0, 'recibidos' => 0, 'eliminables' => 0];
+            $documento->cantidad_pendiente = $resumen['pendientes'];
+            $documento->cantidad_recibida = $resumen['recibidos'];
+            $documento->cantidad_eliminable = $resumen['eliminables'];
+            $documento->eliminara_encabezado = $resumen['eliminables'] == $resumen['total']
+                && !isset($idsConIngresos[$documento->id_api_store_cajas])
+                && !isset($idsConMovimientos[$documento->id_api_store_cajas]);
+            $documento->puede_eliminar = $resumen['eliminables'] > 0;
         }
 
         return $documentos;

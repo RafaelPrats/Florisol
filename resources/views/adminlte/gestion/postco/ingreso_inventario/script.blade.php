@@ -37,12 +37,16 @@
 
     function eliminar_documento_api_pendiente(id, button) {
         var documento = $(button).closest('tr').children().first().text().trim();
+        var eliminaraEncabezado = $(button).text().indexOf('Eliminar documento') >= 0;
+        var alcance = eliminaraEncabezado
+            ? 'Se eliminará el encabezado junto con todos sus detalles pendientes.'
+            : 'Se eliminarán únicamente los detalles pendientes que no tengan ingresos ni movimientos asociados. Los detalles recibidos y el encabezado se conservarán.';
         var texto = '<div class="alert alert-danger text-center">' +
             '<h4>¿Eliminar el documento <strong>' + $('<div>').text(documento).html() + '</strong>?</h4>' +
-            '<p>Se eliminarán el encabezado y sus detalles pendientes. Esta acción no se puede deshacer.</p>' +
+            '<p>' + alcance + ' Esta acción no se puede deshacer.</p>' +
             '</div>';
 
-        modal_quest('confirmar_eliminar_documento_api', texto, 'Eliminar documento', true, false, '40%',
+        modal_quest('confirmar_eliminar_documento_api', texto, 'Eliminar documento pendiente', true, false, '40%',
             function() {
                 post_jquery_m('{{ url('ingreso_inventario/eliminar_documento_api_pendiente') }}', {
                     _token: '{{ csrf_token() }}',
