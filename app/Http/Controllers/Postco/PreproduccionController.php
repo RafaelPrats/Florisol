@@ -1134,10 +1134,34 @@ class PreproduccionController extends Controller
             $listado = $listado->where('p.id_cliente', $request->cliente);
         $listado = $listado->orderBy('p.fecha')
             ->get();
-        $inventario = getTotalInventarioByVariedad($request->variedad);
+        $variedad = Variedad::find($request->variedad);
+        $inventario = 0;
+        if ($variedad && $listado->count() > 0) {
+            $segmentos = Segmento::whereIn('nombre', $listado->pluck('segmento')->unique()->all())
+                ->get()
+                ->keyBy('nombre');
+            $lotesInventario = InventarioRecepcion::where('id_variedad', $variedad->id_variedad)
+                ->where('id_empresa', $finca)
+                ->where('disponibles', '>', 0)
+                ->get();
+
+            foreach ($lotesInventario as $lote) {
+                foreach ($listado as $pedido) {
+                    $segmento = $segmentos->get($pedido->segmento);
+                    $fechaHasta = opDiasFecha('+', $variedad->dias_rotacion_recepcion, $lote->fecha);
+                    if ($segmento
+                        && $lote->bodega == $segmento->bodega
+                        && $pedido->fecha >= $lote->fecha
+                        && $pedido->fecha <= $fechaHasta) {
+                        $inventario += $lote->disponibles;
+                        break;
+                    }
+                }
+            }
+        }
         return view('adminlte.gestion.postco.preproduccion.forms.modal_flor', [
             'listado' => $listado,
-            'variedad' => Variedad::find($request->variedad),
+            'variedad' => $variedad,
             'inventario' => $inventario,
             'fechas' => $request->fechas,
         ]);
