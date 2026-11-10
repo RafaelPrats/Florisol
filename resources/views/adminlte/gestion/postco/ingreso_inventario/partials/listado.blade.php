@@ -52,7 +52,7 @@
                             $var->id_variedad,
                             $var->tallos_x_ramo,
                             $var->longitud,
-                            $var->id_empresa,
+                            $finca,
                             $var->fecha,
                         );
                         $ramos_pendientes = 0;
@@ -95,7 +95,7 @@
                                 $var->id_variedad,
                                 $var->tallos_x_ramo,
                                 $var->longitud,
-                                $var->id_empresa,
+                                $finca,
                                 $var->fecha,
                             );
                             $existe_var = false;
