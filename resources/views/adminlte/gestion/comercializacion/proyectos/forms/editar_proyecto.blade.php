@@ -530,25 +530,7 @@
                                 agencia: agencia,
                                 detalles_pedido: JSON.stringify(detalles_pedido),
                             }
-                            $.LoadingOverlay('show');
-                            $.post('{{ url('proyectos/update_proyecto') }}', datos, function(
-                                retorno) {
-                                if (retorno.success) {
-                                    mini_alerta('success', retorno.mensaje, 5000);
-                                    listar_reporte();
-                                    cerrar_modals();
-                                } else {
-                                    modal.close();
-                                    alerta(retorno.mensaje);
-                                }
-                            }, 'json').fail(function(retorno) {
-                                modal.close();
-                                console.log(retorno);
-                                alerta_errores(retorno.responseText);
-                                alerta('Ha ocurrido un problema al enviar la información');
-                            }).always(function() {
-                                $.LoadingOverlay('hide');
-                            });
+                            enviar_actualizacion_proyecto(datos, false, modal);
                         }
                     }]
                 });
@@ -556,5 +538,38 @@
                 alerta('<div class="alert alert-warning text-center">Faltan datos por ingresar en el pedido</div>')
         else
             alerta('<div class="alert alert-warning text-center">El contenido del pedido esta vacio</div>')
+    }
+
+    function enviar_actualizacion_proyecto(datos, confirmar_armados, modal_actual) {
+        datos.confirmar_armados = confirmar_armados ? 1 : 0;
+        $.LoadingOverlay('show');
+        $.post('{{ url('proyectos/update_proyecto') }}', datos, function(retorno) {
+            if (retorno.requiere_confirmacion) {
+                if (modal_actual)
+                    modal_actual.close();
+                modal_quest('modal_confirmar_armados_update', retorno.mensaje,
+                    '<i class="fa fa-fw fa-exclamation-triangle"></i> Flores armadas asociadas',
+                    true, false, '{{ isPC() ? '45%' : '' }}',
+                    function() {
+                        enviar_actualizacion_proyecto(datos, true, null);
+                    });
+            } else if (retorno.success) {
+                mini_alerta('success', retorno.mensaje, 5000);
+                listar_reporte();
+                cerrar_modals();
+            } else {
+                if (modal_actual)
+                    modal_actual.close();
+                alerta(retorno.mensaje);
+            }
+        }, 'json').fail(function(retorno) {
+            if (modal_actual)
+                modal_actual.close();
+            console.log(retorno);
+            alerta_errores(retorno.responseText);
+            alerta('Ha ocurrido un problema al enviar la información');
+        }).always(function() {
+            $.LoadingOverlay('hide');
+        });
     }
 </script>

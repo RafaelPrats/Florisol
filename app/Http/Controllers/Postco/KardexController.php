@@ -45,7 +45,16 @@ class KardexController extends Controller
             ->get()[0]->cantidad;
         $salida_inicial = DB::table('salidas_recepcion as s')
             ->join('inventario_recepcion as i', 'i.id_inventario_recepcion', '=', 's.id_inventario_recepcion')
-            ->select(DB::raw('sum(s.cantidad + s.basura) as cantidad'))
+            ->select(DB::raw("
+                SUM(
+                    s.cantidad +
+                    CASE
+                        WHEN s.orden_basura IS NOT NULL AND s.estado_orden_basura = 1
+                        THEN s.basura
+                        ELSE 0
+                    END
+                ) as cantidad
+            "))
             ->where('s.id_variedad', $request->variedad)
             ->where('i.id_empresa', $finca)
             ->where('i.bodega', $request->bodega)
@@ -264,6 +273,13 @@ class KardexController extends Controller
             ->orderBy('s.fecha')
             ->orderBy('s.fecha_registro')
             ->get();
+        $salidas_solido_sin_proyecto = $this->salidasSolidoSinRelacionProyecto(
+            $finca,
+            $request->bodega,
+            $request->variedad,
+            $desde,
+            $hasta
+        );
         $salidas_movimiento = DB::table('salidas_recepcion as s')
             ->join('inventario_recepcion as i', 'i.id_inventario_recepcion', '=', 's.id_inventario_recepcion')
             ->select(
@@ -357,6 +373,7 @@ class KardexController extends Controller
             ->merge($salidas_ot)
             ->merge($salidas_ot_nacional)
             ->merge($salidas_solido)
+            ->merge($salidas_solido_sin_proyecto)
             ->merge($salidas_movimiento)
             ->merge($salidas_basura)
             ->merge($salidas_correccion)
@@ -408,7 +425,16 @@ class KardexController extends Controller
             ->get()[0]->cantidad;
         $salida_inicial = DB::table('salidas_recepcion as s')
             ->join('inventario_recepcion as i', 'i.id_inventario_recepcion', '=', 's.id_inventario_recepcion')
-            ->select(DB::raw('sum(s.cantidad + s.basura) as cantidad'))
+            ->select(DB::raw("
+                SUM(
+                    s.cantidad +
+                    CASE
+                        WHEN s.orden_basura IS NOT NULL AND s.estado_orden_basura = 1
+                        THEN s.basura
+                        ELSE 0
+                    END
+                ) as cantidad
+            "))
             ->where('s.id_variedad', $request->variedad)
             ->where('i.id_empresa', $finca)
             ->where('i.bodega', $request->bodega)
@@ -627,6 +653,13 @@ class KardexController extends Controller
             ->orderBy('s.fecha')
             ->orderBy('s.fecha_registro')
             ->get();
+        $salidas_solido_sin_proyecto = $this->salidasSolidoSinRelacionProyecto(
+            $finca,
+            $request->bodega,
+            $request->variedad,
+            $desde,
+            $hasta
+        );
         $salidas_movimiento = DB::table('salidas_recepcion as s')
             ->join('inventario_recepcion as i', 'i.id_inventario_recepcion', '=', 's.id_inventario_recepcion')
             ->select(
@@ -720,6 +753,7 @@ class KardexController extends Controller
             ->merge($salidas_ot)
             ->merge($salidas_ot_nacional)
             ->merge($salidas_solido)
+            ->merge($salidas_solido_sin_proyecto)
             ->merge($salidas_movimiento)
             ->merge($salidas_basura)
             ->merge($salidas_correccion)
@@ -972,5 +1006,60 @@ class KardexController extends Controller
             $sheet->getStyle('E6:G' . $last_row)->getNumberFormat()
                 ->setFormatCode('#,##0;[Red]-#,##0');
         }
+    }
+
+    private function salidasSolidoSinRelacionProyecto($finca, $bodega, $variedad, $desde, $hasta)
+    {
+        $descripcion = "MAX(CONCAT(COALESCE((SELECT rm.descripcion " .
+            "FROM registro_movimientos as rm " .
+            "WHERE rm.concepto = 'FLOR_SOLIDA' " .
+            "AND rm.numero = s.orden_flor_solida " .
+            "AND rm.id_variedad = s.id_variedad " .
+            "AND rm.id_inventario_recepcion = s.id_inventario_recepcion " .
+            "AND rm.id_detalle_caja_proyecto = s.id_detalle_caja_proyecto " .
+            "ORDER BY rm.id_registro_movimientos DESC LIMIT 1), " .
+            "'Salida de Flor Solida'), " .
+            "' | Relación del pedido no disponible (detalle #', " .
+            "s.id_detalle_caja_proyecto, ')')) as detalle";
+
+        return DB::table('salidas_recepcion as s')
+            ->join('inventario_recepcion as i', 'i.id_inventario_recepcion', '=', 's.id_inventario_recepcion')
+            ->select(
+                DB::raw("'SALIDA' as tipo"),
+                's.orden_flor_solida as documento',
+                's.fecha',
+                DB::raw("DATE_FORMAT(s.fecha_registro, '%Y-%m-%d %H:%i') as fecha_registro"),
+                DB::raw('sum(s.cantidad) as cantidad'),
+                DB::raw("'FLOR SOLIDA' as concepto"),
+                DB::raw($descripcion)
+            )
+            ->whereNotNull('s.orden_flor_solida')
+            ->whereNotNull('s.id_detalle_caja_proyecto')
+            ->whereNull('s.id_ot_nacional')
+            ->where('s.cantidad', '>', 0)
+            ->where('i.id_empresa', $finca)
+            ->where('i.bodega', $bodega)
+            ->where('s.fecha_registro', '>=', $desde)
+            ->where('s.fecha', '>=', $desde)
+            ->where('s.fecha', '<=', $hasta)
+            ->where('s.id_variedad', $variedad)
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('detalle_caja_proyecto as dc')
+                    ->join('caja_proyecto as caja', 'caja.id_caja_proyecto', '=', 'dc.id_caja_proyecto')
+                    ->join('proyecto as proy', 'proy.id_proyecto', '=', 'caja.id_proyecto')
+                    ->join('detalle_cliente as cli', 'cli.id_cliente', '=', 'proy.id_cliente')
+                    ->where('cli.estado', 1)
+                    ->whereRaw('dc.id_detalle_caja_proyecto = s.id_detalle_caja_proyecto');
+            })
+            ->groupBy(
+                's.orden_flor_solida',
+                's.fecha',
+                DB::raw("DATE_FORMAT(s.fecha_registro, '%Y-%m-%d %H:%i')"),
+                's.id_detalle_caja_proyecto'
+            )
+            ->orderBy('s.fecha')
+            ->orderBy('s.fecha_registro')
+            ->get();
     }
 }

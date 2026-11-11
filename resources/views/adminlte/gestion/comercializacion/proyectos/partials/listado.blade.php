@@ -747,14 +747,38 @@
         modal_quest('modal_delete_pedido', mensaje['mensaje'], mensaje['title'], true, false,
             '{{ isPC() ? '35%' : '' }}',
             function() {
-                datos = {
-                    _token: '{{ csrf_token() }}',
-                    id: id
-                };
-                post_jquery_m('{{ url('proyectos/delete_pedido') }}', datos, function() {
-                    listar_reporte();
-                });
+                enviar_cancelacion_pedido(id, false);
             });
+    }
+
+    function enviar_cancelacion_pedido(id, confirmar_armados) {
+        datos = {
+            _token: '{{ csrf_token() }}',
+            id: id,
+            confirmar_armados: confirmar_armados ? 1 : 0
+        };
+        $.LoadingOverlay('show');
+        $.post('{{ url('proyectos/delete_pedido') }}', datos, function(retorno) {
+            if (retorno.requiere_confirmacion) {
+                modal_quest('modal_confirmar_armados_cancelar_' + id, retorno.mensaje,
+                    '<i class="fa fa-fw fa-exclamation-triangle"></i> Flores armadas asociadas',
+                    true, false, '{{ isPC() ? '45%' : '' }}',
+                    function() {
+                        enviar_cancelacion_pedido(id, true);
+                    });
+            } else if (retorno.success) {
+                mini_alerta('success', retorno.mensaje, 5000);
+                listar_reporte();
+            } else {
+                alerta(retorno.mensaje);
+            }
+        }, 'json').fail(function(retorno) {
+            console.log(retorno);
+            alerta_errores(retorno.responseText);
+            alerta('Ha ocurrido un problema al enviar la información');
+        }).always(function() {
+            $.LoadingOverlay('hide');
+        });
     }
 
     function enviar_notificacion(id) {

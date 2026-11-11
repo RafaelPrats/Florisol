@@ -20,7 +20,10 @@
                     <select id="form_segmento" class="form-control" onchange="seleccionar_segmento()">
                         <option value="">Seleccione</option>
                         @foreach ($segmentos as $seg)
-                            <option value="{{ $seg }}">{{ $seg }}</option>
+                            <option value="{{ $seg }}"
+                                {{ count($segmentos) == 1 && isset($segmentos[0]) && $segmentos[0] !== '' ? 'selected' : '' }}>
+                                {{ $seg }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
@@ -184,6 +187,10 @@
             $.LoadingOverlay('hide');
         })
     }
+
+    @if (count($segmentos) == 1 && isset($segmentos[0]) && $segmentos[0] !== '')
+        seleccionar_segmento();
+    @endif
 
     function seleccionar_cliente() {
         datos = {

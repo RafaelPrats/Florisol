@@ -570,6 +570,38 @@ class ProyectoController extends Controller
         try {
             DB::beginTransaction();
             $proyecto = Proyecto::find($request->id);
+            $detalles_pedido = json_decode($request->detalles_pedido);
+            if (!is_array($detalles_pedido)) {
+                DB::rollBack();
+                return [
+                    'success' => false,
+                    'mensaje' => 'No se pudieron validar los detalles del pedido.',
+                ];
+            }
+            $ids_detalles_conservados = [];
+            foreach ($detalles_pedido as $det_ped) {
+                foreach (isset($det_ped->detalles_combo) ? $det_ped->detalles_combo : [] as $det_caj) {
+                    if (!empty($det_caj->id_detalle_caja_proyecto)) {
+                        $ids_detalles_conservados[] = $det_caj->id_detalle_caja_proyecto;
+                    }
+                }
+            }
+            $detalles_armados = $this->detallesArmadosPorEliminar(
+                $proyecto->id_proyecto,
+                $ids_detalles_conservados
+            );
+            if (count($detalles_armados) > 0 && (int) $request->input('confirmar_armados', 0) !== 1) {
+                DB::rollBack();
+                return [
+                    'success' => false,
+                    'requiere_confirmacion' => true,
+                    'mensaje' => $this->mensajeConfirmarRemocionArmados($proyecto, $detalles_armados, 'modificar'),
+                ];
+            }
+            if (count($detalles_armados) > 0) {
+                $this->anotarMovimientosArmados($proyecto, $detalles_armados, 'PEDIDO MODIFICADO');
+            }
+
             //$proyecto->id_cliente = $request->cliente;
             $proyecto->fecha = $request->fecha;
             $proyecto->tipo = $request->tipo;
@@ -579,7 +611,7 @@ class ProyectoController extends Controller
             $proyecto->save();
 
             $cajas_actuales = '';
-            foreach (json_decode($request->detalles_pedido) as $pos_det => $det_ped) {
+            foreach ($detalles_pedido as $pos_det => $det_ped) {
                 if ($det_ped->id_caja_proyecto != '') {
                     // CAJA PROYECTO EXISTENTE
                     $caja = CajaProyecto::find($det_ped->id_caja_proyecto);
@@ -797,7 +829,24 @@ class ProyectoController extends Controller
             $proyecto = Proyecto::find($request->id);
             if (count($proyecto->confirmaciones) == 0) {
                 if (count($proyecto->ordenes_compra) == 0) {
+                    $detalles_armados = $this->detallesArmadosPorEliminar($proyecto->id_proyecto);
+                    if (count($detalles_armados) > 0 && (int) $request->input('confirmar_armados', 0) !== 1) {
+                        DB::rollBack();
+                        return [
+                            'success' => false,
+                            'requiere_confirmacion' => true,
+                            'mensaje' => $this->mensajeConfirmarRemocionArmados(
+                                $proyecto,
+                                $detalles_armados,
+                                'cancelar'
+                            ),
+                        ];
+                    }
+                    if (count($detalles_armados) > 0) {
+                        $this->anotarMovimientosArmados($proyecto, $detalles_armados, 'PEDIDO CANCELADO');
+                    }
                     $proyecto->delete();
+                    bitacora('proyecto', $proyecto->id_proyecto, 'D', 'ELIMINAR PEDIDO');
 
                     DB::commit();
                     $success = true;
@@ -829,6 +878,89 @@ class ProyectoController extends Controller
             'success' => $success,
             'mensaje' => $msg,
         ];
+    }
+
+    private function detallesArmadosPorEliminar($id_proyecto, $ids_conservados = [])
+    {
+        $query = DB::table('detalle_caja_proyecto as dc')
+            ->join('caja_proyecto as cp', 'cp.id_caja_proyecto', '=', 'dc.id_caja_proyecto')
+            ->join('variedad as v', 'v.id_variedad', '=', 'dc.id_variedad')
+            ->where('cp.id_proyecto', $id_proyecto)
+            ->where('dc.armados', '>', 0)
+            ->where('v.receta', 0)
+            ->select(
+                'dc.id_detalle_caja_proyecto',
+                'dc.armados',
+                'dc.tallos_x_ramo',
+                'dc.longitud_ramo',
+                'v.nombre as variedad',
+                'cp.tipo_caja'
+            );
+
+        if (count($ids_conservados) > 0) {
+            $query->whereNotIn('dc.id_detalle_caja_proyecto', $ids_conservados);
+        }
+
+        return $query->get();
+    }
+
+    private function mensajeConfirmarRemocionArmados($proyecto, $detalles, $accion)
+    {
+        $cliente = DB::table('detalle_cliente')
+            ->where('id_cliente', $proyecto->id_cliente)
+            ->where('estado', 1)
+            ->value('nombre');
+        $cliente = $cliente ?: 'Cliente #' . $proyecto->id_cliente;
+        $items = [];
+
+        foreach ($detalles as $detalle) {
+            $tallos = $detalle->armados * $detalle->tallos_x_ramo;
+            $items[] = '<li><b>' . e($detalle->variedad) . '</b>, caja ' . e($detalle->tipo_caja) .
+                ': ' . number_format($detalle->armados) . ' ramos (' . number_format($tallos) .
+                ' tallos), longitud ' . e($detalle->longitud_ramo) . ' cm.</li>';
+        }
+
+        return '<div class="alert alert-warning">' .
+            '<p>El pedido tiene flores sólidas armadas asociadas al inventario. Si continúa con la ' .
+            e($accion) . ', se eliminará su relación con el pedido, pero la salida original se conservará ' .
+            'y no se devolverá inventario automáticamente.</p>' .
+            '<p><b>Pedido:</b> #' . e($proyecto->id_proyecto) . ' — ' . e($cliente) .
+            ' — ' . e($proyecto->fecha) . '</p><ul>' . implode('', $items) . '</ul>' .
+            '<p>El sistema dejará esta información en la descripción del movimiento.</p></div>';
+    }
+
+    private function anotarMovimientosArmados($proyecto, $detalles, $accion)
+    {
+        $cliente = DB::table('detalle_cliente')
+            ->where('id_cliente', $proyecto->id_cliente)
+            ->where('estado', 1)
+            ->value('nombre');
+        $cliente = $cliente ?: 'Cliente #' . $proyecto->id_cliente;
+        $fecha_registro = date('Y-m-d H:i:s');
+        $id_usuario = session('id_usuario', -1);
+
+        foreach ($detalles as $detalle) {
+            $tallos = $detalle->armados * $detalle->tallos_x_ramo;
+            $nota = $accion . ' #' . $proyecto->id_proyecto .
+                ' (' . $fecha_registro . ', usuario ' . $id_usuario . ')' .
+                '; cliente ' . $cliente . '; fecha del pedido ' . $proyecto->fecha .
+                '; caja ' . $detalle->tipo_caja . '; flor ' . $detalle->variedad .
+                '; longitud ' . $detalle->longitud_ramo . ' cm; ' . $detalle->armados .
+                ' ramos armados (' . $tallos . ' tallos).';
+
+            $movimientos = RegistroMovimientos::where('id_detalle_caja_proyecto', $detalle->id_detalle_caja_proyecto)
+                ->whereIn('concepto', ['FLOR_SOLIDA', 'RE_INGRESO'])
+                ->get();
+            foreach ($movimientos as $movimiento) {
+                $descripcion = trim($movimiento->descripcion);
+                $movimiento->descripcion = mb_substr(
+                    ($descripcion != '' ? $descripcion . ' | ' : '') . $nota,
+                    0,
+                    5000
+                );
+                $movimiento->save();
+            }
+        }
     }
 
     public function descargar_despachos(Request $request)
