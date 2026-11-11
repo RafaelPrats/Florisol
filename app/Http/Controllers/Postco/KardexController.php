@@ -1010,7 +1010,20 @@ class KardexController extends Controller
 
     private function salidasSolidoSinRelacionProyecto($finca, $bodega, $variedad, $desde, $hasta)
     {
-        $descripcion = "MAX(CONCAT(COALESCE((SELECT rm.descripcion " .
+        $descripcion = "MAX(CASE WHEN EXISTS (SELECT 1 " .
+            "FROM registro_movimientos as rm " .
+            "WHERE rm.concepto = 'FLOR_SOLIDA' " .
+            "AND rm.numero = s.orden_flor_solida " .
+            "AND rm.id_variedad = s.id_variedad " .
+            "AND rm.id_inventario_recepcion = s.id_inventario_recepcion " .
+            "AND rm.id_detalle_caja_proyecto = s.id_detalle_caja_proyecto " .
+            "AND rm.descripcion LIKE '%PEDIDO CANCELADO #%' " .
+            "AND EXISTS (SELECT 1 FROM bitacora as b " .
+            "WHERE b.tabla = 'PROYECTO' AND b.accion = 'D' " .
+            "AND b.codigo = CAST(SUBSTRING_INDEX(" .
+            "SUBSTRING_INDEX(rm.descripcion, 'PEDIDO CANCELADO #', -1), " .
+            "' ', 1) AS UNSIGNED))) " .
+            "THEN 'Pedido eliminado' ELSE CONCAT(COALESCE((SELECT rm.descripcion " .
             "FROM registro_movimientos as rm " .
             "WHERE rm.concepto = 'FLOR_SOLIDA' " .
             "AND rm.numero = s.orden_flor_solida " .
@@ -1020,7 +1033,7 @@ class KardexController extends Controller
             "ORDER BY rm.id_registro_movimientos DESC LIMIT 1), " .
             "'Salida de Flor Solida'), " .
             "' | Relación del pedido no disponible (detalle #', " .
-            "s.id_detalle_caja_proyecto, ')')) as detalle";
+            "s.id_detalle_caja_proyecto, ')') END) as detalle";
 
         return DB::table('salidas_recepcion as s')
             ->join('inventario_recepcion as i', 'i.id_inventario_recepcion', '=', 's.id_inventario_recepcion')
